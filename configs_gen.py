@@ -6,6 +6,7 @@ import os
 import sys
 
 # Mapping of flag emojis to country names
+# This dictionary helps in creating the new 'remarks' field.
 EMOJI_TO_COUNTRY = {
     "🇩🇪": "Germany",
     "🇳🇱": "Netherlands",
@@ -17,7 +18,8 @@ EMOJI_TO_COUNTRY = {
     "🇫🇷": "France",
     "🇯🇵": "Japan",
     "🇦🇺": "Australia",
-    # Add more mappings as needed
+    "🇮🇪": "Ireland",
+    # Add more mappings as needed based on the source data
     "(nm_zorp)": "Zorp",
     "🛜": "WiFi",
     "✅": "Checked",
@@ -27,15 +29,16 @@ EMOJI_TO_COUNTRY = {
 
 def create_final_config():
     """
-    Fetches V2Ray configurations, processes them, and generates a final
-    'configs.json' file with a load balancer.
+    Fetches V2Ray configurations from a URL, groups them by country flag,
+    extracts the first proxy from each group, re-tags and re-brands them,
+    and then builds a final 'configs.json' file with a load balancer.
     The URL is fetched from a GitHub Secret.
     """
     # Get the URL from an environment variable set by GitHub Actions
     url = os.getenv('V2RAY_URL')
     if not url:
-        print("Error: V2RAY_URL environment variable not set.")
-        print("Please set it as a secret in your GitHub repository settings.")
+        print("Error: V2RAY_URL environment variable not set.", file=sys.stderr)
+        print("Please set it as a secret in your GitHub repository settings.", file=sys.stderr)
         sys.exit(1) # Exit the script with an error code
 
     headers = {"User-Agent": "v2rayNG/1.10.7"}
@@ -63,7 +66,7 @@ def create_final_config():
         {"port": 10809, "protocol": "http", "settings": {"userLevel": 8}, "tag": "http"}
       ],
       "outbounds": [
-        # Standard non-proxy outbounds
+        # Standard non-proxy outbounds that will be appended after the generated ones
         {"tag": "direct", "protocol": "freedom", "settings": {"domainStrategy": "UseIPv4"}},
         {"tag": "block", "protocol": "blackhole"},
         {"tag": "dns-out", "protocol": "dns"}
@@ -94,70 +97,80 @@ def create_final_config():
         data = response.json()
         print("Data fetched successfully.")
 
-        # Group configurations by the first part of their 'remarks' (the emoji)
+        # Step 1: Group configurations by the first part of their 'remarks' (the emoji)
         grouped_data = defaultdict(list)
         for item in data:
             remarks = item.get("remarks", "")
             if remarks:
+                # The emoji is the first part of the string
                 key = remarks.split()[0]
                 grouped_data[key].append(item)
 
         print(f"Found {len(grouped_data)} groups based on remarks.")
 
+        # Step 2 & 3: Process each group to extract and modify the first proxy
         processed_outbounds = []
         proxy_tags = []
         proxy_counter = 1
 
-        # Process each group to extract the first outbound proxy
         for emoji, items in grouped_data.items():
             if not items:
                 continue
 
+            # Take the first configuration object from the group
             first_item_in_group = items[0]
+            
+            # Find the first outbound within that object that is tagged as 'proxy'
             if "outbounds" in first_item_in_group and first_item_in_group["outbounds"]:
-                # Find the first outbound with the tag 'proxy'
                 original_proxy = next((ob for ob in first_item_in_group["outbounds"] if ob.get("tag") == "proxy"), None)
                 
                 if original_proxy:
                     # Create a deep copy to avoid modifying the original dict
                     new_proxy = copy.deepcopy(original_proxy)
                     
-                    # Generate new tag and remark
+                    # Generate new tag
                     new_tag = f"proxy{proxy_counter}"
+                    
+                    # Generate new remark based on emoji
                     country_name = EMOJI_TO_COUNTRY.get(emoji, "Unknown")
                     new_remark = f"{emoji} {country_name}"
 
-                    # Update the proxy object
+                    # Update the proxy object's tag and add the new remarks
                     new_proxy["tag"] = new_tag
                     new_proxy["remarks"] = new_remark
                     
+                    # Add the processed proxy to our list
                     processed_outbounds.append(new_proxy)
                     proxy_tags.append(new_tag)
                     proxy_counter += 1
 
         print(f"Processed {len(processed_outbounds)} proxy configurations.")
 
-        # Add the processed proxies to the main template's outbounds
+        # Step 4: Build the final configuration
+        # Prepend the processed proxies to the standard outbounds
         main_template["outbounds"] = processed_outbounds + main_template["outbounds"]
 
-        # Update the selectors in balancer and observatory
+        # Update the selectors in the balancer and observatory sections
         main_template["routing"]["balancers"][0]["selector"] = proxy_tags
         main_template["observatory"]["subjectSelector"] = proxy_tags
         main_template["burstObservatory"]["subjectSelector"] = proxy_tags
         print("Updated balancer and observatory selectors.")
 
-        # Write the final configuration to a file
+        # Step 5: Write the final configuration to a file
         with open("configs.json", "w", encoding="utf-8") as f:
             json.dump(main_template, f, indent=2, ensure_ascii=False)
         
         print("\nSuccessfully created 'configs.json' file.")
 
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred during the request: {e}")
+        print(f"An error occurred during the request: {e}", file=sys.stderr)
     except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON response: {e}")
+        print(f"Failed to parse JSON response: {e}", file=sys.stderr)
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        # Also print traceback for more detailed debugging if needed
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
