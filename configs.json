@@ -4,11 +4,6 @@
             "loglevel": "warning"
         },
         "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
             "queryStrategy": "UseIPv4",
             "servers": [
                 "https://1.0.0.1/dns-query"
@@ -17,6 +12,17 @@
         },
         "fakedns": [],
         "routing": {
+            "balancers": [
+                {
+                    "tag": "balancer",
+                    "selector": [
+                        "proxy"
+                    ],
+                    "strategy": {
+                        "type": "leastPing"
+                    }
+                }
+            ],
             "domainStrategy": "IPIfNonMatch",
             "rules": [
                 {
@@ -50,6 +56,11 @@
                     ],
                     "outboundTag": "block",
                     "type": "field"
+                },
+                {
+                    "type": "field",
+                    "balancerTag": "balancer",
+                    "network": "tcp,udp"
                 }
             ]
         },
@@ -88,12 +99,206 @@
         ],
         "outbounds": [
             {
-                "tag": "proxy",
+                "tag": "proxy1",
                 "protocol": "vless",
                 "settings": {
                     "vnext": [
                         {
-                            "address": "78.46.163.147",
+                            "address": "91.99.182.85",
+                            "port": 443,
+                            "users": [
+                                {
+                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                                    "security": "auto",
+                                    "encryption": "none",
+                                    "email": "https://gozargah.github.io/marzban/",
+                                    "alterId": 0,
+                                    "flow": null
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "streamSettings": {
+                    "network": "xhttp",
+                    "security": "reality",
+                    "realitySettings": {
+                        "serverName": "www.tgju.org",
+                        "fingerprint": "chrome",
+                        "show": false,
+                        "publicKey": "MvHAa605zfOrBe-SDP6_ytTmotBw39f6OefvXn2DZhk",
+                        "shortId": "33ed1b5c1b71"
+                    },
+                    "xhttpSettings": {
+                        "headers": {
+                            "Pragma": "no-cache",
+                            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"
+                        },
+                        "mode": "auto",
+                        "path": "/",
+                        "scMaxEachPostBytes": "1000000",
+                        "scMaxConcurrentPosts": 100,
+                        "scMinPostsIntervalMs": 30,
+                        "xPaddingBytes": "100-1000",
+                        "noGRPCHeader": false
+                    }
+                }
+            },
+            {
+                "tag": "dialer",
+                "protocol": "freedom",
+                "settings": {
+                    "fragment": {
+                        "packets": "tlshello",
+                        "length": "1-10",
+                        "interval": "0-1"
+                    }
+                }
+            },
+            {
+                "tag": "direct",
+                "protocol": "freedom",
+                "settings": {
+                    "domainStrategy": "UseIPv4"
+                }
+            },
+            {
+                "tag": "block",
+                "protocol": "blackhole"
+            },
+            {
+                "tag": "dns-out",
+                "protocol": "dns"
+            }
+        ],
+        "observatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "probeURL": "http://www.google.com/gen_204",
+            "probeInterval": "5m",
+            "enableConcurrency": true
+        },
+        "burstObservatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "pingConfig": {
+                "destination": "http://www.google.com/gen_204",
+                "interval": "5m",
+                "timeout": "10s",
+                "sampling": 3
+            }
+        },
+        "stats": {},
+        "remarks": "no_remarks no_remarks"
+    },
+    {
+        "log": {
+            "loglevel": "warning"
+        },
+        "dns": {
+            "queryStrategy": "UseIPv4",
+            "servers": [
+                "https://1.0.0.1/dns-query"
+            ],
+            "tag": "dns_out"
+        },
+        "fakedns": [],
+        "routing": {
+            "balancers": [
+                {
+                    "tag": "balancer",
+                    "selector": [
+                        "proxy"
+                    ],
+                    "strategy": {
+                        "type": "leastPing"
+                    }
+                }
+            ],
+            "domainStrategy": "IPIfNonMatch",
+            "rules": [
+                {
+                    "domain": [
+                        "geosite:category-ads-all"
+                    ],
+                    "outboundTag": "block"
+                },
+                {
+                    "port": "53",
+                    "network": "udp",
+                    "outboundTag": "dns-out"
+                },
+                {
+                    "domain": [
+                        "regexp:.*\\.ir",
+                        "domain:.ir"
+                    ],
+                    "outboundTag": "direct"
+                },
+                {
+                    "ip": [
+                        "geoip:ir",
+                        "geoip:private"
+                    ],
+                    "outboundTag": "direct"
+                },
+                {
+                    "protocol": [
+                        "bittorrent"
+                    ],
+                    "outboundTag": "block",
+                    "type": "field"
+                },
+                {
+                    "type": "field",
+                    "balancerTag": "balancer",
+                    "network": "tcp,udp"
+                }
+            ]
+        },
+        "policy": {
+            "system": {
+                "statsOutboundDownlink": true,
+                "statsOutboundUplink": true
+            }
+        },
+        "inbounds": [
+            {
+                "port": 10808,
+                "protocol": "socks",
+                "settings": {
+                    "auth": "noauth",
+                    "udp": true,
+                    "userLevel": 8
+                },
+                "sniffing": {
+                    "destOverride": [
+                        "http",
+                        "tls"
+                    ],
+                    "enabled": true
+                },
+                "tag": "socks"
+            },
+            {
+                "port": 10809,
+                "protocol": "http",
+                "settings": {
+                    "userLevel": 8
+                },
+                "tag": "http"
+            }
+        ],
+        "outbounds": [
+            {
+                "tag": "proxy1",
+                "protocol": "vless",
+                "settings": {
+                    "vnext": [
+                        {
+                            "address": "91.99.182.85",
                             "port": 443,
                             "users": [
                                 {
@@ -116,12 +321,12 @@
                         "fingerprint": "chrome",
                         "show": false,
                         "publicKey": "MvHAa605zfOrBe-SDP6_ytTmotBw39f6OefvXn2DZhk",
-                        "shortId": "827cc1dd64e679"
+                        "shortId": "33ed1b5c1b71"
                     },
                     "xhttpSettings": {
                         "headers": {
                             "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0"
                         },
                         "mode": "auto",
                         "path": "/",
@@ -134,119 +339,12 @@
                 }
             },
             {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
-        "stats": {},
-        "remarks": "(nm_zorp) ||  \ud83d\udcc5 \u221e"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
-            ],
-            "tag": "dns_out"
-        },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
-            }
-        },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
+                "tag": "proxy2",
                 "protocol": "vless",
                 "settings": {
                     "vnext": [
                         {
-                            "address": "91.99.175.187",
+                            "address": "104.26.6.89",
                             "port": 443,
                             "users": [
                                 {
@@ -262,27 +360,135 @@
                     ]
                 },
                 "streamSettings": {
-                    "network": "xhttp",
-                    "security": "reality",
-                    "realitySettings": {
-                        "serverName": "tgju.org",
+                    "network": "ws",
+                    "security": "tls",
+                    "tlsSettings": {
+                        "serverName": "parsdl.xyz",
+                        "allowInsecure": true,
                         "fingerprint": "chrome",
-                        "show": false,
-                        "publicKey": "MvHAa605zfOrBe-SDP6_ytTmotBw39f6OefvXn2DZhk",
-                        "shortId": "827cc1dd64e679"
+                        "alpn": [
+                            "http/1.1"
+                        ],
+                        "show": false
                     },
-                    "xhttpSettings": {
+                    "wsSettings": {
                         "headers": {
                             "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.3 Safari/605.1.15"
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
                         },
-                        "mode": "auto",
-                        "path": "/",
-                        "scMaxEachPostBytes": "1000000",
-                        "scMaxConcurrentPosts": 100,
-                        "scMinPostsIntervalMs": 30,
-                        "xPaddingBytes": "100-1000",
-                        "noGRPCHeader": false
+                        "path": "/hajmi?ed=2560",
+                        "host": "nb-de.parsdl.xyz"
+                    },
+                    "sockopt": {
+                        "dialerProxy": "dialer"
+                    }
+                },
+                "mux": {
+                    "enabled": true,
+                    "concurrency": 8,
+                    "xudpConcurrency": 8,
+                    "xudpProxyUDP443": "reject"
+                }
+            },
+            {
+                "tag": "proxy3",
+                "protocol": "vless",
+                "settings": {
+                    "vnext": [
+                        {
+                            "address": "www.speedtest.net",
+                            "port": 443,
+                            "users": [
+                                {
+                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                                    "security": "auto",
+                                    "encryption": "none",
+                                    "email": "https://gozargah.github.io/marzban/",
+                                    "alterId": 0,
+                                    "flow": null
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "streamSettings": {
+                    "network": "ws",
+                    "security": "tls",
+                    "tlsSettings": {
+                        "serverName": "nitter.ir",
+                        "allowInsecure": true,
+                        "fingerprint": "chrome",
+                        "alpn": [
+                            "http/1.1"
+                        ],
+                        "show": false
+                    },
+                    "wsSettings": {
+                        "headers": {
+                            "Pragma": "no-cache",
+                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15"
+                        },
+                        "path": "/hajmi?ed=2050",
+                        "host": "nb-de.nitter.ir"
+                    },
+                    "sockopt": {
+                        "dialerProxy": "dialer"
+                    }
+                },
+                "mux": {
+                    "enabled": true,
+                    "concurrency": 8,
+                    "xudpConcurrency": 8,
+                    "xudpProxyUDP443": "reject"
+                }
+            },
+            {
+                "tag": "proxy4",
+                "protocol": "vless",
+                "settings": {
+                    "vnext": [
+                        {
+                            "address": "www.speedtest.net",
+                            "port": 2095,
+                            "users": [
+                                {
+                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                                    "security": "auto",
+                                    "encryption": "none",
+                                    "email": "https://gozargah.github.io/marzban/",
+                                    "alterId": 0,
+                                    "flow": null
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "streamSettings": {
+                    "network": "ws",
+                    "wsSettings": {
+                        "headers": {
+                            "Pragma": "no-cache",
+                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0"
+                        },
+                        "path": "/hajmi?ed=2050",
+                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-De.85858599.xYz."
+                    }
+                },
+                "mux": {
+                    "enabled": true,
+                    "concurrency": 8,
+                    "xudpConcurrency": 8,
+                    "xudpProxyUDP443": "reject"
+                }
+            },
+            {
+                "tag": "dialer",
+                "protocol": "freedom",
+                "settings": {
+                    "fragment": {
+                        "packets": "tlshello",
+                        "length": "1-10",
+                        "interval": "0-1"
                     }
                 }
             },
@@ -302,19 +508,33 @@
                 "protocol": "dns"
             }
         ],
+        "observatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "probeURL": "http://www.google.com/gen_204",
+            "probeInterval": "5m",
+            "enableConcurrency": true
+        },
+        "burstObservatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "pingConfig": {
+                "destination": "http://www.google.com/gen_204",
+                "interval": "5m",
+                "timeout": "10s",
+                "sampling": 3
+            }
+        },
         "stats": {},
-        "remarks": "\ud83c\udde9\ud83c\uddea \u26d3 X [DIR]"
+        "remarks": "🇩🇪 Germany"
     },
     {
         "log": {
             "loglevel": "warning"
         },
         "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
             "queryStrategy": "UseIPv4",
             "servers": [
                 "https://1.0.0.1/dns-query"
@@ -323,6 +543,17 @@
         },
         "fakedns": [],
         "routing": {
+            "balancers": [
+                {
+                    "tag": "balancer",
+                    "selector": [
+                        "proxy"
+                    ],
+                    "strategy": {
+                        "type": "leastPing"
+                    }
+                }
+            ],
             "domainStrategy": "IPIfNonMatch",
             "rules": [
                 {
@@ -356,6 +587,11 @@
                     ],
                     "outboundTag": "block",
                     "type": "field"
+                },
+                {
+                    "type": "field",
+                    "balancerTag": "balancer",
+                    "network": "tcp,udp"
                 }
             ]
         },
@@ -394,7 +630,7 @@
         ],
         "outbounds": [
             {
-                "tag": "proxy",
+                "tag": "proxy1",
                 "protocol": "vless",
                 "settings": {
                     "vnext": [
@@ -439,165 +675,6 @@
                 }
             },
             {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
-        "stats": {},
-        "remarks": "\ud83c\uddf3\ud83c\uddf1  \u26d3 X [DIR]"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
-            ],
-            "tag": "dns_out"
-        },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
-            }
-        },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
-                "protocol": "vless",
-                "settings": {
-                    "vnext": [
-                        {
-                            "address": "104.26.6.89",
-                            "port": 443,
-                            "users": [
-                                {
-                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                                    "security": "auto",
-                                    "encryption": "none",
-                                    "email": "https://gozargah.github.io/marzban/",
-                                    "alterId": 0,
-                                    "flow": null
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "streamSettings": {
-                    "network": "ws",
-                    "security": "tls",
-                    "tlsSettings": {
-                        "serverName": "parsdl.xyz",
-                        "allowInsecure": true,
-                        "fingerprint": "chrome",
-                        "alpn": [
-                            "http/1.1"
-                        ],
-                        "show": false
-                    },
-                    "wsSettings": {
-                        "headers": {
-                            "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0"
-                        },
-                        "path": "/hajmi?ed=2560",
-                        "host": "nb-de.parsdl.xyz"
-                    },
-                    "sockopt": {
-                        "dialerProxy": "dialer"
-                    }
-                },
-                "mux": {
-                    "enabled": true,
-                    "concurrency": 8,
-                    "xudpConcurrency": 8,
-                    "xudpProxyUDP443": "reject"
-                }
-            },
-            {
                 "tag": "dialer",
                 "protocol": "freedom",
                 "settings": {
@@ -624,19 +701,33 @@
                 "protocol": "dns"
             }
         ],
+        "observatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "probeURL": "http://www.google.com/gen_204",
+            "probeInterval": "5m",
+            "enableConcurrency": true
+        },
+        "burstObservatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "pingConfig": {
+                "destination": "http://www.google.com/gen_204",
+                "interval": "5m",
+                "timeout": "10s",
+                "sampling": 3
+            }
+        },
         "stats": {},
-        "remarks": "\ud83c\udde9\ud83c\uddea \u2601\ufe0f [TLS] HAMRAH & IRANCELL"
+        "remarks": "🇳🇱 Netherlands"
     },
     {
         "log": {
             "loglevel": "warning"
         },
         "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
             "queryStrategy": "UseIPv4",
             "servers": [
                 "https://1.0.0.1/dns-query"
@@ -645,6 +736,17 @@
         },
         "fakedns": [],
         "routing": {
+            "balancers": [
+                {
+                    "tag": "balancer",
+                    "selector": [
+                        "proxy"
+                    ],
+                    "strategy": {
+                        "type": "leastPing"
+                    }
+                }
+            ],
             "domainStrategy": "IPIfNonMatch",
             "rules": [
                 {
@@ -678,6 +780,11 @@
                     ],
                     "outboundTag": "block",
                     "type": "field"
+                },
+                {
+                    "type": "field",
+                    "balancerTag": "balancer",
+                    "network": "tcp,udp"
                 }
             ]
         },
@@ -716,7 +823,7 @@
         ],
         "outbounds": [
             {
-                "tag": "proxy",
+                "tag": "proxy1",
                 "protocol": "vless",
                 "settings": {
                     "vnext": [
@@ -751,177 +858,7 @@
                     "wsSettings": {
                         "headers": {
                             "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Safari/605.1.15"
-                        },
-                        "path": "/hajmi?ed=2050",
-                        "host": "nb-de.nitter.ir"
-                    },
-                    "sockopt": {
-                        "dialerProxy": "dialer"
-                    }
-                },
-                "mux": {
-                    "enabled": true,
-                    "concurrency": 8,
-                    "xudpConcurrency": 8,
-                    "xudpProxyUDP443": "reject"
-                }
-            },
-            {
-                "tag": "dialer",
-                "protocol": "freedom",
-                "settings": {
-                    "fragment": {
-                        "packets": "tlshello",
-                        "length": "1-10",
-                        "interval": "0-1"
-                    }
-                }
-            },
-            {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
-        "stats": {},
-        "remarks": "\ud83c\udde9\ud83c\uddea \u2601\ufe0f [TLS]"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
-            ],
-            "tag": "dns_out"
-        },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
-            }
-        },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
-                "protocol": "vless",
-                "settings": {
-                    "vnext": [
-                        {
-                            "address": "www.speedtest.net",
-                            "port": 443,
-                            "users": [
-                                {
-                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                                    "security": "auto",
-                                    "encryption": "none",
-                                    "email": "https://gozargah.github.io/marzban/",
-                                    "alterId": 0,
-                                    "flow": null
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "streamSettings": {
-                    "network": "ws",
-                    "security": "tls",
-                    "tlsSettings": {
-                        "serverName": "nitter.ir",
-                        "allowInsecure": true,
-                        "fingerprint": "chrome",
-                        "alpn": [
-                            "http/1.1"
-                        ],
-                        "show": false
-                    },
-                    "wsSettings": {
-                        "headers": {
-                            "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0"
                         },
                         "path": "/hajmi?ed=2560",
                         "host": "nb-fi.nitter.ir"
@@ -938,6 +875,45 @@
                 }
             },
             {
+                "tag": "proxy2",
+                "protocol": "vless",
+                "settings": {
+                    "vnext": [
+                        {
+                            "address": "www.speedtest.net",
+                            "port": 2095,
+                            "users": [
+                                {
+                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                                    "security": "auto",
+                                    "encryption": "none",
+                                    "email": "https://gozargah.github.io/marzban/",
+                                    "alterId": 0,
+                                    "flow": null
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "streamSettings": {
+                    "network": "ws",
+                    "wsSettings": {
+                        "headers": {
+                            "Pragma": "no-cache",
+                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0"
+                        },
+                        "path": "/hajmi?*aiojefoijeafiojaoifjoaijfoieajfea4502542---452525252525082850924520759275942592429465265926359832oiejfiaoiefoieaioaeoifiofeaiofeiofeoijeoijfaeoifja7773422834798732498327498huafuawugfuayufu476942652?ed=2050",
+                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-Fi.85858599.xYz."
+                    }
+                },
+                "mux": {
+                    "enabled": true,
+                    "concurrency": 8,
+                    "xudpConcurrency": 8,
+                    "xudpProxyUDP443": "reject"
+                }
+            },
+            {
                 "tag": "dialer",
                 "protocol": "freedom",
                 "settings": {
@@ -964,19 +940,33 @@
                 "protocol": "dns"
             }
         ],
+        "observatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "probeURL": "http://www.google.com/gen_204",
+            "probeInterval": "5m",
+            "enableConcurrency": true
+        },
+        "burstObservatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "pingConfig": {
+                "destination": "http://www.google.com/gen_204",
+                "interval": "5m",
+                "timeout": "10s",
+                "sampling": 3
+            }
+        },
         "stats": {},
-        "remarks": "\ud83c\uddeb\ud83c\uddee \u2601\ufe0f [TLS]"
+        "remarks": "🇫🇮 Finland"
     },
     {
         "log": {
             "loglevel": "warning"
         },
         "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
             "queryStrategy": "UseIPv4",
             "servers": [
                 "https://1.0.0.1/dns-query"
@@ -985,6 +975,17 @@
         },
         "fakedns": [],
         "routing": {
+            "balancers": [
+                {
+                    "tag": "balancer",
+                    "selector": [
+                        "proxy"
+                    ],
+                    "strategy": {
+                        "type": "leastPing"
+                    }
+                }
+            ],
             "domainStrategy": "IPIfNonMatch",
             "rules": [
                 {
@@ -1018,6 +1019,11 @@
                     ],
                     "outboundTag": "block",
                     "type": "field"
+                },
+                {
+                    "type": "field",
+                    "balancerTag": "balancer",
+                    "network": "tcp,udp"
                 }
             ]
         },
@@ -1056,7 +1062,7 @@
         ],
         "outbounds": [
             {
-                "tag": "proxy",
+                "tag": "proxy1",
                 "protocol": "vless",
                 "settings": {
                     "vnext": [
@@ -1091,7 +1097,7 @@
                     "wsSettings": {
                         "headers": {
                             "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
                         },
                         "path": "/hajmi?ed=2560",
                         "host": "nb-en.nitter.ir"
@@ -1108,6 +1114,45 @@
                 }
             },
             {
+                "tag": "proxy2",
+                "protocol": "vless",
+                "settings": {
+                    "vnext": [
+                        {
+                            "address": "www.speedtest.net",
+                            "port": 2095,
+                            "users": [
+                                {
+                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                                    "security": "auto",
+                                    "encryption": "none",
+                                    "email": "https://gozargah.github.io/marzban/",
+                                    "alterId": 0,
+                                    "flow": null
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "streamSettings": {
+                    "network": "ws",
+                    "wsSettings": {
+                        "headers": {
+                            "Pragma": "no-cache",
+                            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                        },
+                        "path": "/hajmi?ed=2050",
+                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-En.85858599.xYz."
+                    }
+                },
+                "mux": {
+                    "enabled": true,
+                    "concurrency": 8,
+                    "xudpConcurrency": 8,
+                    "xudpProxyUDP443": "reject"
+                }
+            },
+            {
                 "tag": "dialer",
                 "protocol": "freedom",
                 "settings": {
@@ -1134,19 +1179,33 @@
                 "protocol": "dns"
             }
         ],
+        "observatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "probeURL": "http://www.google.com/gen_204",
+            "probeInterval": "5m",
+            "enableConcurrency": true
+        },
+        "burstObservatory": {
+            "subjectSelector": [
+                "proxy"
+            ],
+            "pingConfig": {
+                "destination": "http://www.google.com/gen_204",
+                "interval": "5m",
+                "timeout": "10s",
+                "sampling": 3
+            }
+        },
         "stats": {},
-        "remarks": "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f \u2601\ufe0f [TLS]"
+        "remarks": "🇬🇧 UK"
     },
     {
         "log": {
             "loglevel": "warning"
         },
         "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
             "queryStrategy": "UseIPv4",
             "servers": [
                 "https://1.0.0.1/dns-query"
@@ -1155,6 +1214,17 @@
         },
         "fakedns": [],
         "routing": {
+            "balancers": [
+                {
+                    "tag": "balancer",
+                    "selector": [
+                        "proxy"
+                    ],
+                    "strategy": {
+                        "type": "leastPing"
+                    }
+                }
+            ],
             "domainStrategy": "IPIfNonMatch",
             "rules": [
                 {
@@ -1188,6 +1258,11 @@
                     ],
                     "outboundTag": "block",
                     "type": "field"
+                },
+                {
+                    "type": "field",
+                    "balancerTag": "balancer",
+                    "network": "tcp,udp"
                 }
             ]
         },
@@ -1226,7 +1301,7 @@
         ],
         "outbounds": [
             {
-                "tag": "proxy",
+                "tag": "proxy1",
                 "protocol": "vless",
                 "settings": {
                     "vnext": [
@@ -1261,13 +1336,52 @@
                     "wsSettings": {
                         "headers": {
                             "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) obsidian/1.5.3 Chrome/114.0.5735.289 Electron/25.8.1 Safari/537.36"
+                            "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36"
                         },
                         "path": "/hajmi?ed=2560",
                         "host": "nb-us.nitter.ir"
                     },
                     "sockopt": {
                         "dialerProxy": "dialer"
+                    }
+                },
+                "mux": {
+                    "enabled": true,
+                    "concurrency": 8,
+                    "xudpConcurrency": 8,
+                    "xudpProxyUDP443": "reject"
+                }
+            },
+            {
+                "tag": "proxy2",
+                "protocol": "vless",
+                "settings": {
+                    "vnext": [
+                        {
+                            "address": "www.speedtest.net",
+                            "port": 2095,
+                            "users": [
+                                {
+                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                                    "security": "auto",
+                                    "encryption": "none",
+                                    "email": "https://gozargah.github.io/marzban/",
+                                    "alterId": 0,
+                                    "flow": null
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "streamSettings": {
+                    "network": "ws",
+                    "wsSettings": {
+                        "headers": {
+                            "Pragma": "no-cache",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0"
+                        },
+                        "path": "/hajmi?ed=2050",
+                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-Us.85858599.xYz."
                     }
                 },
                 "mux": {
@@ -1304,591 +1418,26 @@
                 "protocol": "dns"
             }
         ],
-        "stats": {},
-        "remarks": "\ud83c\uddfa\ud83c\uddf8 \u2601\ufe0f [TLS]"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
+        "observatory": {
+            "subjectSelector": [
+                "proxy"
             ],
-            "tag": "dns_out"
+            "probeURL": "http://www.google.com/gen_204",
+            "probeInterval": "5m",
+            "enableConcurrency": true
         },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
-            }
-        },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
-                "protocol": "vless",
-                "settings": {
-                    "vnext": [
-                        {
-                            "address": "www.speedtest.net",
-                            "port": 2095,
-                            "users": [
-                                {
-                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                                    "security": "auto",
-                                    "encryption": "none",
-                                    "email": "https://gozargah.github.io/marzban/",
-                                    "alterId": 0,
-                                    "flow": null
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "streamSettings": {
-                    "network": "ws",
-                    "wsSettings": {
-                        "headers": {
-                            "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0"
-                        },
-                        "path": "/hajmi?ed=2050",
-                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-De.85858599.xYz."
-                    }
-                },
-                "mux": {
-                    "enabled": true,
-                    "concurrency": 8,
-                    "xudpConcurrency": 8,
-                    "xudpProxyUDP443": "reject"
-                }
-            },
-            {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
-        "stats": {},
-        "remarks": "\ud83c\udde9\ud83c\uddea [NoTLS]"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
+        "burstObservatory": {
+            "subjectSelector": [
+                "proxy"
             ],
-            "tag": "dns_out"
-        },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
+            "pingConfig": {
+                "destination": "http://www.google.com/gen_204",
+                "interval": "5m",
+                "timeout": "10s",
+                "sampling": 3
             }
         },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
-                "protocol": "vless",
-                "settings": {
-                    "vnext": [
-                        {
-                            "address": "www.speedtest.net",
-                            "port": 2095,
-                            "users": [
-                                {
-                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                                    "security": "auto",
-                                    "encryption": "none",
-                                    "email": "https://gozargah.github.io/marzban/",
-                                    "alterId": 0,
-                                    "flow": null
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "streamSettings": {
-                    "network": "ws",
-                    "wsSettings": {
-                        "headers": {
-                            "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-                        },
-                        "path": "/hajmi?*aiojefoijeafiojaoifjoaijfoieajfea4502542---452525252525082850924520759275942592429465265926359832oiejfiaoiefoieaioaeoifiofeaiofeiofeoijeoijfaeoifja7773422834798732498327498huafuawugfuayufu476942652?ed=2050",
-                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-Fi.85858599.xYz."
-                    }
-                },
-                "mux": {
-                    "enabled": true,
-                    "concurrency": 8,
-                    "xudpConcurrency": 8,
-                    "xudpProxyUDP443": "reject"
-                }
-            },
-            {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
         "stats": {},
-        "remarks": "\ud83c\uddeb\ud83c\uddee [NoTLS]"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
-            ],
-            "tag": "dns_out"
-        },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
-            }
-        },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
-                "protocol": "vless",
-                "settings": {
-                    "vnext": [
-                        {
-                            "address": "www.speedtest.net",
-                            "port": 2095,
-                            "users": [
-                                {
-                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                                    "security": "auto",
-                                    "encryption": "none",
-                                    "email": "https://gozargah.github.io/marzban/",
-                                    "alterId": 0,
-                                    "flow": null
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "streamSettings": {
-                    "network": "ws",
-                    "wsSettings": {
-                        "headers": {
-                            "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-                        },
-                        "path": "/hajmi?ed=2050",
-                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-En.85858599.xYz."
-                    }
-                },
-                "mux": {
-                    "enabled": true,
-                    "concurrency": 8,
-                    "xudpConcurrency": 8,
-                    "xudpProxyUDP443": "reject"
-                }
-            },
-            {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
-        "stats": {},
-        "remarks": "\ud83c\udff4\udb40\udc67\udb40\udc62\udb40\udc65\udb40\udc6e\udb40\udc67\udb40\udc7f [NoTLS]"
-    },
-    {
-        "log": {
-            "loglevel": "warning"
-        },
-        "dns": {
-            "hosts": {
-                "tgju.ir": [
-                    "10.202.8.146"
-                ]
-            },
-            "queryStrategy": "UseIPv4",
-            "servers": [
-                "https://1.0.0.1/dns-query"
-            ],
-            "tag": "dns_out"
-        },
-        "fakedns": [],
-        "routing": {
-            "domainStrategy": "IPIfNonMatch",
-            "rules": [
-                {
-                    "domain": [
-                        "geosite:category-ads-all"
-                    ],
-                    "outboundTag": "block"
-                },
-                {
-                    "port": "53",
-                    "network": "udp",
-                    "outboundTag": "dns-out"
-                },
-                {
-                    "domain": [
-                        "regexp:.*\\.ir",
-                        "domain:.ir"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "ip": [
-                        "geoip:ir",
-                        "geoip:private"
-                    ],
-                    "outboundTag": "direct"
-                },
-                {
-                    "protocol": [
-                        "bittorrent"
-                    ],
-                    "outboundTag": "block",
-                    "type": "field"
-                }
-            ]
-        },
-        "policy": {
-            "system": {
-                "statsOutboundDownlink": true,
-                "statsOutboundUplink": true
-            }
-        },
-        "inbounds": [
-            {
-                "port": 10808,
-                "protocol": "socks",
-                "settings": {
-                    "auth": "noauth",
-                    "udp": true,
-                    "userLevel": 8
-                },
-                "sniffing": {
-                    "destOverride": [
-                        "http",
-                        "tls"
-                    ],
-                    "enabled": true
-                },
-                "tag": "socks"
-            },
-            {
-                "port": 10809,
-                "protocol": "http",
-                "settings": {
-                    "userLevel": 8
-                },
-                "tag": "http"
-            }
-        ],
-        "outbounds": [
-            {
-                "tag": "proxy",
-                "protocol": "vless",
-                "settings": {
-                    "vnext": [
-                        {
-                            "address": "www.speedtest.net",
-                            "port": 2095,
-                            "users": [
-                                {
-                                    "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                                    "security": "auto",
-                                    "encryption": "none",
-                                    "email": "https://gozargah.github.io/marzban/",
-                                    "alterId": 0,
-                                    "flow": null
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "streamSettings": {
-                    "network": "ws",
-                    "wsSettings": {
-                        "headers": {
-                            "Pragma": "no-cache",
-                            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
-                        },
-                        "path": "/hajmi?ed=2050",
-                        "host": "dbe661d5a761ff6c.s-5HU09JDF-97SHS.WWWrubika.irto.xn--ls8haaaaaaaaaaaaaaaaaa.la.which.xn--ls8haaaaaaaaaaaaaaaaaa.xn-ls8faaaaaaaaaa.speedtest.net.google.com.eu.ir.nl.aparat.com.komak.IR.Nb-Us.85858599.xYz."
-                    }
-                },
-                "mux": {
-                    "enabled": true,
-                    "concurrency": 8,
-                    "xudpConcurrency": 8,
-                    "xudpProxyUDP443": "reject"
-                }
-            },
-            {
-                "tag": "direct",
-                "protocol": "freedom",
-                "settings": {
-                    "domainStrategy": "UseIPv4"
-                }
-            },
-            {
-                "tag": "block",
-                "protocol": "blackhole"
-            },
-            {
-                "tag": "dns-out",
-                "protocol": "dns"
-            }
-        ],
-        "stats": {},
-        "remarks": "\ud83c\uddfa\ud83c\uddf8 [NoTLS]"
+        "remarks": "🇺🇸 USA"
     }
 ]

@@ -3,10 +3,11 @@ import json
 from collections import defaultdict
 import copy
 import os
-import sys
+from dotenv import load_dotenv
 
-# Mapping of flag emojis to country names
-# This dictionary helps in creating the new 'remarks' field.
+# Load environment variables from .env file
+load_dotenv()
+
 EMOJI_TO_COUNTRY = {
     "🇩🇪": "Germany",
     "🇳🇱": "Netherlands",
@@ -18,160 +19,274 @@ EMOJI_TO_COUNTRY = {
     "🇫🇷": "France",
     "🇯🇵": "Japan",
     "🇦🇺": "Australia",
-    "🇮🇪": "Ireland",
-    # Add more mappings as needed based on the source data
+    # Add more mappings as needed
     "(nm_zorp)": "Zorp",
     "🛜": "WiFi",
     "✅": "Checked",
     "❌": "Blocked"
 }
 
+TEMPLATE = """{
+  "log": {
+    "loglevel": "warning"
+  },
+  "dns": {
+    "queryStrategy": "UseIPv4",
+    "servers": ["https://1.0.0.1/dns-query"],
+    "tag": "dns_out"
+  },
+  "fakedns": [],
+  "routing": {
+    "balancers": [
+      {
+        "tag": "balancer",
+        "selector": ["proxy"],
+        "strategy": {
+          "type": "leastPing"
+        }
+      }
+    ],
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "domain": ["geosite:category-ads-all"],
+        "outboundTag": "block"
+      },
+      {
+        "port": "53",
+        "network": "udp",
+        "outboundTag": "dns-out"
+      },
+      {
+        "domain": ["regexp:.*\\\\.ir", "domain:.ir"],
+        "outboundTag": "direct"
+      },
+      {
+        "ip": ["geoip:ir", "geoip:private"],
+        "outboundTag": "direct"
+      },
+      {
+        "protocol": ["bittorrent"],
+        "outboundTag": "block",
+        "type": "field"
+      },
+      {
+        "type": "field",
+        "balancerTag": "balancer",
+        "network": "tcp,udp"
+      }
+    ]
+  },
+  "policy": {
+    "system": {
+      "statsOutboundDownlink": true,
+      "statsOutboundUplink": true
+    }
+  },
+  "inbounds": [
+    {
+      "port": 10808,
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "userLevel": 8
+      },
+      "sniffing": {
+        "destOverride": ["http", "tls"],
+        "enabled": true
+      },
+      "tag": "socks"
+    },
+    {
+      "port": 10809,
+      "protocol": "http",
+      "settings": {
+        "userLevel": 8
+      },
+      "tag": "http"
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "dialer",
+      "protocol": "freedom",
+      "settings": {
+        "fragment": {
+          "packets": "tlshello",
+          "length": "1-10",
+          "interval": "0-1"
+        }
+      }
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIPv4"
+      }
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
+    },
+    {
+      "tag": "dns-out",
+      "protocol": "dns"
+    }
+  ],
+  "observatory": {
+    "subjectSelector": ["proxy"],
+    "probeURL": "http://www.google.com/gen_204",
+    "probeInterval": "5m",
+    "enableConcurrency": true
+  },
+  "burstObservatory": {
+    "subjectSelector": ["proxy"],
+    "pingConfig": {
+      "destination": "http://www.google.com/gen_204",
+      "interval": "5m",
+      "timeout": "10s",
+      "sampling": 3
+    }
+  },
+  "stats": {},
+  "remarks": ""
+}
+"""
 
-def create_final_config():
+def is_flag_emoji(char):
+    """Check if a character is a flag emoji (regional indicator symbols)"""
+    # Flag emojis are composed of regional indicator symbols (U+1F1E6 to U+1F1FF)
+    if len(char) == 2:  # Flag emojis are typically 2 characters
+        return all(0x1F1E6 <= ord(c) <= 0x1F1FF for c in char)
+    return False
+
+
+def fetch_and_group_data():
     """
-    Fetches V2Ray configurations from a URL, groups them by country flag,
-    extracts the first proxy from each group, re-tags and re-brands them,
-    and then builds a final 'configs.json' file with a load balancer.
-    The URL is fetched from a GitHub Secret.
+    Fetches data from the URL specified in .env file, groups it by the flag emoji in the 'remarks' field,
+    and prints the grouped data.
     """
-    # Get the URL from an environment variable set by GitHub Actions
-    url = os.getenv('V2RAY_URL')
+    # Get URL from environment variable
+    url = os.getenv('URL')
     if not url:
-        print("Error: V2RAY_URL environment variable not set.", file=sys.stderr)
-        print("Please set it as a secret in your GitHub repository settings.", file=sys.stderr)
-        sys.exit(1) # Exit the script with an error code
-
+        print("Error: URL not found in .env file. Please add URL=your_api_url to your .env file")
+        return None
+    
     headers = {"User-Agent": "v2rayNG/1.10.7"}
 
-    # Base template for the final JSON configuration
-    main_template = {
-      "log": {"loglevel": "warning"},
-      "dns": {"queryStrategy": "UseIPv4", "servers": ["https://1.0.0.1/dns-query"], "tag": "dns_out"},
-      "fakedns": [],
-      "routing": {
-        "balancers": [{"tag": "balancer", "selector": [], "strategy": {"type": "leastPing"}}],
-        "domainStrategy": "IPIfNonMatch",
-        "rules": [
-          {"domain": ["geosite:category-ads-all"], "outboundTag": "block"},
-          {"port": "53", "network": "udp", "outboundTag": "dns-out"},
-          {"domain": ["regexp:.*\\.ir", "domain:.ir"], "outboundTag": "direct"},
-          {"ip": ["geoip:ir", "geoip:private"], "outboundTag": "direct"},
-          {"protocol": ["bittorrent"], "outboundTag": "block", "type": "field"},
-          {"type": "field", "balancerTag": "balancer", "network": "tcp,udp"}
-        ]
-      },
-      "policy": {"system": {"statsOutboundDownlink": True, "statsOutboundUplink": True}},
-      "inbounds": [
-        {"port": 10808, "protocol": "socks", "settings": {"auth": "noauth", "udp": True, "userLevel": 8}, "sniffing": {"destOverride": ["http", "tls"], "enabled": True}, "tag": "socks"},
-        {"port": 10809, "protocol": "http", "settings": {"userLevel": 8}, "tag": "http"}
-      ],
-      "outbounds": [
-        # Standard non-proxy outbounds that will be appended after the generated ones
-        {"tag": "direct", "protocol": "freedom", "settings": {"domainStrategy": "UseIPv4"}},
-        {"tag": "block", "protocol": "blackhole"},
-        {"tag": "dns-out", "protocol": "dns"}
-      ],
-      "observatory": {
-        "subjectSelector": [],
-        "probeURL": "http://www.google.com/gen_204",
-        "probeInterval": "5m",
-        "enableConcurrency": True
-      },
-       "burstObservatory": {
-        "subjectSelector": [],
-        "pingConfig": {
-            "destination": "http://www.google.com/gen_204",
-            "interval": "5m",
-            "timeout": "10s",
-            "sampling": 3
-        }
-      },
-      "stats": {},
-      "remarks": "Generated by F-T"
-    }
-
     try:
-        print("Fetching data from URL...")
+        # Send a GET request to the URL with the specified headers
         response = requests.get(url, headers=headers)
+        # Raise an exception for bad status codes (4xx or 5xx)
         response.raise_for_status()
+
+        # Parse the JSON response
         data = response.json()
-        print("Data fetched successfully.")
 
-        # Step 1: Group configurations by the first part of their 'remarks' (the emoji)
+        # A dictionary to hold the grouped results. defaultdict makes it easier
+        # as we don't need to check if the key exists before appending.
         grouped_data = defaultdict(list)
+
+        # Iterate over each object in the data list
         for item in data:
+            # Get the 'remarks' string, default to an empty string if not found
             remarks = item.get("remarks", "")
+
+            # The flag emoji is usually the first part of the remarks string.
+            # We split the string by space and take the first element as the key.
             if remarks:
-                # The emoji is the first part of the string
                 key = remarks.split()[0]
-                grouped_data[key].append(item)
+                # Check if the key is a flag emoji
+                if is_flag_emoji(key):
+                    grouped_data[key].append(item)
+                else:
+                    # If not a flag emoji, group under 'no_remarks'
+                    grouped_data["no_remarks"].append(item)
+            else:
+                # If there are no remarks, group them under a 'no_remarks' key
+                grouped_data["no_remarks"].append(item)
 
-        print(f"Found {len(grouped_data)} groups based on remarks.")
-
-        # Step 2 & 3: Process each group to extract and modify the first proxy
-        processed_outbounds = []
-        proxy_tags = []
-        proxy_counter = 1
-
-        for emoji, items in grouped_data.items():
-            if not items:
-                continue
-
-            # Take the first configuration object from the group
-            first_item_in_group = items[0]
-            
-            # Find the first outbound within that object that is tagged as 'proxy'
-            if "outbounds" in first_item_in_group and first_item_in_group["outbounds"]:
-                original_proxy = next((ob for ob in first_item_in_group["outbounds"] if ob.get("tag") == "proxy"), None)
-                
-                if original_proxy:
-                    # Create a deep copy to avoid modifying the original dict
-                    new_proxy = copy.deepcopy(original_proxy)
-                    
-                    # Generate new tag
-                    new_tag = f"proxy{proxy_counter}"
-                    
-                    # Generate new remark based on emoji
-                    country_name = EMOJI_TO_COUNTRY.get(emoji, "Unknown")
-                    new_remark = f"{emoji} {country_name}"
-
-                    # Update the proxy object's tag and add the new remarks
-                    new_proxy["tag"] = new_tag
-                    new_proxy["remarks"] = new_remark
-                    
-                    # Add the processed proxy to our list
-                    processed_outbounds.append(new_proxy)
-                    proxy_tags.append(new_tag)
-                    proxy_counter += 1
-
-        print(f"Processed {len(processed_outbounds)} proxy configurations.")
-
-        # Step 4: Build the final configuration
-        # Prepend the processed proxies to the standard outbounds
-        main_template["outbounds"] = processed_outbounds + main_template["outbounds"]
-
-        # Update the selectors in the balancer and observatory sections
-        main_template["routing"]["balancers"][0]["selector"] = proxy_tags
-        main_template["observatory"]["subjectSelector"] = proxy_tags
-        main_template["burstObservatory"]["subjectSelector"] = proxy_tags
-        print("Updated balancer and observatory selectors.")
-
-        # Step 5: Write the final configuration to a file
-        with open("configs.json", "w", encoding="utf-8") as f:
-            json.dump(main_template, f, indent=2, ensure_ascii=False)
-        
-        print("\nSuccessfully created 'configs.json' file.")
+        # Pretty-print the grouped JSON data.
+        # ensure_ascii=False is used to correctly print the emoji characters.
+        #print(json.dumps(grouped_data, indent=4, ensure_ascii=False))
+        return grouped_data
 
     except requests.exceptions.RequestException as e:
-        print(f"An error occurred during the request: {e}", file=sys.stderr)
+        print(f"An error occurred during the request: {e}")
+        return None
     except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON response: {e}", file=sys.stderr)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}", file=sys.stderr)
-        # Also print traceback for more detailed debugging if needed
-        import traceback
-        traceback.print_exc()
+        print(f"Failed to parse JSON response: {e}")
+        return None
+    except IndexError:
+        # This handles cases where remarks might be an empty string after splitting
+        print("An error occurred while parsing remarks.")
+        return None
 
+def add_to_template(grouped_data):
+    """
+    Creates configurations for each country group using the template.
+    """
+    if not grouped_data:
+        return []
+    
+    configs = []
+    
+    # Iterate over the grouped data properly
+    for emoji, config_list in grouped_data.items():
+        # Parse the template JSON for each country
+        template = json.loads(TEMPLATE)
+        
+        # Keep the original proxy outbound at the first position
+        # Find all non-proxy outbounds (after the first proxy)
+        base_outbounds = [ob for ob in template["outbounds"] if ob["tag"] != "proxy"]
+        
+        # Start with just the base outbounds, we'll insert proxies at the beginning
+        new_outbounds = []
+        
+        # Add the original proxy first (keep it as "proxy")
+        original_proxy = next((ob for ob in template["outbounds"] if ob["tag"] == "proxy"), None)
+        if original_proxy:
+            new_outbounds.append(original_proxy)
+        
+        # Add each config from this country group
+        for i, config in enumerate(config_list, 1):
+            # Create a deep copy of the config's outbound to avoid modifying the original
+            if "outbounds" in config and len(config["outbounds"]) > 0:
+                proxy_config = copy.deepcopy(config["outbounds"][0])
+                proxy_config["tag"] = f"proxy{i}"
+                new_outbounds.append(proxy_config)
+        
+        # Add the base outbounds after all proxies
+        new_outbounds.extend(base_outbounds)
+        
+        # Update the template outbounds
+        template["outbounds"] = new_outbounds
+        
+        # Keep the original balancer selector unchanged (it stays as ["proxy"])
+        
+        # Set the remarks with country name
+        country_name = EMOJI_TO_COUNTRY.get(emoji, emoji)
+        template["remarks"] = f"{emoji} {country_name}"
+        
+        configs.append(template)
+    
+    return configs
 
 if __name__ == "__main__":
-    create_final_config()
+    grouped_data = fetch_and_group_data()
+    if grouped_data:
+        configs = add_to_template(grouped_data)
+        
+        # Export to configs.json file
+        try:
+            with open("configs.json", "w", encoding="utf-8") as f:
+                json.dump(configs, f, indent=4, ensure_ascii=False)
+            print(f"Successfully exported {len(configs)} configurations to configs.json")
+        except IOError as e:
+            print(f"Failed to write configs.json: {e}")
+            # Fallback to printing to console
+            print(json.dumps(configs, indent=4, ensure_ascii=False))
+    else:
+        print("Failed to fetch or process data.")
