@@ -47,17 +47,14 @@ jobs:
           URL: ${{ secrets.URL }}
         run: python configs_gen.py
       
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Automated update of configs.json"
-          file_pattern: configs.json
-          commit_user_name: "GitHub Actions Bot"
-          commit_user_email: "github-actions@github.com"
-          commit_author: "GitHub Actions Bot <github-actions@github.com>"
-          push_options: --force
-        env:
-          GIT_AUTH_TOKEN: ${{ secrets.PAT }}
-
+      - name: Commit and push configs.json manually
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions@github.com"
+          git add configs.json
+          git commit -m "Automated update of configs.json" || echo "No changes to commit"
+          git push https://x-access-token:${{ secrets.PAT }}@github.com/VPNAPPS/config.git HEAD:main
+          
       # Upload the generated artifact using the latest version
       - name: Upload configs.json
         uses: actions/upload-artifact@v4
