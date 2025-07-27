@@ -13,6 +13,11 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# Add permissions for GITHUB_TOKEN
+permissions:
+  contents: write
+  actions: read
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -24,6 +29,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Sets up Python
       - name: Set up Python 3.9
@@ -47,17 +54,19 @@ jobs:
           URL: ${{ secrets.URL }}
         run: python configs_gen.py
       
-      - name: Commit and push configs.json manually
+      - name: Commit and push configs.json
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions@github.com"
           git add configs.json
-          git commit -m "Automated update of configs.json" || echo "No changes to commit"
           
-          # ✅ Use your PAT in the push
-          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/VPNAPPS/config.git
-          git push origin HEAD:main
-
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Automated update of configs.json"
+            git push origin HEAD:main
+          fi
 
       # Upload the generated artifact using the latest version
       - name: Upload configs.json
