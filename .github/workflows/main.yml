@@ -22,6 +22,7 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
       # Sets up Python
@@ -36,13 +37,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      # List files for debugging purposes to ensure the script is where we expect it.
+      - name: List files in workspace
+        run: ls -R
+
       # Runs the Python script
       - name: Run script
         env:
           V2RAY_URL: ${{ secrets.URL }}
-        run: python config_gen.py
+        run: python config_gen.py # Replaced placeholder with your script name
       
-      # Optional: Upload the generated artifact
+      # Upload the generated artifact using the latest version
       - name: Upload configs.json
         uses: actions/upload-artifact@v4
         with:
