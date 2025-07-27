@@ -53,8 +53,12 @@ jobs:
           git config user.email "github-actions@github.com"
           git add configs.json
           git commit -m "Automated update of configs.json" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.PAT }}@github.com/VPNAPPS/config.git HEAD:main
           
+          # ✅ Use your PAT in the push
+          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/VPNAPPS/config.git
+          git push origin HEAD:main
+
+
       # Upload the generated artifact using the latest version
       - name: Upload configs.json
         uses: actions/upload-artifact@v4
