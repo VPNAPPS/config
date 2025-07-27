@@ -278,7 +278,7 @@ if __name__ == "__main__":
     grouped_data = fetch_and_group_data()
     if grouped_data:
         configs = add_to_template(grouped_data)
-        
+        configs = configs[1:]
         # Export to configs.json file
         try:
             with open("configs.json", "w", encoding="utf-8") as f:
