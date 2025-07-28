@@ -1,0 +1,70 @@
+# .github/workflows/decrypt-config.yml
+name: Decrypt Configuration Data
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+  push:
+    branches: [ main ]
+    paths:
+      - 'begz/decrypt_script.py'
+      - '.github/workflows/decrypt-config.yml'
+
+jobs:
+  decrypt-and-store:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests cryptography python-dotenv
+    
+    - name: Create begz directory
+      run: mkdir -p begz
+    
+    - name: Create .env file from secrets
+      run: |
+        cd begz
+        echo "API_URL=${{ secrets.API_URL }}" > .env
+        echo "DECRYPT_KEY=${{ secrets.DECRYPT_KEY }}" >> .env
+    
+    - name: Run decryption script
+      run: |
+        cd begz
+        python decrypt_script.py
+    
+    - name: Check if configs.txt was created
+      run: |
+        if [ -f "begz/configs.txt" ]; then
+          echo "✅ configs.txt created successfully"
+          echo "File size: $(wc -c < begz/configs.txt) bytes"
+          echo "First few lines:"
+          head -5 begz/configs.txt || echo "File might be empty or binary"
+        else
+          echo "❌ configs.txt was not created"
+          exit 1
+        fi
+    
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add begz/configs.txt
+        git diff --staged --quiet || {
+          git commit -m "Update configs.txt - $(date '+%Y-%m-%d %H:%M:%S UTC')"
+          git push
+        }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
