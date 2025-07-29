@@ -28,7 +28,6 @@ def build_proxies_from_content(content: str) -> List[dict]:
         if not line:
             continue  # skip empty lines
         try:
-            print(line)
             config = json.loads(generateConfig(line))
             if config:
                 proxy = config["outbounds"][0]
