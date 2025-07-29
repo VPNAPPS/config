@@ -155,7 +155,7 @@ if __name__ == "__main__":
         # Export to configs.json file
         try:
             with open("config.json", "r", encoding="utf-8") as f:
-              configs[:0] = json.loads(f.read())
+              configs.insert(0,json.loads(f.read()))
             with open("configs.json", "w", encoding="utf-8") as f:
                 json.dump(configs, f, indent=4, ensure_ascii=False)
             print(f"Successfully exported {len(configs)} configurations to configs.json")
