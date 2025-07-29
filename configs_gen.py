@@ -25,135 +25,8 @@ EMOJI_TO_COUNTRY = {
     "✅": "Checked",
     "❌": "Blocked"
 }
-
-TEMPLATE = """{
-  "log": {
-    "loglevel": "warning"
-  },
-  "dns": {
-    "queryStrategy": "UseIPv4",
-    "servers": ["https://1.0.0.1/dns-query"],
-    "tag": "dns_out"
-  },
-  "fakedns": [],
-  "routing": {
-    "balancers": [
-      {
-        "tag": "balancer",
-        "selector": ["proxy"],
-        "strategy": {
-          "type": "leastPing"
-        }
-      }
-    ],
-    "domainStrategy": "IPIfNonMatch",
-    "rules": [
-      {
-        "domain": ["geosite:category-ads-all"],
-        "outboundTag": "block"
-      },
-      {
-        "port": "53",
-        "network": "udp",
-        "outboundTag": "dns-out"
-      },
-      {
-        "domain": ["regexp:.*\\\\.ir", "domain:.ir"],
-        "outboundTag": "direct"
-      },
-      {
-        "ip": ["geoip:ir", "geoip:private"],
-        "outboundTag": "direct"
-      },
-      {
-        "protocol": ["bittorrent"],
-        "outboundTag": "block",
-        "type": "field"
-      },
-      {
-        "type": "field",
-        "balancerTag": "balancer",
-        "network": "tcp,udp"
-      }
-    ]
-  },
-  "policy": {
-    "system": {
-      "statsOutboundDownlink": true,
-      "statsOutboundUplink": true
-    }
-  },
-  "inbounds": [
-    {
-      "port": 10808,
-      "protocol": "socks",
-      "settings": {
-        "auth": "noauth",
-        "udp": true,
-        "userLevel": 8
-      },
-      "sniffing": {
-        "destOverride": ["http", "tls"],
-        "enabled": true
-      },
-      "tag": "socks"
-    },
-    {
-      "port": 10809,
-      "protocol": "http",
-      "settings": {
-        "userLevel": 8
-      },
-      "tag": "http"
-    }
-  ],
-  "outbounds": [
-    {
-      "tag": "dialer",
-      "protocol": "freedom",
-      "settings": {
-        "fragment": {
-          "packets": "tlshello",
-          "length": "1-10",
-          "interval": "0-1"
-        }
-      }
-    },
-    {
-      "tag": "direct",
-      "protocol": "freedom",
-      "settings": {
-        "domainStrategy": "UseIPv4"
-      }
-    },
-    {
-      "tag": "block",
-      "protocol": "blackhole"
-    },
-    {
-      "tag": "dns-out",
-      "protocol": "dns"
-    }
-  ],
-  "observatory": {
-    "subjectSelector": ["proxy"],
-    "probeURL": "http://www.google.com/gen_204",
-    "probeInterval": "5m",
-    "enableConcurrency": true
-  },
-  "burstObservatory": {
-    "subjectSelector": ["proxy"],
-    "pingConfig": {
-      "destination": "http://www.google.com/gen_204",
-      "interval": "5m",
-      "timeout": "10s",
-      "sampling": 3
-    }
-  },
-  "stats": {},
-  "remarks": ""
-}
-"""
+with open("template.json", "r") as f:
+  TEMPLATE = json.loads(f.read())
 
 def is_flag_emoji(char):
     """Check if a character is a flag emoji (regional indicator symbols)"""
@@ -236,7 +109,7 @@ def add_to_template(grouped_data):
     # Iterate over the grouped data properly
     for emoji, config_list in grouped_data.items():
         # Parse the template JSON for each country
-        template = json.loads(TEMPLATE)
+        template = TEMPLATE
         
         # Keep the original proxy outbound at the first position
         # Find all non-proxy outbounds (after the first proxy)

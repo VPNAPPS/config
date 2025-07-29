@@ -10,6 +10,7 @@ import base64
 import json
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from dotenv import load_dotenv
+from v2ray2json import generateConfig
 
 # Load environment variables from .env file
 load_dotenv()
@@ -146,6 +147,73 @@ def fetch_and_decrypt():
     except Exception as e:
         return f"Unexpected error: {str(e)}"
 
+def create_config_with_debug():
+    print("=== Debug Info ===")
+    print(f"Current directory: {os.getcwd()}")
+    print(f"configs.txt exists: {os.path.exists('begz/configs.txt')}")
+    print(f"template.json exists: {os.path.exists('template.json')}")
+    print(f"Parent directory exists: {os.path.exists('..')}")
+    print(f"Can write to parent: {os.access('..', os.W_OK)}")
+    
+    try:
+        # Read configs
+        with open('begz/configs.txt', 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+            print(f"Found {len(lines)} lines in configs.txt")
+            
+        proxies = []
+        i = 0
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            i += 1
+            
+            try:
+                print(f"Processing line {i}: {line[:50]}...")
+                json_config = generateConfig(line)
+                config = json.loads(json_config)
+                
+                if "outbounds" not in config or len(config["outbounds"]) == 0:
+                    print(f"Warning: No outbounds in config for line {i}")
+                    continue
+                    
+                config["outbounds"][0]["tag"] = f"proxy{i}"
+                proxies.append(config["outbounds"][0])
+                print(f"Successfully processed line {i}")
+                
+            except Exception as e:
+                print(f"Error processing line {i}: {e}")
+                continue
+        
+        print(f"Total proxies created: {len(proxies)}")
+        
+        # Load template
+        with open("template.json", "r") as f:
+            template = json.loads(f.read())
+        print("Template loaded successfully")
+        
+        # Modify template
+        original_count = len(template.get("outbounds", []))
+        template["outbounds"][:0] = proxies
+        new_count = len(template.get("outbounds", []))
+        print(f"Template outbounds: {original_count} -> {new_count}")
+        
+        # Write config
+        config_path = os.path.abspath("../config.json")
+        print(f"Writing to: {config_path}")
+        
+        with open("config.json", "w", encoding='utf-8') as f:
+            json.dump(template, f, indent=4, ensure_ascii=False)
+        
+        print("✓ config.json created successfully!")
+        print(f"File size: {os.path.getsize('../config.json')} bytes")
+        
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        import traceback
+        traceback.print_exc()
+
 def main():
     """Main function"""
     print("Configuration Data Decryption Tool")
@@ -186,7 +254,9 @@ def main():
                 print("  ...")
         else:
             print(f"❌ Decryption failed: {result}")
-            
+        
+        #Creating config.json
+        create_config_with_debug()
     except Exception as e:
         print(f"❌ Error writing to file: {str(e)}")
 
