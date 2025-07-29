@@ -4,12 +4,13 @@ Python script to fetch and decrypt configuration data
 Uses .env file for API_URL and DECRYPT_KEY
 """
 
-import os
+import os, sys
 import requests
 import base64
 import json
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from dotenv import load_dotenv
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from v2ray2json import generateConfig
 
 # Load environment variables from .env file
@@ -189,7 +190,7 @@ def create_config_with_debug():
         print(f"Total proxies created: {len(proxies)}")
         
         # Load template
-        with open("template.json", "r") as f:
+        with open("../template.json", "r") as f:
             template = json.loads(f.read())
         print("Template loaded successfully")
         

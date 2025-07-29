@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests cryptography python-dotenv
+          pip install requests cryptography python-dotenv pycountry
 
       # 4. Create the 'begz' directory needed by the decrypt script
       - name: Create begz directory
@@ -60,14 +60,32 @@ jobs:
       # 7. Run the decrypt script first (decrypt_script.py)
       - name: Run decryption script
         run: |
-          python begz/decrypt_script.py
+          cd begz
+          python decrypt_script.py
 
       # 8. Run the generator script second (configs_gen.py)
       - name: Run generator script
         env:
           URL: ${{ secrets.URL }}
-        run: python configs_gen.py
+        run: |
+          cd nb
+          python configs_gen.py
       
+      # 6. Create the .env file for the decryption script
+      - name: Create .env file for yebe
+        run: |
+          echo "BASE_URL=${{ secrets.BASE_URL }}" > yebe/.env
+          echo "GGITHUB_API_URL=${{ secrets.GGITHUB_API_URL }}" >> yebe/.env
+      
+      # 7. Run the decrypt script first (decrypt_script.py)
+      - name: Run yebe script
+        run: |
+          cd yebe
+          python generate_yebe_configs.py
+      
+      - name: merge all
+        run: merge_configs.py
+
       # 9. Commit and push any changes from both scripts
       - name: Commit and push updated configs
         run: |
