@@ -157,7 +157,7 @@ def create_config_with_debug():
     
     try:
         # Read configs
-        with open('begz/configs.txt', 'r', encoding='utf-8') as file:
+        with open('configs.txt', 'r', encoding='utf-8') as file:
             lines = file.readlines()
             print(f"Found {len(lines)} lines in configs.txt")
             
