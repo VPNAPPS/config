@@ -6,6 +6,8 @@ import os
 import subprocess
 import urllib.parse
 import re
+# Import added for concurrency
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.json")
 with open(TEMPLATE_PATH, "r") as f:
@@ -107,12 +109,11 @@ def is_xray_config_valid(config_dict: dict, xray_path: str = os.path.join(os.pat
 
 def build_proxies_from_content(content: str) -> List[dict]:
     """
-    Parses content, validates each generated config, and returns valid proxies.
+    Parses content, validates each generated config CONCURRENTLY, and returns valid proxies.
     """
-    proxies = []
-    i = 0
-    for line in content.strip().splitlines():
-        i += 1
+    tasks_to_process = []
+    # 1. First, parse all lines and generate configs without validating yet.
+    for i, line in enumerate(content.strip().splitlines()):
         line = line.strip()
         if not line:
             continue
@@ -120,18 +121,41 @@ def build_proxies_from_content(content: str) -> List[dict]:
             if "vless" in line:
                 line = fix_vless_url(line)
             config = json.loads(generateConfig(line))
-            
-            # **VALIDATION STEP using the timeout method**
-            #if is_xray_config_valid(config):
-            proxy = config["outbounds"][0]
-            proxy["tag"] = f"proxy{i}"
-            proxies.append(proxy)
-            # else:
-            #     print(f"Skipping invalid config from line: {line} \n {json.dumps(config)}")
-
+            # Store the config and its original metadata (line, index) for later.
+            tasks_to_process.append({'config': config, 'line': line, 'index': i + 1})
         except Exception as e:
             print(f"Error processing line: {line}\nException: {e}")
             continue
+    
+    proxies = []
+    # Use a reasonable number of worker threads. Capped at 32.
+    max_workers = min(32, (os.cpu_count() or 1) * 5)
+
+    # 2. Concurrently validate all the generated configs.
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Map each future object back to its original task data.
+        future_to_task = {
+            executor.submit(is_xray_config_valid, task['config']): task
+            for task in tasks_to_process
+        }
+        
+        # Process results as they are completed.
+        for future in as_completed(future_to_task):
+            task = future_to_task[future]
+            try:
+                is_valid = future.result()
+                if is_valid:
+                    proxy = task['config']["outbounds"][0]
+                    proxy["tag"] = f"proxy{task['index']}"
+                    proxies.append(proxy)
+                else:
+                    print(f"Skipping invalid config from line: {task['line']} \n {json.dumps(task['config'])}")
+            except Exception as e:
+                print(f"An exception occurred for config from line {task['line']}: {e}")
+
+    # 3. Sort proxies by their original index to maintain order.
+    proxies.sort(key=lambda p: int(p['tag'].replace('proxy', '')))
+    
     return proxies
 
 def build_config_json_from_proxies(name: str, proxies: list) -> dict:
