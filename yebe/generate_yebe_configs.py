@@ -24,15 +24,15 @@ class CountryDataFetcher:
         try:
             return ''.join(chr(self.flag_offset + ord(char)) for char in country_code.upper())
         except:
-            return "🏳️"
+            return "⚡️"
 
     def get_country_name(self, country_code: str) -> str:
         """Get country name from country code using pycountry"""
         try:
             country = pycountry.countries.get(alpha_2=country_code.upper())
-            return country.name if country else f"Unknown ({country_code})"
+            return country.name if country else f"Fastest Location"
         except:
-            return f"Unknown ({country_code})"
+            return f"Fastest Location"
 
     def fetch_available_country_codes(self) -> List[str]:
         """Fetch all available country codes from the GitHub repository"""
@@ -168,6 +168,8 @@ if __name__ == "__main__":
         fetcher.save_to_files(results)
 
         successful = [r for r in results if r['status'] == 'success']
+        successful = [r for r in successful if r['country_name'] == 'Fastest Location'] + \
+                    [r for r in successful if r['country_name'] != 'Fastest Location']
         configs = []
         if successful:
             print(f"\n🎉 Successfully fetched data for:")
