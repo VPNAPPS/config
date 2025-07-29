@@ -24,39 +24,43 @@ def fix_uuid(raw_uuid: str) -> str:
     hex_chars = re.sub(r'[^a-fA-F0-9]', '', decoded)
     if len(hex_chars) >= 32:
         return f"{hex_chars[:8]}-{hex_chars[8:12]}-{hex_chars[12:16]}-{hex_chars[16:20]}-{hex_chars[20:32]}"
-    return decoded  # return as-is if can't fix
+    return decoded
 
 def remove_duplicate_type_param(url: str) -> str:
+    # Remove all type= except the first one
     type_pattern = re.compile(r"(type=[^&]*)", re.IGNORECASE)
     matches = type_pattern.findall(url)
     if len(matches) <= 1:
-        return url  # no duplicate
+        return url
+    first = matches[0]
+    start = url.find(first)
+    rest = url[start + len(first):]
+    rest_cleaned = type_pattern.sub('', rest)
+    rest_cleaned = re.sub(r'&&+', '&', rest_cleaned)
+    rest_cleaned = re.sub(r'[?&]+$', '', rest_cleaned)
+    rest_cleaned = re.sub(r'[?&]+&', '?', rest_cleaned)
+    return url[:start + len(first)] + rest_cleaned
 
-    # Remove all but the first occurrence of type=
-    first_pos = url.find(matches[0])
-    rest = url[first_pos + len(matches[0]):]
-    # Remove other type= occurrences from the rest
-    cleaned_rest = type_pattern.sub('', rest)
-    # Clean up leftover '&&' or leading '&' if needed
-    cleaned_rest = re.sub(r'&&+', '&', cleaned_rest)
-    cleaned_rest = re.sub(r'[?&]+$', '', cleaned_rest)
-    cleaned_rest = re.sub(r'[?&]+&', '?', cleaned_rest)
-    return url[:first_pos + len(matches[0])] + cleaned_rest
+def fix_encryption_param(url: str) -> str:
+    # Fix malformed encryption=none%3D...
+    def replacer(match):
+        return "encryption=none"
+    return re.sub(r"encryption=none[^&#]*", replacer, url)
 
 def fix_vless_url(url: str) -> str:
     if not url.startswith("vless://"):
         return url
 
-    # Split into userinfo and the rest
     body = url[len("vless://"):]
     if '@' not in body:
-        return url  # skip if malformed
+        return url
 
     userinfo, rest = body.split('@', 1)
     fixed_uuid = fix_uuid(userinfo)
-    rebuilt_url = f"vless://{fixed_uuid}@{rest}"
-    cleaned_url = remove_duplicate_type_param(rebuilt_url)
-    return cleaned_url
+    rebuilt = f"vless://{fixed_uuid}@{rest}"
+    rebuilt = remove_duplicate_type_param(rebuilt)
+    rebuilt = fix_encryption_param(rebuilt)
+    return rebuilt
 
 def is_xray_config_valid(config_dict: dict, xray_path: str = os.path.join(os.path.dirname(__file__), "xray")) -> bool:
     """
