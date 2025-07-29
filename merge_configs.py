@@ -15,7 +15,11 @@ def load_json_from_folder(folder: str):
         if path.exists():
             with open(path, 'r', encoding='utf-8') as f:
                 print(f"Loading: {path}")
-                return json.load(f)
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError as e:
+                    print(f"Invalid JSON in {path}: {e}")
+                    return None
     print(f"No config file found in {folder}")
     return None
 
@@ -28,22 +32,29 @@ for folder in FOLDERS:
     elif isinstance(data, dict):
         merged_list.append(data)
     else:
-        raise ValueError(f"Unsupported data type in {folder}: {type(data)}")
+        print(f"Unsupported data type in {folder}: {type(data)}")
 
-# Save the merged list
+# Save raw merged list for debugging
 with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
     json.dump(merged_list, f, ensure_ascii=False, indent=2)
     print(f"Merged config written to {OUTPUT_FILE}")
 
+# Build merged config from outbounds
 i = 0
 proxies = []
 for config in merged_list:
-    i+=1
-    for proxy in config["outbounds"]:
-        if "proxy" in proxy["tag"]:
+    i += 1
+    outbounds = config.get("outbounds")
+    if not outbounds:
+        print(f"Warning: config #{i} has no 'outbounds'. Skipping.")
+        continue
+    for proxy in outbounds:
+        if "proxy" in proxy.get("tag", ""):
             proxy["tag"] = f"proxy{i}"
             proxies.append(proxy)
 
+# Final output
+final_config = build_config_json_from_proxies("🤰 Mother of Configs", proxies)
 with open("config.json", 'w', encoding='utf-8') as f:
-    json.dump(build_config_json_from_proxies("🤰 Mother of Configs", proxies), f, ensure_ascii=False, indent=2)
-    print(f"Merged config written to config.json")
+    json.dump(final_config, f, ensure_ascii=False, indent=2)
+    print(f"Final merged config written to config.json")
