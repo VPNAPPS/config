@@ -200,14 +200,14 @@ def create_config_with_debug():
         print(f"Template outbounds: {original_count} -> {new_count}")
         
         # Write config
-        config_path = os.path.abspath("../config.json")
+        config_path = os.path.abspath("config.json")
         print(f"Writing to: {config_path}")
         
         with open("config.json", "w", encoding='utf-8') as f:
             json.dump(template, f, indent=4, ensure_ascii=False)
         
         print("✓ config.json created successfully!")
-        print(f"File size: {os.path.getsize('../config.json')} bytes")
+        print(f"File size: {os.path.getsize('config.json')} bytes")
         
     except Exception as e:
         print(f"✗ Error: {e}")
