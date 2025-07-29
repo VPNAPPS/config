@@ -7,7 +7,7 @@ from urllib.parse import parse_qs
 from urllib.parse import unquote
 
 DEFAULT_PORT = 443
-DEFAULT_SECURITY = "auto"
+DEFAULT_SECURITY = "none"
 DEFAULT_LEVEL = 8
 DEFAULT_NETWORK = "tcp"
 
@@ -1152,13 +1152,13 @@ def generateConfig(config: str, dns_list=["8.8.8.8"]):
         vnext = outbound.settings.vnext[0]
         vnext.address = vmessQRCode.add
         vnext.port = (
-            int(vmessQRCode.port) if vmessQRCode.port.isdigit() else DEFAULT_PORT
+            int(vmessQRCode.port) if str(vmessQRCode.port).isdigit() else DEFAULT_PORT
         )
 
         user = vnext.users[0]
         user.id = vmessQRCode.id
-        user.security = vmessQRCode.scy if vmessQRCode.scy != "" else DEFAULT_SECURITY
-        user.alterId = int(vmessQRCode.aid) if vmessQRCode.aid.isdigit() else None
+        user.security = vmessQRCode.scy if vmessQRCode.scy != "" and vmessQRCode.scy != "auto" else DEFAULT_SECURITY
+        user.alterId = int(vmessQRCode.aid) if str(vmessQRCode.aid).isdigit() else None
 
         streamSetting = outbound.streamSettings
 
