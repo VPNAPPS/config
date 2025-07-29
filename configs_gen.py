@@ -109,7 +109,7 @@ def add_to_template(grouped_data):
     # Iterate over the grouped data properly
     for emoji, config_list in grouped_data.items():
         # Parse the template JSON for each country
-        template = TEMPLATE
+        template = copy.deepcopy(TEMPLATE)
         
         # Keep the original proxy outbound at the first position
         # Find all non-proxy outbounds (after the first proxy)
