@@ -157,13 +157,13 @@ def is_xray_config_valid(
     port: int, 
     xray_path: str = os.path.join(os.path.dirname(__file__), "xray"),
     timeout: int = 8,
-    startup_wait: float = 3.0,
+    startup_wait: float = 2.0,
     test_urls: list = None
 ) -> bool:
     """
     Validates an Xray config by running it on a unique port and testing its connectivity.
     
-    MAJOR FIX: Changed process communication logic to avoid deadlock
+    MAJOR FIX: Fixed race condition and I/O operation errors
     """
     if test_urls is None:
         test_urls = [
@@ -172,7 +172,7 @@ def is_xray_config_valid(
             "http://clients3.google.com/generate_204"
         ]
     
-    logger.info(f"Validating Xray config on port {port}")
+    logger.debug(f"Validating Xray config on port {port}")
     
     # Validate input
     if not config_dict:
@@ -185,9 +185,9 @@ def is_xray_config_valid(
     
     # Check if port is available
     if not _is_port_available(port):
-        logger.warning(f"Port {port} is not available, finding alternative")
+        logger.debug(f"Port {port} is not available, finding alternative")
         port = find_free_port()
-        logger.info(f"Using alternative port {port}")
+        logger.debug(f"Using alternative port {port}")
     
     # Prepare config
     template = copy.deepcopy(TEMPLATE)
@@ -210,7 +210,7 @@ def is_xray_config_valid(
     
     # Validate JSON serialization
     try:
-        config_str = json.dumps(template, indent=2)
+        config_str = json.dumps(template)
         logger.debug("Successfully serialized config to JSON")
     except (TypeError, ValueError) as e:
         logger.error(f"Failed to serialize config to JSON: {e}")
@@ -221,6 +221,8 @@ def is_xray_config_valid(
     logger.debug(f"Running command: {' '.join(command)}")
     
     process = None
+    process_started = False
+    
     try:
         # Check if Xray executable exists
         if not os.path.isfile(xray_path):
@@ -228,72 +230,102 @@ def is_xray_config_valid(
             return True
         
         # Start the Xray process
-        logger.info("Starting Xray process...")
+        logger.debug("Starting Xray process...")
         process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,  # Don't capture stdout to avoid buffer issues
             stderr=subprocess.PIPE,
             text=True
         )
+        process_started = True
 
-        # MAJOR FIX: Don't use communicate() with timeout - it causes deadlock
-        # Instead, write to stdin and close it, then let process run
+        # Send config to process and close stdin immediately
         try:
-            process.stdin.write(config_str)
-            process.stdin.close()
-            logger.debug("Config sent to Xray process")
-        except (IOError, BrokenPipeError) as e:
-            logger.error(f"Failed to send config to Xray process: {e}")
+            if process.stdin and not process.stdin.closed:
+                process.stdin.write(config_str)
+                process.stdin.close()
+                logger.debug("Config sent to Xray process")
+        except (IOError, BrokenPipeError, ValueError) as e:
+            logger.debug(f"Failed to send config to Xray process: {e}")
             return False
 
         # Wait for Xray to start up
-        logger.info(f"Waiting {startup_wait}s for Xray to start up...")
+        logger.debug(f"Waiting {startup_wait}s for Xray to start up...")
         time.sleep(startup_wait)
 
         # Check if process is still running after startup
-        if process.poll() is not None:
-            # Process terminated, get the stderr
-            _, stderr = process.communicate()
-            logger.error(f"Xray process terminated unexpectedly (exit code: {process.returncode})")
-            if stderr:
-                logger.error(f"Xray stderr: {stderr.strip()}")
+        return_code = process.poll()
+        if return_code is not None:
+            # Process terminated, try to get stderr safely
+            try:
+                stderr_output = ""
+                if process.stderr and not process.stderr.closed:
+                    stderr_output = process.stderr.read()
+                logger.debug(f"Xray process terminated unexpectedly (exit code: {return_code})")
+                if stderr_output.strip():
+                    logger.debug(f"Xray stderr: {stderr_output.strip()}")
+            except (ValueError, IOError):
+                logger.debug("Could not read stderr from terminated process")
             return False
 
-        logger.info("Xray process started successfully, testing connectivity...")
+        logger.debug("Xray process started successfully, testing connectivity...")
         
         # Test connectivity
-        return _test_connectivity(port, test_urls, timeout)
+        result = _test_connectivity(port, test_urls, timeout)
+        return result
 
     except FileNotFoundError:
         logger.warning(f"Xray executable '{xray_path}' not found. Skipping validation.")
         return True
         
     except Exception as e:
-        logger.error(f"Unexpected error during validation: {type(e).__name__}: {e}")
+        logger.debug(f"Unexpected error during validation: {type(e).__name__}: {e}")
         return False
         
     finally:
-        # Ensure the Xray process is terminated
-        if process and process.poll() is None:
-            logger.info("Terminating Xray process...")
-            process.terminate()
+        # Ensure the Xray process is terminated safely
+        if process_started and process:
             try:
-                process.wait(timeout=5)
-                logger.debug("Xray process terminated gracefully")
-            except subprocess.TimeoutExpired:
-                logger.warning("Xray process didn't terminate gracefully, killing...")
-                process.kill()
-                process.wait()
+                if process.poll() is None:
+                    logger.debug("Terminating Xray process...")
+                    process.terminate()
+                    try:
+                        process.wait(timeout=3)
+                        logger.debug("Xray process terminated gracefully")
+                    except subprocess.TimeoutExpired:
+                        logger.debug("Xray process didn't terminate gracefully, killing...")
+                        process.kill()
+                        try:
+                            process.wait(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            pass  # Process is really stuck, ignore
+                            
+                # Close any remaining file handles safely
+                try:
+                    if process.stdin and not process.stdin.closed:
+                        process.stdin.close()
+                except (ValueError, IOError):
+                    pass
+                try:
+                    if process.stderr and not process.stderr.closed:
+                        process.stderr.close()
+                except (ValueError, IOError):
+                    pass
+                    
+            except Exception as cleanup_error:
+                logger.debug(f"Error during cleanup: {cleanup_error}")
+                pass  # Don't let cleanup errors affect the result
 
 def build_proxies_from_content(content: str) -> List[dict]:
     """
     Parses content, validates each generated config CONCURRENTLY, and returns valid proxies.
     """
-    logger.info(f"Processing {len(content.strip().splitlines())} lines of proxy configurations")
+    lines = content.strip().splitlines()
+    logger.info(f"Processing {len(lines)} lines of proxy configurations")
     
     tasks_to_process = []
-    for i, line in enumerate(content.strip().splitlines()):
+    for i, line in enumerate(lines):
         line = line.strip()
         if not line:
             continue
@@ -304,45 +336,63 @@ def build_proxies_from_content(content: str) -> List[dict]:
             tasks_to_process.append({'config': config, 'line': line, 'index': i + 1})
             logger.debug(f"Successfully parsed line {i + 1}: {line[:50]}...")
         except Exception as e:
-            logger.error(f"Error processing line {i + 1}: {line}")
-            logger.error(f"Exception: {e}")
+            logger.debug(f"Error processing line {i + 1}: {line[:50]}...")
+            logger.debug(f"Exception: {e}")
             continue
     
     logger.info(f"Successfully parsed {len(tasks_to_process)} configurations, starting validation...")
     
     proxies = []
-    max_workers = min(16, (os.cpu_count() or 1) * 2)  # Reduced concurrency to avoid port conflicts
+    # Further reduce concurrency to avoid resource exhaustion
+    max_workers = min(8, max(1, (os.cpu_count() or 1)))
     logger.info(f"Using {max_workers} worker threads for validation")
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all tasks
-        future_to_task = {}
-        for task in tasks_to_process:
-            port = find_free_port()
-            future = executor.submit(is_xray_config_valid, task['config'], port)
-            future_to_task[future] = task
-            logger.debug(f"Submitted validation task for proxy{task['index']} on port {port}")
+    # Process in smaller batches to avoid overwhelming the system
+    batch_size = max_workers * 2
+    total_batches = (len(tasks_to_process) + batch_size - 1) // batch_size
+    
+    for batch_num in range(total_batches):
+        start_idx = batch_num * batch_size
+        end_idx = min(start_idx + batch_size, len(tasks_to_process))
+        batch_tasks = tasks_to_process[start_idx:end_idx]
         
-        # Collect results
-        completed_count = 0
-        for future in as_completed(future_to_task):
-            task = future_to_task[future]
-            completed_count += 1
+        logger.info(f"Processing batch {batch_num + 1}/{total_batches} ({len(batch_tasks)} configs)")
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit batch tasks
+            future_to_task = {}
+            for task in batch_tasks:
+                port = find_free_port()
+                future = executor.submit(is_xray_config_valid, task['config'], port)
+                future_to_task[future] = task
+                logger.debug(f"Submitted validation task for proxy{task['index']} on port {port}")
             
-            try:
-                is_valid = future.result()
-                logger.info(f"[{completed_count}/{len(tasks_to_process)}] Proxy{task['index']} validation: {'PASSED' if is_valid else 'FAILED'}")
+            # Collect batch results
+            batch_completed = 0
+            for future in as_completed(future_to_task):
+                task = future_to_task[future]
+                batch_completed += 1
+                total_completed = start_idx + batch_completed
                 
-                if is_valid:
-                    logger.info("🎉 FUCK YEAH! Configuration PASSED validation!")
-                    proxy = task['config']["outbounds"][0]
-                    proxy["tag"] = f"proxy{task['index']}"
-                    proxies.append(proxy)
-                else:
-                    logger.warning(f"❌ Skipping invalid config from line: {task['line'][:50]}...")
+                try:
+                    is_valid = future.result()
+                    status = 'PASSED' if is_valid else 'FAILED'
+                    logger.info(f"[{total_completed}/{len(tasks_to_process)}] Proxy{task['index']} validation: {status}")
                     
-            except Exception as e:
-                logger.error(f"Exception occurred for proxy{task['index']}: {type(e).__name__}: {e}")
+                    if is_valid:
+                        logger.info("🎉 FUCK YEAH! Configuration PASSED validation!")
+                        proxy = task['config']["outbounds"][0]
+                        proxy["tag"] = f"proxy{task['index']}"
+                        proxies.append(proxy)
+                    else:
+                        logger.debug(f"❌ Skipping invalid config from line: {task['line'][:50]}...")
+                        
+                except Exception as e:
+                    logger.debug(f"Exception occurred for proxy{task['index']}: {type(e).__name__}: {e}")
+        
+        # Small delay between batches to let system recover
+        if batch_num < total_batches - 1:
+            time.sleep(0.5)
 
     # Sort proxies by their index
     proxies.sort(key=lambda p: int(p['tag'].replace('proxy', '')))
