@@ -6,14 +6,21 @@ import os
 import subprocess
 import urllib.parse
 import re
-# Imports added for concurrency and connectivity testing
+# Imports added for concurrency, connectivity testing, and dynamic port allocation
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import urllib.request
+import socket
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.json")
 with open(TEMPLATE_PATH, "r") as f:
     TEMPLATE = json.load(f)
+
+def find_free_port() -> int:
+    """Finds and returns an available TCP port."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))  # Bind to a free port provided by the OS
+        return s.getsockname()[1]
 
 def is_valid_uuid(uuid: str) -> bool:
     return re.fullmatch(
@@ -66,16 +73,27 @@ def fix_vless_url(url: str) -> str:
     rebuilt = fix_encryption_param(rebuilt)
     return rebuilt
 
-def is_xray_config_valid(config_dict: dict, xray_path: str = os.path.join(os.path.dirname(__file__), "xray")) -> bool:
+def is_xray_config_valid(config_dict: dict, port: int, xray_path: str = os.path.join(os.path.dirname(__file__), "xray")) -> bool:
     """
-    Validates an Xray config by running it and testing its connectivity.
-    It starts the config, which exposes an HTTP proxy on port 10809,
-    and then attempts to make a request through that proxy.
+    Validates an Xray config by running it on a unique port and testing its connectivity.
     """
     if not config_dict:
         return False
 
     template = copy.deepcopy(TEMPLATE)
+    
+    # **Dynamically update the listening port in the template**
+    http_inbound_found = False
+    for inbound in template.get("inbounds", []):
+        if inbound.get("protocol") == "http":
+            inbound["port"] = port
+            http_inbound_found = True
+            break
+    
+    if not http_inbound_found:
+        print("Error: Could not find HTTP inbound in template to assign dynamic port.")
+        return False
+
     # Ensure the provided outbound is the primary one for the test.
     template["outbounds"] = [config_dict["outbounds"][0]] + template["outbounds"]
     config_str = json.dumps(template)
@@ -92,52 +110,39 @@ def is_xray_config_valid(config_dict: dict, xray_path: str = os.path.join(os.pat
             text=True
         )
 
-        # Send the configuration to the process's stdin.
         try:
             process.stdin.write(config_str)
             process.stdin.close()
         except (IOError, BrokenPipeError):
-            # This can happen if the process terminates immediately on a bad config.
             stderr_output, _ = process.communicate()
             print(f"Xray process terminated unexpectedly. Error: {stderr_output.strip()}")
             return False
 
-        # Give Xray a moment to start up.
         time.sleep(1.5)
 
-        # Check if the process has already exited (i.e., failed to start).
         if process.poll() is not None:
             stderr_output = process.stderr.read()
             print(f"Xray validation failed on startup: {stderr_output.strip()}")
             return False
 
-        # If the process is running, test connectivity through the proxy.
+        # **Test connectivity through the dynamically assigned proxy port**
+        proxy_url = f'http://127.0.0.1:{port}'
         proxy_handler = urllib.request.ProxyHandler({
-            'http': 'http://127.0.0.1:10809',
-            'https': 'http://127.0.0.1:10809'
+            'http': proxy_url,
+            'https': proxy_url
         })
         opener = urllib.request.build_opener(proxy_handler)
         
         try:
-            # Use a lightweight URL for the connectivity test.
             test_url = "http://www.gstatic.com/generate_204"
-            # Set a reasonable timeout for the connection attempt.
             response = opener.open(test_url, timeout=4)
-            # A successful response (e.g., 204 No Content) means the proxy works.
-            if 200 <= response.status < 300:
-                # print("Connectivity test successful.")
-                return True
-            else:
-                # print(f"Connectivity test failed with status: {response.status}")
-                return False
-        except Exception as e:
-            # Any exception during the request (e.g., timeout, connection refused) means failure.
-            # print(f"Connectivity test failed: {e}")
+            return 200 <= response.status < 300
+        except Exception:
             return False
 
     except FileNotFoundError:
         print(f"Warning: '{xray_path}' executable not found. Skipping validation.")
-        return True # Maintain original behavior of skipping if not found
+        return True
         
     except Exception as e:
         print(f"An unexpected error occurred during validation: {e}")
@@ -147,14 +152,13 @@ def is_xray_config_valid(config_dict: dict, xray_path: str = os.path.join(os.pat
         # Ensure the background Xray process is terminated.
         if process and process.poll() is None:
             process.terminate()
-            process.wait() # Wait for the process to be fully terminated
+            process.wait()
 
 def build_proxies_from_content(content: str) -> List[dict]:
     """
     Parses content, validates each generated config CONCURRENTLY, and returns valid proxies.
     """
     tasks_to_process = []
-    # 1. First, parse all lines and generate configs without validating yet.
     for i, line in enumerate(content.strip().splitlines()):
         line = line.strip()
         if not line:
@@ -163,25 +167,22 @@ def build_proxies_from_content(content: str) -> List[dict]:
             if "vless" in line:
                 line = fix_vless_url(line)
             config = json.loads(generateConfig(line))
-            # Store the config and its original metadata (line, index) for later.
             tasks_to_process.append({'config': config, 'line': line, 'index': i + 1})
         except Exception as e:
             print(f"Error processing line: {line}\nException: {e}")
             continue
     
     proxies = []
-    # Use a reasonable number of worker threads. Capped at 32.
     max_workers = min(32, (os.cpu_count() or 1) * 5)
 
-    # 2. Concurrently validate all the generated configs.
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Map each future object back to its original task data.
+        # Map each future to its task, now submitting with a unique port.
         future_to_task = {
-            executor.submit(is_xray_config_valid, task['config']): task
+            # **Find a free port and pass it to the validation function**
+            executor.submit(is_xray_config_valid, task['config'], find_free_port()): task
             for task in tasks_to_process
         }
         
-        # Process results as they are completed.
         for future in as_completed(future_to_task):
             task = future_to_task[future]
             try:
@@ -195,7 +196,6 @@ def build_proxies_from_content(content: str) -> List[dict]:
             except Exception as e:
                 print(f"An exception occurred for config from line {task['line']}: {e}")
 
-    # 3. Sort proxies by their original index to maintain order.
     proxies.sort(key=lambda p: int(p['tag'].replace('proxy', '')))
     
     return proxies
