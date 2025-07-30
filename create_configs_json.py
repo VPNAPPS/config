@@ -73,86 +73,241 @@ def fix_vless_url(url: str) -> str:
     rebuilt = fix_encryption_param(rebuilt)
     return rebuilt
 
-def is_xray_config_valid(config_dict: dict, port: int, xray_path: str = os.path.join(os.path.dirname(__file__), "xray")) -> bool:
+import logging
+import json
+import copy
+import subprocess
+import time
+import urllib.request
+import urllib.error
+import socket
+from typing import Optional, Tuple
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def is_xray_config_valid(
+    config_dict: dict, 
+    port: int, 
+    xray_path: str = os.path.join(os.path.dirname(__file__), "xray"),
+    timeout: int = 8,
+    startup_wait: float = 3.0,
+    test_urls: list = None
+) -> bool:
     """
     Validates an Xray config by running it on a unique port and testing its connectivity.
+    
+    Args:
+        config_dict: The Xray configuration dictionary
+        port: The port to use for the HTTP proxy
+        xray_path: Path to the Xray executable
+        timeout: Timeout for connectivity tests in seconds
+        startup_wait: Time to wait for Xray to start up
+        test_urls: List of URLs to test connectivity with
+    
+    Returns:
+        bool: True if the configuration is valid and connectivity works
     """
+    if test_urls is None:
+        test_urls = [
+            "http://www.gstatic.com/generate_204",
+            "http://connectivitycheck.gstatic.com/generate_204",
+            "http://clients3.google.com/generate_204"
+        ]
+    
+    logger.info(f"Validating Xray config on port {port}")
+    
+    # Validate input
     if not config_dict:
+        logger.error("Empty config dictionary provided")
         return False
-
+    
+    if not config_dict.get("outbounds"):
+        logger.error("No outbounds found in config")
+        return False
+    
+    # Check if port is available
+    if not _is_port_available(port):
+        logger.warning(f"Port {port} is not available, finding alternative")
+        port = find_free_port()
+        logger.info(f"Using alternative port {port}")
+    
+    # Prepare config
     template = copy.deepcopy(TEMPLATE)
     
-    # **Dynamically update the listening port in the template**
+    # Update the listening port in the template
     http_inbound_found = False
     for inbound in template.get("inbounds", []):
         if inbound.get("protocol") == "http":
             inbound["port"] = port
             http_inbound_found = True
+            logger.debug(f"Updated HTTP inbound port to {port}")
             break
     
     if not http_inbound_found:
-        print("Error: Could not find HTTP inbound in template to assign dynamic port.")
+        logger.error("Could not find HTTP inbound in template to assign dynamic port")
         return False
 
-    # Ensure the provided outbound is the primary one for the test.
+    # Set up outbounds - put the test config first
     template["outbounds"] = [config_dict["outbounds"][0]] + template["outbounds"]
-    config_str = json.dumps(template)
+    
+    # Validate JSON serialization
+    try:
+        config_str = json.dumps(template, indent=2)
+        logger.debug("Successfully serialized config to JSON")
+    except (TypeError, ValueError) as e:
+        logger.error(f"Failed to serialize config to JSON: {e}")
+        return False
+    
+    # Prepare Xray command
     command = [xray_path, "run", "-c", "stdin:"]
+    logger.debug(f"Running command: {' '.join(command)}")
     
     process = None
     try:
-        # Start the Xray process in the background.
+        # Check if Xray executable exists
+        if not os.path.isfile(xray_path):
+            logger.warning(f"Xray executable not found at '{xray_path}'. Skipping validation.")
+            return True
+        
+        # Start the Xray process
+        logger.info("Starting Xray process...")
         process = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL, # Suppress stdout
+            stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
 
+        # Send config to process
         try:
-            process.stdin.write(config_str)
-            process.stdin.close()
-        except (IOError, BrokenPipeError):
-            stderr_output, _ = process.communicate()
-            print(f"Xray process terminated unexpectedly. Error: {stderr_output.strip()}")
+            stdout, stderr = process.communicate(input=config_str, timeout=5)
+            
+            # If process terminated during communication, check why
+            if process.returncode is not None and process.returncode != 0:
+                logger.error(f"Xray process failed to start properly (exit code: {process.returncode})")
+                if stderr:
+                    logger.error(f"Xray stderr: {stderr.strip()}")
+                if stdout:
+                    logger.debug(f"Xray stdout: {stdout.strip()}")
+                return False
+                
+        except subprocess.TimeoutExpired:
+            logger.error("Timeout while communicating with Xray process")
+            process.kill()
+            return False
+        except (IOError, BrokenPipeError) as e:
+            logger.error(f"Failed to send config to Xray process: {e}")
             return False
 
-        time.sleep(1.5)
+        # Wait for Xray to start up
+        logger.info(f"Waiting {startup_wait}s for Xray to start up...")
+        time.sleep(startup_wait)
 
+        # Check if process is still running
         if process.poll() is not None:
-            stderr_output = process.stderr.read()
-            print(f"Xray validation failed on startup: {stderr_output.strip()}")
+            logger.error(f"Xray process terminated unexpectedly (exit code: {process.returncode})")
+            if stderr:
+                logger.error(f"Final stderr: {stderr.strip()}")
             return False
 
-        # **Test connectivity through the dynamically assigned proxy port**
-        proxy_url = f'http://127.0.0.1:{port}'
-        proxy_handler = urllib.request.ProxyHandler({
-            'http': proxy_url,
-            'https': proxy_url
-        })
-        opener = urllib.request.build_opener(proxy_handler)
+        logger.info("Xray process started successfully, testing connectivity...")
         
-        try:
-            test_url = "http://www.gstatic.com/generate_204"
-            response = opener.open(test_url, timeout=4)
-            return 200 <= response.status < 300
-        except Exception:
-            return False
+        # Test connectivity
+        return _test_connectivity(port, test_urls, timeout)
 
     except FileNotFoundError:
-        print(f"Warning: '{xray_path}' executable not found. Skipping validation.")
+        logger.warning(f"Xray executable '{xray_path}' not found. Skipping validation.")
         return True
         
     except Exception as e:
-        print(f"An unexpected error occurred during validation: {e}")
+        logger.error(f"Unexpected error during validation: {type(e).__name__}: {e}")
         return False
         
     finally:
-        # Ensure the background Xray process is terminated.
+        # Ensure the Xray process is terminated
         if process and process.poll() is None:
+            logger.info("Terminating Xray process...")
             process.terminate()
-            process.wait()
+            try:
+                process.wait(timeout=5)
+                logger.debug("Xray process terminated gracefully")
+            except subprocess.TimeoutExpired:
+                logger.warning("Xray process didn't terminate gracefully, killing...")
+                process.kill()
+                process.wait()
+
+def _is_port_available(port: int) -> bool:
+    """Check if a port is available for use."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', port))
+            return True
+    except OSError:
+        return False
+
+def _test_connectivity(port: int, test_urls: list, timeout: int) -> Tuple[bool, str]:
+    """
+    Test connectivity through the proxy.
+    
+    Returns:
+        bool: True if any test URL succeeds
+    """
+    proxy_url = f'http://127.0.0.1:{port}'
+    proxy_handler = urllib.request.ProxyHandler({
+        'http': proxy_url,
+        'https': proxy_url
+    })
+    opener = urllib.request.build_opener(proxy_handler)
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
+    
+    successful_tests = 0
+    total_tests = len(test_urls)
+    
+    for i, test_url in enumerate(test_urls, 1):
+        logger.debug(f"Testing connectivity ({i}/{total_tests}): {test_url}")
+        
+        try:
+            start_time = time.time()
+            response = opener.open(test_url, timeout=timeout)
+            response_time = time.time() - start_time
+            
+            status_code = response.getcode()
+            logger.info(f"✓ Connectivity test passed: {test_url} -> HTTP {status_code} ({response_time:.2f}s)")
+            
+            if 200 <= status_code < 300:
+                successful_tests += 1
+            else:
+                logger.warning(f"Unexpected status code {status_code} for {test_url}")
+                
+        except urllib.error.HTTPError as e:
+            logger.warning(f"HTTP error for {test_url}: {e.code} {e.reason}")
+            if 200 <= e.code < 300:  # Some connectivity check endpoints return specific codes
+                successful_tests += 1
+                
+        except urllib.error.URLError as e:
+            logger.warning(f"URL error for {test_url}: {e.reason}")
+            
+        except socket.timeout:
+            logger.warning(f"Timeout connecting to {test_url}")
+            
+        except Exception as e:
+            logger.warning(f"Unexpected error testing {test_url}: {type(e).__name__}: {e}")
+    
+    success_rate = successful_tests / total_tests
+    logger.info(f"Connectivity test results: {successful_tests}/{total_tests} successful ({success_rate:.1%})")
+    
+    # Consider it successful if at least one test passed
+    is_valid = successful_tests > 0
+    
+    if is_valid:
+        logger.info("🎉 Configuration validation PASSED!")
+    else:
+        logger.error("❌ Configuration validation FAILED - no successful connections")
+    
+    return is_valid
 
 def build_proxies_from_content(content: str) -> List[dict]:
     """
@@ -188,6 +343,7 @@ def build_proxies_from_content(content: str) -> List[dict]:
             try:
                 is_valid = future.result()
                 if is_valid:
+                    print("FUCK YEAH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
                     proxy = task['config']["outbounds"][0]
                     proxy["tag"] = f"proxy{task['index']}"
                     proxies.append(proxy)
