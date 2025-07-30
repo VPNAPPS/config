@@ -211,6 +211,7 @@ def is_xray_config_valid(
     # Validate JSON serialization
     try:
         config_str = json.dumps(template)
+        print(config_str)
         logger.debug("Successfully serialized config to JSON")
     except (TypeError, ValueError) as e:
         logger.error(f"Failed to serialize config to JSON: {e}")
