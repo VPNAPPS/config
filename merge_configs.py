@@ -43,12 +43,12 @@ with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
 i = 0
 proxies = []
 for config in merged_list:
-    i += 1
     outbounds = config.get("outbounds")
     if not outbounds:
         print(f"Warning: config #{i} has no 'outbounds'. Skipping.")
         continue
     for proxy in outbounds:
+        i += 1
         if "proxy" in proxy.get("tag", ""):
             proxy["tag"] = f"proxy{i}"
             proxies.append(proxy)
