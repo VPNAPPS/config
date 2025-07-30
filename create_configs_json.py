@@ -6,8 +6,10 @@ import os
 import subprocess
 import urllib.parse
 import re
-# Import added for concurrency
+# Imports added for concurrency and connectivity testing
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+import urllib.request
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.json")
 with open(TEMPLATE_PATH, "r") as f:
@@ -66,46 +68,86 @@ def fix_vless_url(url: str) -> str:
 
 def is_xray_config_valid(config_dict: dict, xray_path: str = os.path.join(os.path.dirname(__file__), "xray")) -> bool:
     """
-    Validates an Xray configuration by attempting to run it with a timeout.
-    This is a workaround for older Xray versions that lack the 'test' command.
+    Validates an Xray config by running it and testing its connectivity.
+    It starts the config, which exposes an HTTP proxy on port 10809,
+    and then attempts to make a request through that proxy.
     """
     if not config_dict:
         return False
-    
-    config_str = json.dumps(config_dict)
+
+    template = copy.deepcopy(TEMPLATE)
+    # Ensure the provided outbound is the primary one for the test.
+    template["outbounds"] = [config_dict["outbounds"][0]] + template["outbounds"]
+    config_str = json.dumps(template)
     command = [xray_path, "run", "-c", "stdin:"]
     
+    process = None
     try:
-        # Attempt to run the config with a 2-second timeout.
-        result = subprocess.run(
+        # Start the Xray process in the background.
+        process = subprocess.Popen(
             command,
-            input=config_str,
-            text=True,
-            capture_output=True,
-            timeout=2  # Add a timeout
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL, # Suppress stdout
+            stderr=subprocess.PIPE,
+            text=True
         )
-        
-        # If the process exited before the timeout, check its return code.
-        # A non-zero code means the config was invalid.
-        if result.returncode != 0:
-            print(f"Xray validation failed: {result.stderr.strip()}")
-            return False
-        
-        # This case is unlikely for 'run' but we'll treat a clean exit as valid.
-        return True
 
-    except subprocess.TimeoutExpired:
-        # If it times out, it means Xray started successfully and is running.
-        # This is our success condition for a valid config.
-        return True
+        # Send the configuration to the process's stdin.
+        try:
+            process.stdin.write(config_str)
+            process.stdin.close()
+        except (IOError, BrokenPipeError):
+            # This can happen if the process terminates immediately on a bad config.
+            stderr_output, _ = process.communicate()
+            print(f"Xray process terminated unexpectedly. Error: {stderr_output.strip()}")
+            return False
+
+        # Give Xray a moment to start up.
+        time.sleep(1.5)
+
+        # Check if the process has already exited (i.e., failed to start).
+        if process.poll() is not None:
+            stderr_output = process.stderr.read()
+            print(f"Xray validation failed on startup: {stderr_output.strip()}")
+            return False
+
+        # If the process is running, test connectivity through the proxy.
+        proxy_handler = urllib.request.ProxyHandler({
+            'http': 'http://127.0.0.1:10809',
+            'https': 'http://127.0.0.1:10809'
+        })
+        opener = urllib.request.build_opener(proxy_handler)
         
+        try:
+            # Use a lightweight URL for the connectivity test.
+            test_url = "http://www.gstatic.com/generate_204"
+            # Set a reasonable timeout for the connection attempt.
+            response = opener.open(test_url, timeout=4)
+            # A successful response (e.g., 204 No Content) means the proxy works.
+            if 200 <= response.status < 300:
+                # print("Connectivity test successful.")
+                return True
+            else:
+                # print(f"Connectivity test failed with status: {response.status}")
+                return False
+        except Exception as e:
+            # Any exception during the request (e.g., timeout, connection refused) means failure.
+            # print(f"Connectivity test failed: {e}")
+            return False
+
     except FileNotFoundError:
         print(f"Warning: '{xray_path}' executable not found. Skipping validation.")
-        return True
+        return True # Maintain original behavior of skipping if not found
         
     except Exception as e:
         print(f"An unexpected error occurred during validation: {e}")
         return False
+        
+    finally:
+        # Ensure the background Xray process is terminated.
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait() # Wait for the process to be fully terminated
 
 def build_proxies_from_content(content: str) -> List[dict]:
     """
@@ -149,7 +191,7 @@ def build_proxies_from_content(content: str) -> List[dict]:
                     proxy["tag"] = f"proxy{task['index']}"
                     proxies.append(proxy)
                 else:
-                    print(f"Skipping invalid config from line: {task['line']} \n {json.dumps(task['config'])}")
+                    print(f"Skipping invalid config from line: {task['line']}")
             except Exception as e:
                 print(f"An exception occurred for config from line {task['line']}: {e}")
 
