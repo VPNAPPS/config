@@ -6,11 +6,20 @@ import os
 import subprocess
 import urllib.parse
 import re
-# Imports added for concurrency, connectivity testing, and dynamic port allocation
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
 import time
 import urllib.request
+import urllib.error
 import socket
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional, Tuple
+
+# Set up logging with more detailed format
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(name)s - %(levelname)s - [Thread-%(thread)d] - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "template.json")
 with open(TEMPLATE_PATH, "r") as f:
@@ -73,19 +82,75 @@ def fix_vless_url(url: str) -> str:
     rebuilt = fix_encryption_param(rebuilt)
     return rebuilt
 
-import logging
-import json
-import copy
-import subprocess
-import time
-import urllib.request
-import urllib.error
-import socket
-from typing import Optional, Tuple
+def _is_port_available(port: int) -> bool:
+    """Check if a port is available for use."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('127.0.0.1', port))
+            return True
+    except OSError:
+        return False
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+def _test_connectivity(port: int, test_urls: list, timeout: int) -> bool:
+    """
+    Test connectivity through the proxy.
+    
+    Returns:
+        bool: True if any test URL succeeds
+    """
+    proxy_url = f'http://127.0.0.1:{port}'
+    proxy_handler = urllib.request.ProxyHandler({
+        'http': proxy_url,
+        'https': proxy_url
+    })
+    opener = urllib.request.build_opener(proxy_handler)
+    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
+    
+    successful_tests = 0
+    total_tests = len(test_urls)
+    
+    for i, test_url in enumerate(test_urls, 1):
+        logger.debug(f"Testing connectivity ({i}/{total_tests}): {test_url}")
+        
+        try:
+            start_time = time.time()
+            response = opener.open(test_url, timeout=timeout)
+            response_time = time.time() - start_time
+            
+            status_code = response.getcode()
+            logger.info(f"✓ Connectivity test passed: {test_url} -> HTTP {status_code} ({response_time:.2f}s)")
+            
+            if 200 <= status_code < 300:
+                successful_tests += 1
+            else:
+                logger.warning(f"Unexpected status code {status_code} for {test_url}")
+                
+        except urllib.error.HTTPError as e:
+            logger.warning(f"HTTP error for {test_url}: {e.code} {e.reason}")
+            if 200 <= e.code < 300:  # Some connectivity check endpoints return specific codes
+                successful_tests += 1
+                
+        except urllib.error.URLError as e:
+            logger.warning(f"URL error for {test_url}: {e.reason}")
+            
+        except socket.timeout:
+            logger.warning(f"Timeout connecting to {test_url}")
+            
+        except Exception as e:
+            logger.warning(f"Unexpected error testing {test_url}: {type(e).__name__}: {e}")
+    
+    success_rate = successful_tests / total_tests
+    logger.info(f"Connectivity test results: {successful_tests}/{total_tests} successful ({success_rate:.1%})")
+    
+    # Consider it successful if at least one test passed
+    is_valid = successful_tests > 0
+    
+    if is_valid:
+        logger.info("🎉 Configuration validation PASSED!")
+    else:
+        logger.error("❌ Configuration validation FAILED - no successful connections")
+    
+    return is_valid
 
 def is_xray_config_valid(
     config_dict: dict, 
@@ -98,16 +163,7 @@ def is_xray_config_valid(
     """
     Validates an Xray config by running it on a unique port and testing its connectivity.
     
-    Args:
-        config_dict: The Xray configuration dictionary
-        port: The port to use for the HTTP proxy
-        xray_path: Path to the Xray executable
-        timeout: Timeout for connectivity tests in seconds
-        startup_wait: Time to wait for Xray to start up
-        test_urls: List of URLs to test connectivity with
-    
-    Returns:
-        bool: True if the configuration is valid and connectivity works
+    MAJOR FIX: Changed process communication logic to avoid deadlock
     """
     if test_urls is None:
         test_urls = [
@@ -181,23 +237,12 @@ def is_xray_config_valid(
             text=True
         )
 
-        # Send config to process
+        # MAJOR FIX: Don't use communicate() with timeout - it causes deadlock
+        # Instead, write to stdin and close it, then let process run
         try:
-            stdout, stderr = process.communicate(input=config_str, timeout=5)
-            
-            # If process terminated during communication, check why
-            if process.returncode is not None and process.returncode != 0:
-                logger.error(f"Xray process failed to start properly (exit code: {process.returncode})")
-                if stderr:
-                    logger.error(f"Xray stderr: {stderr.strip()}")
-                if stdout:
-                    logger.debug(f"Xray stdout: {stdout.strip()}")
-                return False
-                
-        except subprocess.TimeoutExpired:
-            logger.error("Timeout while communicating with Xray process")
-            process.kill()
-            return False
+            process.stdin.write(config_str)
+            process.stdin.close()
+            logger.debug("Config sent to Xray process")
         except (IOError, BrokenPipeError) as e:
             logger.error(f"Failed to send config to Xray process: {e}")
             return False
@@ -206,11 +251,13 @@ def is_xray_config_valid(
         logger.info(f"Waiting {startup_wait}s for Xray to start up...")
         time.sleep(startup_wait)
 
-        # Check if process is still running
+        # Check if process is still running after startup
         if process.poll() is not None:
+            # Process terminated, get the stderr
+            _, stderr = process.communicate()
             logger.error(f"Xray process terminated unexpectedly (exit code: {process.returncode})")
             if stderr:
-                logger.error(f"Final stderr: {stderr.strip()}")
+                logger.error(f"Xray stderr: {stderr.strip()}")
             return False
 
         logger.info("Xray process started successfully, testing connectivity...")
@@ -239,80 +286,12 @@ def is_xray_config_valid(
                 process.kill()
                 process.wait()
 
-def _is_port_available(port: int) -> bool:
-    """Check if a port is available for use."""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('127.0.0.1', port))
-            return True
-    except OSError:
-        return False
-
-def _test_connectivity(port: int, test_urls: list, timeout: int) -> Tuple[bool, str]:
-    """
-    Test connectivity through the proxy.
-    
-    Returns:
-        bool: True if any test URL succeeds
-    """
-    proxy_url = f'http://127.0.0.1:{port}'
-    proxy_handler = urllib.request.ProxyHandler({
-        'http': proxy_url,
-        'https': proxy_url
-    })
-    opener = urllib.request.build_opener(proxy_handler)
-    opener.addheaders = [('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')]
-    
-    successful_tests = 0
-    total_tests = len(test_urls)
-    
-    for i, test_url in enumerate(test_urls, 1):
-        logger.debug(f"Testing connectivity ({i}/{total_tests}): {test_url}")
-        
-        try:
-            start_time = time.time()
-            response = opener.open(test_url, timeout=timeout)
-            response_time = time.time() - start_time
-            
-            status_code = response.getcode()
-            logger.info(f"✓ Connectivity test passed: {test_url} -> HTTP {status_code} ({response_time:.2f}s)")
-            
-            if 200 <= status_code < 300:
-                successful_tests += 1
-            else:
-                logger.warning(f"Unexpected status code {status_code} for {test_url}")
-                
-        except urllib.error.HTTPError as e:
-            logger.warning(f"HTTP error for {test_url}: {e.code} {e.reason}")
-            if 200 <= e.code < 300:  # Some connectivity check endpoints return specific codes
-                successful_tests += 1
-                
-        except urllib.error.URLError as e:
-            logger.warning(f"URL error for {test_url}: {e.reason}")
-            
-        except socket.timeout:
-            logger.warning(f"Timeout connecting to {test_url}")
-            
-        except Exception as e:
-            logger.warning(f"Unexpected error testing {test_url}: {type(e).__name__}: {e}")
-    
-    success_rate = successful_tests / total_tests
-    logger.info(f"Connectivity test results: {successful_tests}/{total_tests} successful ({success_rate:.1%})")
-    
-    # Consider it successful if at least one test passed
-    is_valid = successful_tests > 0
-    
-    if is_valid:
-        logger.info("🎉 Configuration validation PASSED!")
-    else:
-        logger.error("❌ Configuration validation FAILED - no successful connections")
-    
-    return is_valid
-
 def build_proxies_from_content(content: str) -> List[dict]:
     """
     Parses content, validates each generated config CONCURRENTLY, and returns valid proxies.
     """
+    logger.info(f"Processing {len(content.strip().splitlines())} lines of proxy configurations")
+    
     tasks_to_process = []
     for i, line in enumerate(content.strip().splitlines()):
         line = line.strip()
@@ -323,37 +302,52 @@ def build_proxies_from_content(content: str) -> List[dict]:
                 line = fix_vless_url(line)
             config = json.loads(generateConfig(line))
             tasks_to_process.append({'config': config, 'line': line, 'index': i + 1})
+            logger.debug(f"Successfully parsed line {i + 1}: {line[:50]}...")
         except Exception as e:
-            print(f"Error processing line: {line}\nException: {e}")
+            logger.error(f"Error processing line {i + 1}: {line}")
+            logger.error(f"Exception: {e}")
             continue
     
+    logger.info(f"Successfully parsed {len(tasks_to_process)} configurations, starting validation...")
+    
     proxies = []
-    max_workers = min(32, (os.cpu_count() or 1) * 5)
+    max_workers = min(16, (os.cpu_count() or 1) * 2)  # Reduced concurrency to avoid port conflicts
+    logger.info(f"Using {max_workers} worker threads for validation")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Map each future to its task, now submitting with a unique port.
-        future_to_task = {
-            # **Find a free port and pass it to the validation function**
-            executor.submit(is_xray_config_valid, task['config'], find_free_port()): task
-            for task in tasks_to_process
-        }
+        # Submit all tasks
+        future_to_task = {}
+        for task in tasks_to_process:
+            port = find_free_port()
+            future = executor.submit(is_xray_config_valid, task['config'], port)
+            future_to_task[future] = task
+            logger.debug(f"Submitted validation task for proxy{task['index']} on port {port}")
         
+        # Collect results
+        completed_count = 0
         for future in as_completed(future_to_task):
             task = future_to_task[future]
+            completed_count += 1
+            
             try:
                 is_valid = future.result()
+                logger.info(f"[{completed_count}/{len(tasks_to_process)}] Proxy{task['index']} validation: {'PASSED' if is_valid else 'FAILED'}")
+                
                 if is_valid:
-                    print("FUCK YEAH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                    logger.info("🎉 FUCK YEAH! Configuration PASSED validation!")
                     proxy = task['config']["outbounds"][0]
                     proxy["tag"] = f"proxy{task['index']}"
                     proxies.append(proxy)
                 else:
-                    print(f"Skipping invalid config from line: {task['line']}")
+                    logger.warning(f"❌ Skipping invalid config from line: {task['line'][:50]}...")
+                    
             except Exception as e:
-                print(f"An exception occurred for config from line {task['line']}: {e}")
+                logger.error(f"Exception occurred for proxy{task['index']}: {type(e).__name__}: {e}")
 
+    # Sort proxies by their index
     proxies.sort(key=lambda p: int(p['tag'].replace('proxy', '')))
     
+    logger.info(f"🏁 Validation complete! {len(proxies)}/{len(tasks_to_process)} configurations passed")
     return proxies
 
 def build_config_json_from_proxies(name: str, proxies: list) -> dict:
