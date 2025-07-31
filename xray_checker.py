@@ -663,7 +663,6 @@ def get_working_proxies(base64_subscription: str):
         for protocol, proxies in working_by_protocol.items():
             print(f"\n  ✅ Working {protocol.upper()} proxies ({len(proxies)}):")
             for i, proxy_info in enumerate(proxies):
-                print(proxy_info)
                 print(f"    {i+1}: {proxy_info['name']} - {proxy_info['address']}")
                 print(f"        URL: {proxy_info['url']}")
                 pxies+=proxy_info['url']+"\n"
