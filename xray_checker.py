@@ -13,31 +13,6 @@ from urllib.parse import unquote, urlparse
 import ipaddress
 import re
 
-class InvalidHostError(Exception):
-    def __init__(self, host: str):
-        super().__init__(f"Invalid host: {host}")
-        self.host = host
-
-
-def is_valid_ip(host: str) -> bool:
-    try:
-        ipaddress.ip_address(host)
-        return True
-    except ValueError:
-        return False
-
-def is_valid_domain(host: str) -> bool:
-    # Simplified domain validation (RFC 1035 compliant)
-    if len(host) > 253:
-        return False
-    if host.endswith("."):
-        host = host[:-1]
-    allowed = re.compile(
-        r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)$"
-    )
-    return all(allowed.match(label) for label in host.split("."))
-
-
 def _find_free_port(start_port: int = 2112, max_attempts: int = 1000) -> int:
     """
     Find a free port starting from the given port number.
@@ -147,8 +122,6 @@ def _extract_vless_trojan_info(proxy_url: str, protocol: str) -> Dict[str, str]:
         host, port = address.rsplit(":", 1)
     else:
         host, port = address, "443"
-    if not (is_valid_ip(host) or is_valid_domain(host)):
-        raise InvalidHostError(host)
     return {
         "protocol": protocol,
         "address": address,
@@ -168,8 +141,7 @@ def _extract_vmess_info(proxy_url: str) -> Dict[str, str]:
         host = vmess_config.get("add", "")
         port = str(vmess_config.get("port", ""))
         name = vmess_config.get("ps", "")
-        if not (is_valid_ip(host) or is_valid_domain(host)):
-            raise InvalidHostError(host)
+
         address = f"{host}:{port}" if host and port else "unknown"
         return {
             "protocol": "vmess",
@@ -199,8 +171,7 @@ def _extract_shadowsocks_info(proxy_url: str) -> Dict[str, str]:
             host, port = address_part.rsplit(":", 1)
         else:
             host, port = address_part, "8388"
-        if not (is_valid_ip(host) or is_valid_domain(host)):
-            raise InvalidHostError(host)
+
         address = f"{host}:{port}"
         return {
             "protocol": "shadowsocks",
@@ -220,8 +191,7 @@ def _extract_generic_info(proxy_url: str, protocol: str) -> Dict[str, str]:
         parsed = urlparse(proxy_url)
         host = parsed.hostname or "unknown"
         port = str(parsed.port) if parsed.port else "unknown"
-        if host != "unknown" and not (is_valid_ip(host) or is_valid_domain(host)):
-            raise InvalidHostError(host)
+
         address = f"{host}:{port}" if host != "unknown" and port != "unknown" else "unknown"
         name = ""
         if "#" in proxy_url:
