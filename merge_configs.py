@@ -34,11 +34,6 @@ for folder in FOLDERS:
     else:
         print(f"Unsupported data type in {folder}: {type(data)}")
 
-# Save raw merged list for debugging
-with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-    json.dump(merged_list, f, ensure_ascii=False, indent=2)
-    print(f"Merged config written to {OUTPUT_FILE}")
-
 # Build merged config from outbounds
 i = 0
 proxies = []
@@ -54,7 +49,13 @@ for config in merged_list:
             proxies.append(proxy)
 
 # Final output
-final_config = build_config_json_from_proxies("🤰 Mother of Configs", proxies)
+final_config = build_config_json_from_proxies("⚡️ Fastest Location", proxies)
+merged_list[:0] = final_config
 with open("config.json", 'w', encoding='utf-8') as f:
     json.dump(final_config, f, ensure_ascii=False, indent=2)
     print(f"Final merged config written to config.json")
+
+# Save raw merged list for debugging
+with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+    json.dump(merged_list, f, ensure_ascii=False, indent=2)
+    print(f"Merged config written to {OUTPUT_FILE}")
