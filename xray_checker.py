@@ -220,7 +220,7 @@ def _check_xray_subscription(
     subscription_base64: str,
     proxy_no: int,
     binary_path: str = None,
-    timeout: int = 10,
+    timeout: int = 20,
     check_interval: int = 10,
     preferred_port: int = 2112,
 ) -> List[str]:
