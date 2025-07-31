@@ -1,11 +1,13 @@
 from typing import List
 from v2ray2json import generateConfig
+from xray_checker import get_working_proxies
 import json
 import copy
 import os
 import subprocess
 import urllib.parse
 import re
+import base64
 # Import added for concurrency
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -112,6 +114,10 @@ def build_proxies_from_content(content: str) -> List[dict]:
     Parses content, validates each generated config CONCURRENTLY, and returns valid proxies.
     """
     tasks_to_process = []
+    #print("",base64.b64encode(content.encode('utf-8')).decode('utf-8'),"")
+    content = get_working_proxies(base64.b64encode(content.encode('utf-8')).decode('utf-8'))
+    if not content:
+        return None
     # 1. First, parse all lines and generate configs without validating yet.
     for i, line in enumerate(content.strip().splitlines()):
         line = line.strip()
@@ -166,4 +172,7 @@ def build_config_json_from_proxies(name: str, proxies: list) -> dict:
 
 def build_config(name: str, content: str) -> dict:
     proxies = build_proxies_from_content(content)
-    return build_config_json_from_proxies(name, proxies)
+    if proxies:
+        return build_config_json_from_proxies(name, proxies)
+    else:
+        return None

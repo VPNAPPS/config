@@ -2,21 +2,15 @@
 
 name: Decrypt and Generate Configs
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-  
   schedule:
     - cron: '0 */1 * * *'  # Run every 1 hour
 
-# Add permissions for GITHUB_TOKEN to allow committing back to the repo
 permissions:
   contents: write
   actions: read
@@ -25,29 +19,24 @@ jobs:
   build-and-commit:
     runs-on: ubuntu-latest
     steps:
-      # 1. Check-out your repository
       - name: Check-out repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2. Set up Python environment
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
-      # 3. Install all required dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install requests cryptography python-dotenv pycountry
 
-      # ====================================================================
-      # 4. NEW STEP: Download and Set Up Xray-core
+      # Step 4: Download and Set Up Xray-core
       - name: Download and Set Up Xray-core
         run: |
-          # Determine the runner's architecture and set the corresponding Xray filename part
           if [ "${{ runner.arch }}" == "X64" ]; then
             XRAY_ARCH="linux-64"
           elif [ "${{ runner.arch }}" == "ARM64" ]; then
@@ -57,92 +46,88 @@ jobs:
             exit 1
           fi
           
-          # Use a valid, recent version of Xray-core (v1.8.10 is the latest as of writing)
           XRAY_VERSION="v25.7.26"
           XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_VERSION}/Xray-${XRAY_ARCH}.zip"
           
-          echo "Downloading Xray for architecture: $XRAY_ARCH from $XRAY_URL"
-          
-          # Download, unzip only the executable, and make it runnable
+          echo "Downloading Xray from $XRAY_URL"
           curl -L -o xray.zip "$XRAY_URL"
           unzip -o xray.zip xray
           chmod +x xray
-          
-          # Add the current directory to the PATH so 'xray' can be called directly
           echo "$(pwd)" >> $GITHUB_PATH
-          
-          # Verify that xray is installed and accessible
-          echo "Xray version:"
           ./xray version
-      # ====================================================================
 
-      # 5. Create the 'begz' directory needed by the decrypt script
+      # Step 4b: Download and Set Up xray-checker
+      - name: Download and Set Up xray-checker
+        run: |
+          if [ "${{ runner.arch }}" == "X64" ]; then
+            CHECKER_URL="https://github.com/kutovoys/xray-checker/releases/download/v0.4.3/xray-checker-v0.4.3-linux-amd64.tar.gz"
+          elif [ "${{ runner.arch }}" == "ARM64" ]; then
+            CHECKER_URL="https://github.com/kutovoys/xray-checker/releases/download/v0.4.3/xray-checker-v0.4.3-linux-arm64.tar.gz"
+          else
+            echo "Unsupported architecture: ${{ runner.arch }}"
+            exit 1
+          fi
+
+          echo "Downloading xray-checker from $CHECKER_URL"
+          curl -L -o checker.tar.gz "$CHECKER_URL"
+          tar -xzvf checker.tar.gz
+          chmod +x xray-checker
+          echo "$(pwd)" >> $GITHUB_PATH
+          ./xray-checker --help || true  # Prevents failure if it exits non-zero
+
       - name: Create begz directory
         run: mkdir -p begz
-      
-      # 6. List files for debugging
+
       - name: List files in workspace
         run: ls -R
 
-      # 7. Create the .env file for the decryption script
       - name: Create .env file for decryption
         run: |
           echo "API_URL=${{ secrets.API_URL }}" > begz/.env
           echo "DECRYPT_KEY=${{ secrets.DECRYPT_KEY }}" >> begz/.env
-      
-      # 8. Run the decrypt script first (decrypt_script.py)
+
       - name: Run decryption script
         run: |
           cd begz
           python decrypt_script.py
 
-      # 9. Run the generator script second (configs_gen.py)
       - name: Run generator script
         env:
           URL: ${{ secrets.URL }}
         run: |
           cd nb
           python configs_gen.py
-      
-      # 10. Create the .env file for the yebe script
+
       - name: Create .env file for yebe
         run: |
           echo "BASE_URL=${{ secrets.BASE_URL }}" > yebe/.env
           echo "GGITHUB_API_URL=${{ secrets.GGITHUB_API_URL }}" >> yebe/.env
-      
-      # 11. Run the yebe script
+
       - name: Run yebe script
         run: |
           cd yebe
           python generate_yebe_configs.py
-      
-      # 12. Merge all configs
+
       - name: Merge all configs
         run: python merge_configs.py
 
-      # 13. Commit and push any changes from all scripts
       - name: Commit and push updated configs
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions@github.com"
           git add configs.json config.json
-          
-          # Check if there are staged changes
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
             git commit -m "Automated update of config files - $(date '+%Y-%m-%d %H:%M:%S UTC')"
             git push origin HEAD:main
-          fi
 
-      # 14. Upload the generated file as an artifact
       - name: Upload configs.json
         uses: actions/upload-artifact@v4
         with:
           name: generated-config
           path: configs.json
 
-      # 15. Upload the additional config.json file as an artifact
       - name: Upload config.json
         uses: actions/upload-artifact@v4
         with:

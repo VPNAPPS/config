@@ -1,0 +1,103 @@
+
+{
+  "log": {
+    "loglevel": "none"
+  },
+  "inbounds": [
+    {
+      "listen": "127.0.0.1",
+      "port": 10000,
+      "protocol": "socks",
+      "tag": "🇨🇾 CY | 🔒 VLESS | @v2raych [19]_vless_0_Inbound",
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"],
+        "routeOnly": true
+      },
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "userLevel": 0
+      }
+    }
+  ],
+  "outbounds": [{
+  "tag": "direct",
+  "protocol": "freedom",
+  "settings": {
+    "domainStrategy": "UseIP"
+  },
+  "streamSettings": {
+    "sockopt": {}
+  }
+},
+{
+  "tag": "block",
+  "protocol": "blackhole",
+  "settings": {}
+},
+{
+  "tag": "dns-out",
+  "protocol": "dns",
+  "settings": {
+    "address": "1.1.1.1",
+    "network": "udp",
+    "port": 53
+  },
+  "streamSettings": {
+    "sockopt": {}
+  }
+},
+    {
+      "tag": "🇨🇾 CY | 🔒 VLESS | @v2raych [19]_0",
+      "protocol": "vless",
+  "settings": {
+    "vnext": [{
+      "address": "154.92.9.46",
+      "port": 443,
+      "users": [{
+        "id": "ec8a65ad-aafc-4095-9b8c-ea10890ca629",
+        "encryption": "none",
+        "level": 0
+      }]
+    }]
+  },
+  "streamSettings": {
+    "network": "ws",
+    "security": "tls",
+    "tlsSettings": {
+      "serverName": "simorgh.hpcode.ir",
+      "allowInsecure": false,
+      "fingerprint": "firefox"
+    },
+    "wsSettings": {
+      "path": "/Javid-SHAH-KingRezaPahlavi/?ed=2560",
+      "host": "simorgh.hpcode.ir",
+      "headers": {
+        "Host": "simorgh.hpcode.ir"
+      }
+    },
+    
+    "sockopt": {}
+  }
+    }
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {
+        "type": "field",
+        "protocol": ["dns"],
+        "outboundTag": "dns-out"
+      },
+      {
+        "type": "field",
+        "inboundTag": ["🇨🇾 CY | 🔒 VLESS | @v2raych [19]_vless_0_Inbound"],
+        "outboundTag": "🇨🇾 CY | 🔒 VLESS | @v2raych [19]_0"
+      }
+    ]
+  }
+}
+
+
+

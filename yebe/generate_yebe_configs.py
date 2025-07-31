@@ -220,7 +220,8 @@ if __name__ == "__main__":
                 config = build_config(
                     f"{r['flag_emoji']} {r['country_name']}", r["content"]
                 )
-                configs.append(config)
+                if config:
+                    configs.append(config)
                 # print(f"   {r['flag_emoji']} {r['country_name']} ({r['country_code']}) - {r['content_length']} chars")
             with open("configs.json", "w", encoding="utf-8") as f:
                 json.dump(configs, f, indent=4, ensure_ascii=False)
