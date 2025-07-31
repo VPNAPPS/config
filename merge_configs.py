@@ -50,7 +50,7 @@ for config in merged_list:
 
 # Final output
 final_config = build_config_json_from_proxies("⚡️ Fastest Location", proxies)
-merged_list[:0] = final_config
+merged_list.insert(0, final_config)
 with open("config.json", 'w', encoding='utf-8') as f:
     json.dump(final_config, f, ensure_ascii=False, indent=2)
     print(f"Final merged config written to config.json")
