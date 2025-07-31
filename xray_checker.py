@@ -650,7 +650,7 @@ def _check_xray_subscription_with_config_file(
             os.unlink(temp_config)
 
 def get_working_proxies(base64_subscription: str):
-    # try:
+    try:
         # Test parsing base64 data first
         print("Parsing base64 subscription data...")
         proxy_urls = parse_base64_subscription(base64_subscription)
@@ -704,8 +704,9 @@ def get_working_proxies(base64_subscription: str):
         
         return pxies
     
-    # except Exception as e:
-    #     print(f"❌ Error: {e}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return None
 
 # Example usage
 if __name__ == "__main__":
