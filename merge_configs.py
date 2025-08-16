@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from create_configs_json import build_config_json_from_proxies
 
-FOLDERS = ['begz']
+FOLDERS = ['begz','nb']
 OUTPUT_FILE = 'configs.json'
 CANDIDATE_FILES = ['configs.json', 'config.json']
 
