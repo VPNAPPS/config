@@ -86,8 +86,8 @@ def fetch_and_process_configs():
         
         print("Processing configurations by country...")
         for country_code, config_list in country_configs.items():
-            # if len(config_list) < 5:
-            #     continue
+            if len(config_list) < 5:
+                continue
             country_name, flag_emoji = get_country_info(country_code)
             
             print(f"Processing {len(config_list)} configs for {country_name} ({country_code})")
