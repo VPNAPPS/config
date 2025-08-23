@@ -103,10 +103,15 @@ jobs:
           echo "BASE_URL=${{ secrets.BASE_URL }}" > yebe/.env
           echo "GGITHUB_API_URL=${{ secrets.GGITHUB_API_URL }}" >> yebe/.env
 
-      - name: Run yebe script
+      # - name: Run yebe script
+      #   run: |
+      #     cd yebe
+      #     python generate_yebe_configs.py
+
+      - name: Run ala script
         run: |
-          cd yebe
-          python generate_yebe_configs.py
+          cd ala
+          python configs_gen.py
 
       - name: Merge all configs
         run: python merge_configs.py
