@@ -6,9 +6,15 @@
     "dns": {
       "queryStrategy": "UseIPv4",
       "servers": [
-        "https://1.0.0.1/dns-query"
+        "https://1.1.1.1/dns-query",
+        "https://1.0.0.1/dns-query",
+        "8.8.8.8",
+        "8.8.4.4"
       ],
-      "tag": "dns_out"
+      "tag": "dns_out",
+      "disableCache": false,
+      "disableFallback": false,
+      "disableFallbackIfMatch": false
     },
     "fakedns": [],
     "routing": {
@@ -34,9 +40,22 @@
       ]
     },
     "policy": {
+      "levels": {
+        "8": {
+          "handshake": 4,
+          "connIdle": 300,
+          "uplinkOnly": 1,
+          "downlinkOnly": 1,
+          "statsUserUplink": true,
+          "statsUserDownlink": true,
+          "bufferSize": 10240
+        }
+      },
       "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
+        "statsInboundUplink": true,
+        "statsInboundDownlink": true,
+        "statsOutboundUplink": true,
+        "statsOutboundDownlink": true
       }
     },
     "inbounds": [
@@ -51,19 +70,46 @@
         "sniffing": {
           "destOverride": [
             "http",
-            "tls"
+            "tls",
+            "quic"
           ],
-          "enabled": true
+          "enabled": true,
+          "metadataOnly": false,
+          "routeOnly": true
         },
-        "tag": "socks"
+        "tag": "socks",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       },
       {
         "port": 10809,
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "userLevel": 8,
+          "allowTransparent": false,
+          "timeout": 300
         },
-        "tag": "http"
+        "tag": "http",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       }
     ],
     "outbounds": [
@@ -4466,10 +4512,23 @@
         "tag": "dialer",
         "protocol": "freedom",
         "settings": {
+          "domainStrategy": "UseIPv4",
           "fragment": {
             "packets": "tlshello",
-            "length": "1-10",
+            "length": "1-3",
             "interval": "0-1"
+          }
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true,
+            "mark": 255
           }
         }
       },
@@ -4478,6 +4537,17 @@
         "protocol": "freedom",
         "settings": {
           "domainStrategy": "UseIPv4"
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
         }
       },
       {
@@ -4493,8 +4563,8 @@
       "subjectSelector": [
         "proxy"
       ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "5m",
+      "probeURL": "http://www.gstatic.com/generate_204",
+      "probeInterval": "30s",
       "enableConcurrency": true
     },
     "burstObservatory": {
@@ -4502,13 +4572,22 @@
         "proxy"
       ],
       "pingConfig": {
-        "destination": "http://www.google.com/gen_204",
-        "interval": "5m",
-        "timeout": "10s",
-        "sampling": 3
+        "destination": "http://www.gstatic.com/generate_204",
+        "interval": "10s",
+        "timeout": "4s",
+        "sampling": 5,
+        "connectivity": "http://cp.cloudflare.com/"
       }
     },
     "stats": {},
+    "api": {
+      "tag": "api",
+      "services": [
+        "HandlerService",
+        "LoggerService",
+        "StatsService"
+      ]
+    },
     "remarks": "⚡️ Fastest Location"
   },
   {
@@ -4518,9 +4597,15 @@
     "dns": {
       "queryStrategy": "UseIPv4",
       "servers": [
-        "https://1.0.0.1/dns-query"
+        "https://1.1.1.1/dns-query",
+        "https://1.0.0.1/dns-query",
+        "8.8.8.8",
+        "8.8.4.4"
       ],
-      "tag": "dns_out"
+      "tag": "dns_out",
+      "disableCache": false,
+      "disableFallback": false,
+      "disableFallbackIfMatch": false
     },
     "fakedns": [],
     "routing": {
@@ -4546,9 +4631,22 @@
       ]
     },
     "policy": {
+      "levels": {
+        "8": {
+          "handshake": 4,
+          "connIdle": 300,
+          "uplinkOnly": 1,
+          "downlinkOnly": 1,
+          "statsUserUplink": true,
+          "statsUserDownlink": true,
+          "bufferSize": 10240
+        }
+      },
       "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
+        "statsInboundUplink": true,
+        "statsInboundDownlink": true,
+        "statsOutboundUplink": true,
+        "statsOutboundDownlink": true
       }
     },
     "inbounds": [
@@ -4563,19 +4661,46 @@
         "sniffing": {
           "destOverride": [
             "http",
-            "tls"
+            "tls",
+            "quic"
           ],
-          "enabled": true
+          "enabled": true,
+          "metadataOnly": false,
+          "routeOnly": true
         },
-        "tag": "socks"
+        "tag": "socks",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       },
       {
         "port": 10809,
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "userLevel": 8,
+          "allowTransparent": false,
+          "timeout": 300
         },
-        "tag": "http"
+        "tag": "http",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       }
     ],
     "outbounds": [
@@ -6492,10 +6617,23 @@
         "tag": "dialer",
         "protocol": "freedom",
         "settings": {
+          "domainStrategy": "UseIPv4",
           "fragment": {
             "packets": "tlshello",
-            "length": "1-10",
+            "length": "1-3",
             "interval": "0-1"
+          }
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true,
+            "mark": 255
           }
         }
       },
@@ -6504,6 +6642,17 @@
         "protocol": "freedom",
         "settings": {
           "domainStrategy": "UseIPv4"
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
         }
       },
       {
@@ -6519,8 +6668,8 @@
       "subjectSelector": [
         "proxy"
       ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "5m",
+      "probeURL": "http://www.gstatic.com/generate_204",
+      "probeInterval": "30s",
       "enableConcurrency": true
     },
     "burstObservatory": {
@@ -6528,13 +6677,22 @@
         "proxy"
       ],
       "pingConfig": {
-        "destination": "http://www.google.com/gen_204",
-        "interval": "5m",
-        "timeout": "10s",
-        "sampling": 3
+        "destination": "http://www.gstatic.com/generate_204",
+        "interval": "10s",
+        "timeout": "4s",
+        "sampling": 5,
+        "connectivity": "http://cp.cloudflare.com/"
       }
     },
     "stats": {},
+    "api": {
+      "tag": "api",
+      "services": [
+        "HandlerService",
+        "LoggerService",
+        "StatsService"
+      ]
+    },
     "remarks": "🇺🇸 United States"
   },
   {
@@ -6544,9 +6702,15 @@
     "dns": {
       "queryStrategy": "UseIPv4",
       "servers": [
-        "https://1.0.0.1/dns-query"
+        "https://1.1.1.1/dns-query",
+        "https://1.0.0.1/dns-query",
+        "8.8.8.8",
+        "8.8.4.4"
       ],
-      "tag": "dns_out"
+      "tag": "dns_out",
+      "disableCache": false,
+      "disableFallback": false,
+      "disableFallbackIfMatch": false
     },
     "fakedns": [],
     "routing": {
@@ -6572,9 +6736,22 @@
       ]
     },
     "policy": {
+      "levels": {
+        "8": {
+          "handshake": 4,
+          "connIdle": 300,
+          "uplinkOnly": 1,
+          "downlinkOnly": 1,
+          "statsUserUplink": true,
+          "statsUserDownlink": true,
+          "bufferSize": 10240
+        }
+      },
       "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
+        "statsInboundUplink": true,
+        "statsInboundDownlink": true,
+        "statsOutboundUplink": true,
+        "statsOutboundDownlink": true
       }
     },
     "inbounds": [
@@ -6589,19 +6766,46 @@
         "sniffing": {
           "destOverride": [
             "http",
-            "tls"
+            "tls",
+            "quic"
           ],
-          "enabled": true
+          "enabled": true,
+          "metadataOnly": false,
+          "routeOnly": true
         },
-        "tag": "socks"
+        "tag": "socks",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       },
       {
         "port": 10809,
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "userLevel": 8,
+          "allowTransparent": false,
+          "timeout": 300
         },
-        "tag": "http"
+        "tag": "http",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       }
     ],
     "outbounds": [
@@ -7626,10 +7830,23 @@
         "tag": "dialer",
         "protocol": "freedom",
         "settings": {
+          "domainStrategy": "UseIPv4",
           "fragment": {
             "packets": "tlshello",
-            "length": "1-10",
+            "length": "1-3",
             "interval": "0-1"
+          }
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true,
+            "mark": 255
           }
         }
       },
@@ -7638,6 +7855,17 @@
         "protocol": "freedom",
         "settings": {
           "domainStrategy": "UseIPv4"
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
         }
       },
       {
@@ -7653,8 +7881,8 @@
       "subjectSelector": [
         "proxy"
       ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "5m",
+      "probeURL": "http://www.gstatic.com/generate_204",
+      "probeInterval": "30s",
       "enableConcurrency": true
     },
     "burstObservatory": {
@@ -7662,13 +7890,22 @@
         "proxy"
       ],
       "pingConfig": {
-        "destination": "http://www.google.com/gen_204",
-        "interval": "5m",
-        "timeout": "10s",
-        "sampling": 3
+        "destination": "http://www.gstatic.com/generate_204",
+        "interval": "10s",
+        "timeout": "4s",
+        "sampling": 5,
+        "connectivity": "http://cp.cloudflare.com/"
       }
     },
     "stats": {},
+    "api": {
+      "tag": "api",
+      "services": [
+        "HandlerService",
+        "LoggerService",
+        "StatsService"
+      ]
+    },
     "remarks": "🇩🇪 Germany"
   },
   {
@@ -7678,9 +7915,15 @@
     "dns": {
       "queryStrategy": "UseIPv4",
       "servers": [
-        "https://1.0.0.1/dns-query"
+        "https://1.1.1.1/dns-query",
+        "https://1.0.0.1/dns-query",
+        "8.8.8.8",
+        "8.8.4.4"
       ],
-      "tag": "dns_out"
+      "tag": "dns_out",
+      "disableCache": false,
+      "disableFallback": false,
+      "disableFallbackIfMatch": false
     },
     "fakedns": [],
     "routing": {
@@ -7706,9 +7949,22 @@
       ]
     },
     "policy": {
+      "levels": {
+        "8": {
+          "handshake": 4,
+          "connIdle": 300,
+          "uplinkOnly": 1,
+          "downlinkOnly": 1,
+          "statsUserUplink": true,
+          "statsUserDownlink": true,
+          "bufferSize": 10240
+        }
+      },
       "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
+        "statsInboundUplink": true,
+        "statsInboundDownlink": true,
+        "statsOutboundUplink": true,
+        "statsOutboundDownlink": true
       }
     },
     "inbounds": [
@@ -7723,19 +7979,46 @@
         "sniffing": {
           "destOverride": [
             "http",
-            "tls"
+            "tls",
+            "quic"
           ],
-          "enabled": true
+          "enabled": true,
+          "metadataOnly": false,
+          "routeOnly": true
         },
-        "tag": "socks"
+        "tag": "socks",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       },
       {
         "port": 10809,
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "userLevel": 8,
+          "allowTransparent": false,
+          "timeout": 300
         },
-        "tag": "http"
+        "tag": "http",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       }
     ],
     "outbounds": [
@@ -8341,10 +8624,23 @@
         "tag": "dialer",
         "protocol": "freedom",
         "settings": {
+          "domainStrategy": "UseIPv4",
           "fragment": {
             "packets": "tlshello",
-            "length": "1-10",
+            "length": "1-3",
             "interval": "0-1"
+          }
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true,
+            "mark": 255
           }
         }
       },
@@ -8353,6 +8649,17 @@
         "protocol": "freedom",
         "settings": {
           "domainStrategy": "UseIPv4"
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
         }
       },
       {
@@ -8368,8 +8675,8 @@
       "subjectSelector": [
         "proxy"
       ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "5m",
+      "probeURL": "http://www.gstatic.com/generate_204",
+      "probeInterval": "30s",
       "enableConcurrency": true
     },
     "burstObservatory": {
@@ -8377,13 +8684,22 @@
         "proxy"
       ],
       "pingConfig": {
-        "destination": "http://www.google.com/gen_204",
-        "interval": "5m",
-        "timeout": "10s",
-        "sampling": 3
+        "destination": "http://www.gstatic.com/generate_204",
+        "interval": "10s",
+        "timeout": "4s",
+        "sampling": 5,
+        "connectivity": "http://cp.cloudflare.com/"
       }
     },
     "stats": {},
+    "api": {
+      "tag": "api",
+      "services": [
+        "HandlerService",
+        "LoggerService",
+        "StatsService"
+      ]
+    },
     "remarks": "🇬🇧 United Kingdom"
   },
   {
@@ -8393,9 +8709,15 @@
     "dns": {
       "queryStrategy": "UseIPv4",
       "servers": [
-        "https://1.0.0.1/dns-query"
+        "https://1.1.1.1/dns-query",
+        "https://1.0.0.1/dns-query",
+        "8.8.8.8",
+        "8.8.4.4"
       ],
-      "tag": "dns_out"
+      "tag": "dns_out",
+      "disableCache": false,
+      "disableFallback": false,
+      "disableFallbackIfMatch": false
     },
     "fakedns": [],
     "routing": {
@@ -8421,9 +8743,22 @@
       ]
     },
     "policy": {
+      "levels": {
+        "8": {
+          "handshake": 4,
+          "connIdle": 300,
+          "uplinkOnly": 1,
+          "downlinkOnly": 1,
+          "statsUserUplink": true,
+          "statsUserDownlink": true,
+          "bufferSize": 10240
+        }
+      },
       "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
+        "statsInboundUplink": true,
+        "statsInboundDownlink": true,
+        "statsOutboundUplink": true,
+        "statsOutboundDownlink": true
       }
     },
     "inbounds": [
@@ -8438,19 +8773,46 @@
         "sniffing": {
           "destOverride": [
             "http",
-            "tls"
+            "tls",
+            "quic"
           ],
-          "enabled": true
+          "enabled": true,
+          "metadataOnly": false,
+          "routeOnly": true
         },
-        "tag": "socks"
+        "tag": "socks",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       },
       {
         "port": 10809,
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "userLevel": 8,
+          "allowTransparent": false,
+          "timeout": 300
         },
-        "tag": "http"
+        "tag": "http",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       }
     ],
     "outbounds": [
@@ -8699,10 +9061,23 @@
         "tag": "dialer",
         "protocol": "freedom",
         "settings": {
+          "domainStrategy": "UseIPv4",
           "fragment": {
             "packets": "tlshello",
-            "length": "1-10",
+            "length": "1-3",
             "interval": "0-1"
+          }
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true,
+            "mark": 255
           }
         }
       },
@@ -8711,6 +9086,17 @@
         "protocol": "freedom",
         "settings": {
           "domainStrategy": "UseIPv4"
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
         }
       },
       {
@@ -8726,8 +9112,8 @@
       "subjectSelector": [
         "proxy"
       ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "5m",
+      "probeURL": "http://www.gstatic.com/generate_204",
+      "probeInterval": "30s",
       "enableConcurrency": true
     },
     "burstObservatory": {
@@ -8735,13 +9121,22 @@
         "proxy"
       ],
       "pingConfig": {
-        "destination": "http://www.google.com/gen_204",
-        "interval": "5m",
-        "timeout": "10s",
-        "sampling": 3
+        "destination": "http://www.gstatic.com/generate_204",
+        "interval": "10s",
+        "timeout": "4s",
+        "sampling": 5,
+        "connectivity": "http://cp.cloudflare.com/"
       }
     },
     "stats": {},
+    "api": {
+      "tag": "api",
+      "services": [
+        "HandlerService",
+        "LoggerService",
+        "StatsService"
+      ]
+    },
     "remarks": "🇳🇱 Netherlands"
   },
   {
@@ -8751,9 +9146,15 @@
     "dns": {
       "queryStrategy": "UseIPv4",
       "servers": [
-        "https://1.0.0.1/dns-query"
+        "https://1.1.1.1/dns-query",
+        "https://1.0.0.1/dns-query",
+        "8.8.8.8",
+        "8.8.4.4"
       ],
-      "tag": "dns_out"
+      "tag": "dns_out",
+      "disableCache": false,
+      "disableFallback": false,
+      "disableFallbackIfMatch": false
     },
     "fakedns": [],
     "routing": {
@@ -8779,9 +9180,22 @@
       ]
     },
     "policy": {
+      "levels": {
+        "8": {
+          "handshake": 4,
+          "connIdle": 300,
+          "uplinkOnly": 1,
+          "downlinkOnly": 1,
+          "statsUserUplink": true,
+          "statsUserDownlink": true,
+          "bufferSize": 10240
+        }
+      },
       "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
+        "statsInboundUplink": true,
+        "statsInboundDownlink": true,
+        "statsOutboundUplink": true,
+        "statsOutboundDownlink": true
       }
     },
     "inbounds": [
@@ -8796,19 +9210,46 @@
         "sniffing": {
           "destOverride": [
             "http",
-            "tls"
+            "tls",
+            "quic"
           ],
-          "enabled": true
+          "enabled": true,
+          "metadataOnly": false,
+          "routeOnly": true
         },
-        "tag": "socks"
+        "tag": "socks",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       },
       {
         "port": 10809,
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "userLevel": 8,
+          "allowTransparent": false,
+          "timeout": 300
         },
-        "tag": "http"
+        "tag": "http",
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
+        }
       }
     ],
     "outbounds": [
@@ -9446,10 +9887,23 @@
         "tag": "dialer",
         "protocol": "freedom",
         "settings": {
+          "domainStrategy": "UseIPv4",
           "fragment": {
             "packets": "tlshello",
-            "length": "1-10",
+            "length": "1-3",
             "interval": "0-1"
+          }
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true,
+            "mark": 255
           }
         }
       },
@@ -9458,6 +9912,17 @@
         "protocol": "freedom",
         "settings": {
           "domainStrategy": "UseIPv4"
+        },
+        "streamSettings": {
+          "sockopt": {
+            "tcpKeepAliveInterval": 30,
+            "tcpKeepAliveIdle": 300,
+            "tcpUserTimeout": 10000,
+            "tcpCongestion": "bbr",
+            "tcpWindowClamp": 600,
+            "tcpMptcp": false,
+            "tcpNoDelay": true
+          }
         }
       },
       {
@@ -9473,8 +9938,8 @@
       "subjectSelector": [
         "proxy"
       ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "5m",
+      "probeURL": "http://www.gstatic.com/generate_204",
+      "probeInterval": "30s",
       "enableConcurrency": true
     },
     "burstObservatory": {
@@ -9482,13 +9947,22 @@
         "proxy"
       ],
       "pingConfig": {
-        "destination": "http://www.google.com/gen_204",
-        "interval": "5m",
-        "timeout": "10s",
-        "sampling": 3
+        "destination": "http://www.gstatic.com/generate_204",
+        "interval": "10s",
+        "timeout": "4s",
+        "sampling": 5,
+        "connectivity": "http://cp.cloudflare.com/"
       }
     },
     "stats": {},
+    "api": {
+      "tag": "api",
+      "services": [
+        "HandlerService",
+        "LoggerService",
+        "StatsService"
+      ]
+    },
     "remarks": "🇫🇷 France"
   }
 ]
