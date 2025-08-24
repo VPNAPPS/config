@@ -93,7 +93,7 @@ def fetch_and_process_configs():
             print(f"Processing {len(config_list)} configs for {country_name} ({country_code})")
             
             # Sort by speed (highest first) for better organization
-            config_list.sort(key=lambda x: x['speed'], reverse=True)
+            config_list.sort(key=lambda x: x['speed'], reverse=False)
             
             # Process each config for this country
             content = ""
