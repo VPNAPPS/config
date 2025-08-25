@@ -8,7 +8,7 @@ import subprocess
 import urllib.parse
 import re
 import base64
-
+from v2rayng import uri_to_json
 # Import added for concurrency
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -143,7 +143,9 @@ def build_proxies_from_content(content: str, check: bool = True) -> List[dict]:
         try:
             if "vless" in line:
                 line = fix_vless_url(line)
-            config = json.loads(generateConfig(line))
+            p = json.loads(uri_to_json(line))
+            config = build_config_json_from_proxy("a", p)
+            print("kirrrr",config)
             # Store the config and its original metadata (line, index) for later.
             tasks_to_process.append({"config": config, "line": line, "index": i + 1})
         except Exception as e:
@@ -183,6 +185,11 @@ def build_proxies_from_content(content: str, check: bool = True) -> List[dict]:
 
     return proxies
 
+def build_config_json_from_proxy(name: str, proxy: dict) -> dict:
+    template = copy.deepcopy(TEMPLATE)
+    template["remarks"] = name
+    template["outbounds"].insert(0, proxy)
+    return template
 
 def build_config_json_from_proxies(name: str, proxies: list) -> dict:
     template = copy.deepcopy(TEMPLATE)
