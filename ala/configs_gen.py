@@ -122,8 +122,8 @@ def fetch_and_process_configs():
             
             for config_item in all_configs[source]:
                 config_id = extract_config_identifier(config_item['config'])
-                if config_id in main_config_identifiers:
-                    matching_configs.append(config_item)
+                #if config_id in main_config_identifiers:
+                matching_configs.append(config_item)
             
             print(f"Found {len(matching_configs)} {source} configs that match main configs")
             filtered_configs.extend(matching_configs)
