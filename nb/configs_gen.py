@@ -4,27 +4,46 @@ from collections import defaultdict
 import copy
 import os
 from dotenv import load_dotenv
+import pycountry
 
 # Load environment variables from .env file
 load_dotenv()
 
-EMOJI_TO_COUNTRY = {
-    "🇩🇪": "Germany",
-    "🇳🇱": "Netherlands",
-    "🇫🇮": "Finland",
-    "🇺🇸": "USA",
-    "🇬🇧": "UK",
-    "🏴󠁧󠁢󠁥󠁮󠁧󠁿": "England",
-    "🇨🇦": "Canada",
-    "🇫🇷": "France",
-    "🇯🇵": "Japan",
-    "🇦🇺": "Australia",
-    # Add more mappings as needed
-    "(nm_zorp)": "Zorp",
-    "🛜": "WiFi",
-    "✅": "Checked",
-    "❌": "Blocked"
-}
+def emoji_to_country_name(emoji):
+    """
+    Convert flag emoji to country name using pycountry.
+    Flag emojis are made of regional indicator symbols that correspond to ISO alpha-2 codes.
+    """
+    if not is_flag_emoji(emoji):
+        # Handle special cases that aren't flag emojis
+        special_cases = {
+            "(nm_zorp)": "Zorp",
+            "🛜": "WiFi",
+            "✅": "Checked",
+            "❌": "Blocked",
+            "🏴󠁧󠁢󠁥󠁮󠁧󠁿": "England"  # England flag is a special case
+        }
+        return special_cases.get(emoji, emoji)
+    
+    # Convert flag emoji to country code
+    # Flag emojis use regional indicator symbols (U+1F1E6 to U+1F1FF)
+    # Each corresponds to A-Z, so we convert back to get the country code
+    if len(emoji) == 2:
+        try:
+            # Convert each character back to its corresponding letter
+            code = ''.join(chr(ord(char) - 0x1F1E6 + ord('A')) for char in emoji)
+            
+            # Look up the country using pycountry
+            country = pycountry.countries.get(alpha_2=code)
+            if country:
+                return country.name
+            else:
+                return emoji  # Return emoji if country not found
+        except (ValueError, AttributeError):
+            return emoji
+    
+    return emoji
+
 with open("../template.json", "r") as f:
   TEMPLATE = json.loads(f.read())
 
@@ -139,8 +158,8 @@ def add_to_template(grouped_data):
         
         # Keep the original balancer selector unchanged (it stays as ["proxy"])
         
-        # Set the remarks with country name
-        country_name = EMOJI_TO_COUNTRY.get(emoji, emoji)
+        # Set the remarks with country name using pycountry
+        country_name = emoji_to_country_name(emoji)
         template["remarks"] = f"{emoji} {country_name}"
         
         configs.append(template)
