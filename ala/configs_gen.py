@@ -3,6 +3,7 @@ import re
 import json
 import pycountry
 from collections import defaultdict
+from datetime import datetime, timezone, timedelta
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from create_configs_json import build_config
@@ -41,6 +42,52 @@ def get_country_info(country_code):
     except Exception:
         # Fallback case for any errors
         return country_code, '🏳️'
+
+def check_file_last_commit(file_path):
+    """Check if a file's last commit was less than 2 hours ago"""
+    try:
+        # GitHub API URL for commits on the specific file
+        api_url = f"https://api.github.com/repos/VPNAPPS/checker/commits"
+        params = {
+            'path': file_path,
+            'per_page': 1  # We only need the latest commit
+        }
+        
+        print(f"Checking last commit time for {file_path}...")
+        response = requests.get(api_url, params=params)
+        response.raise_for_status()
+        
+        commits = response.json()
+        if not commits:
+            print(f"❌ No commits found for {file_path}")
+            return False
+        
+        # Get the commit date
+        commit_date_str = commits[0]['commit']['committer']['date']
+        commit_date = datetime.fromisoformat(commit_date_str.replace('Z', '+00:00'))
+        
+        # Calculate time difference
+        now = datetime.now(timezone.utc)
+        time_diff = now - commit_date
+        hours_ago = time_diff.total_seconds() / 3600
+        
+        print(f"📅 {file_path} last commit: {commit_date.strftime('%Y-%m-%d %H:%M:%S UTC')} ({hours_ago:.1f} hours ago)")
+        
+        # Return True if less than 2 hours ago
+        is_recent = hours_ago < 2
+        if is_recent:
+            print(f"✅ {file_path} is recent (less than 2 hours ago)")
+        else:
+            print(f"❌ {file_path} is too old (more than 2 hours ago)")
+        
+        return is_recent
+        
+    except requests.RequestException as e:
+        print(f"❌ Error checking commit time for {file_path}: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Error processing commit data for {file_path}: {e}")
+        return False
 
 def parse_config_line(line):
     """Parse a single configuration line and extract country, speed, and config"""
@@ -99,44 +146,69 @@ def fetch_and_process_configs():
         'tuco': "https://github.com/VPNAPPS/checker/raw/refs/heads/main/configs-tuco.txt"
     }
     
+    # File paths for commit checking
+    file_paths = {
+        'gonzo': 'configs-gonzo.txt',
+        'tuco': 'configs-tuco.txt'
+    }
+    
     try:
-        # Fetch configs from all URLs
-        all_configs = {}
-        for source, url in urls.items():
-            all_configs[source] = fetch_configs_from_url(url)
-            print(f"Fetched {len(all_configs[source])} configs from {source}")
-        
-        # Create a set of main config identifiers for comparison
-        main_config_identifiers = set()
-        for config_item in all_configs['main']:
-            main_config_identifiers.add(extract_config_identifier(config_item['config']))
-        
-        print(f"Main configs set contains {len(main_config_identifiers)} unique configs")
-        
-        # Process gonzo and tuco configs, keeping only those that exist in main
-        filtered_configs = []
+        # Check commit times for gonzo and tuco files
+        valid_sources = ['main']  # Always include main
         
         for source in ['gonzo', 'tuco']:
-            print(f"\nProcessing {source} configs...")
-            matching_configs = []
-            
-            for config_item in all_configs[source]:
-                config_id = extract_config_identifier(config_item['config'])
-                #if config_id in main_config_identifiers:
-                matching_configs.append(config_item)
-            
-            print(f"Found {len(matching_configs)} {source} configs that match main configs")
-            filtered_configs.extend(matching_configs)
+            if check_file_last_commit(file_paths[source]):
+                valid_sources.append(source)
+            else:
+                print(f"⚠️ Skipping {source} due to old commit time")
         
-        print(f"\nTotal filtered configs from gonzo and tuco: {len(filtered_configs)}")
+        print(f"\nValid sources to process: {valid_sources}")
         
-        # Decide which configs to use
-        if len(filtered_configs) >= 10:
-            print("Using filtered configs from gonzo and tuco (>=10 configs found)")
-            configs_to_process = filtered_configs
-        else:
-            print("Less than 10 filtered configs found, falling back to main configs")
+        # Fetch configs from valid URLs only
+        all_configs = {}
+        for source in valid_sources:
+            all_configs[source] = fetch_configs_from_url(urls[source])
+            print(f"Fetched {len(all_configs[source])} configs from {source}")
+        
+        # If we only have main configs, use them directly
+        if len(valid_sources) == 1 and valid_sources[0] == 'main':
+            print("Only main configs available, using them directly")
             configs_to_process = all_configs['main']
+        else:
+            # Create a set of main config identifiers for comparison
+            main_config_identifiers = set()
+            for config_item in all_configs['main']:
+                main_config_identifiers.add(extract_config_identifier(config_item['config']))
+            
+            print(f"Main configs set contains {len(main_config_identifiers)} unique configs")
+            
+            # Process valid gonzo and tuco configs, keeping only those that exist in main
+            filtered_configs = []
+            
+            for source in ['gonzo', 'tuco']:
+                if source not in valid_sources:
+                    continue
+                    
+                print(f"\nProcessing {source} configs...")
+                matching_configs = []
+                
+                for config_item in all_configs[source]:
+                    config_id = extract_config_identifier(config_item['config'])
+                    #if config_id in main_config_identifiers:
+                    matching_configs.append(config_item)
+                
+                print(f"Found {len(matching_configs)} {source} configs that match main configs")
+                filtered_configs.extend(matching_configs)
+            
+            print(f"\nTotal filtered configs from valid sources: {len(filtered_configs)}")
+            
+            # Decide which configs to use
+            if len(filtered_configs) >= 10:
+                print("Using filtered configs from valid sources (>=10 configs found)")
+                configs_to_process = filtered_configs
+            else:
+                print("Less than 10 filtered configs found, falling back to main configs")
+                configs_to_process = all_configs['main']
         
         # Group configs by country
         country_configs = defaultdict(list)
