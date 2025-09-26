@@ -86,24 +86,25 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "vmess",
+        "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "47.242.186.1",
-              "port": 5043,
+              "address": "47.83.203.20",
+              "port": 43975,
               "users": [
                 {
-                  "id": "93c35277-ee3f-4ab2-9d9e-462b97a8795f",
-                  "security": "auto",
-                  "level": 0
+                  "id": "b0dabbad-1417-4ce4-b09e-7719c937fc48",
+                  "level": 0,
+                  "encryption": "none"
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "kcp"
+          "network": "tcp",
+          "security": "none"
         }
       },
       {
@@ -264,6 +265,25 @@
     "outbounds": [
       {
         "tag": "proxy1",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "153.121.51.214",
+              "method": "aes-128-gcm",
+              "ota": false,
+              "password": "10086",
+              "port": 10087,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy2",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -285,26 +305,29 @@
         }
       },
       {
-        "tag": "proxy2",
-        "protocol": "shadowsocks",
+        "tag": "proxy3",
+        "protocol": "vmess",
         "settings": {
-          "servers": [
+          "vnext": [
             {
-              "address": "153.121.51.214",
-              "method": "aes-128-gcm",
-              "ota": false,
-              "password": "10086",
-              "port": 10087,
-              "level": 0
+              "address": "47.74.14.30",
+              "port": 5106,
+              "users": [
+                {
+                  "id": "1cc84891-1657-4f71-97d0-287df565820e",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp"
+          "network": "kcp"
         }
       },
       {
-        "tag": "proxy3",
+        "tag": "proxy4",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -443,7 +466,7 @@
         "settings": {
           "servers": [
             {
-              "address": "217.197.160.84",
+              "address": "spevoy.missionsec.us",
               "ota": false,
               "password": "R3SuZDAZXDO3FYqxwK36l7gpSIBTFCxlzc89a7qg3S9p8BOCeACSFaA8nxeD2ZlT5Nl4O",
               "port": 443,
@@ -504,28 +527,6 @@
             "allowInsecure": false,
             "serverName": "spevoy.missionsec.us"
           }
-        }
-      },
-      {
-        "tag": "proxy4",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.219.14.179",
-              "port": 22525,
-              "users": [
-                {
-                  "id": "cabe905a-28ea-4e7e-c34d-2fa38604001f",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
         }
       },
       {
@@ -708,16 +709,19 @@
       },
       {
         "tag": "proxy4",
-        "protocol": "shadowsocks",
+        "protocol": "vmess",
         "settings": {
-          "servers": [
+          "vnext": [
             {
-              "address": "103.111.114.29",
-              "method": "chacha20-ietf-poly1305",
-              "ota": false,
-              "password": "360e21d21977dc11",
-              "port": 57456,
-              "level": 0
+              "address": "94.136.185.230",
+              "port": 10534,
+              "users": [
+                {
+                  "id": "b01c7ef9-33ec-41f6-bfbf-77ddc4d21649",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
             }
           ]
         },
@@ -788,7 +792,8 @@
           ]
         },
         "streamSettings": {
-          "network": "tcp"
+          "network": "raw",
+          "security": "none"
         }
       },
       {
@@ -815,19 +820,16 @@
       },
       {
         "tag": "proxy9",
-        "protocol": "vmess",
+        "protocol": "shadowsocks",
         "settings": {
-          "vnext": [
+          "servers": [
             {
-              "address": "94.136.185.230",
-              "port": 10534,
-              "users": [
-                {
-                  "id": "b01c7ef9-33ec-41f6-bfbf-77ddc4d21649",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
+              "address": "103.111.114.29",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "360e21d21977dc11",
+              "port": 57456,
+              "level": 0
             }
           ]
         },
@@ -860,6 +862,50 @@
       },
       {
         "tag": "proxy11",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "94.136.185.230",
+              "port": 10534,
+              "users": [
+                {
+                  "id": "b01c7ef9-33ec-41f6-bfbf-77ddc4d21649",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy12",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "94.136.185.230",
+              "port": 10534,
+              "users": [
+                {
+                  "id": "b01c7ef9-33ec-41f6-bfbf-77ddc4d21649",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy13",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -994,21 +1040,71 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "shadowsocks",
+        "protocol": "trojan",
         "settings": {
           "servers": [
             {
-              "address": "185.126.239.250",
-              "method": "chacha20-ietf-poly1305",
+              "address": "louber.missionsec.us",
               "ota": false,
-              "password": "f8f7aCzcPKbsF8p3",
-              "port": 990,
+              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
+              "port": 443,
               "level": 0
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp"
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "louber.missionsec.us"
+          }
+        }
+      },
+      {
+        "tag": "proxy2",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "louber.missionsec.us",
+              "ota": false,
+              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
+              "port": 443,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "louber.missionsec.us"
+          }
+        }
+      },
+      {
+        "tag": "proxy3",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "louber.missionsec.us",
+              "ota": false,
+              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
+              "port": 443,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "louber.missionsec.us"
+          }
         }
       },
       {
@@ -1036,7 +1132,7 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇷🇺 Russian Federation"
+    "remarks": "🇦🇺 Australia"
   },
   {
     "log": {
@@ -1276,8 +1372,7 @@
           ]
         },
         "streamSettings": {
-          "network": "raw",
-          "security": "none"
+          "network": "tcp"
         }
       },
       {
@@ -1388,6 +1483,29 @@
         },
         "streamSettings": {
           "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy7",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "46.250.243.56",
+              "port": 50394,
+              "users": [
+                {
+                  "id": "a75f3f95-ad4e-4498-fc72-dd740dd02bfc",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "raw",
+          "security": "none"
         }
       },
       {
@@ -1508,11 +1626,11 @@
         "settings": {
           "servers": [
             {
-              "address": "119.59.98.58",
-              "method": "chacha20-ietf-poly1305",
+              "address": "156.146.62.164",
+              "method": "aes-128-gcm",
               "ota": false,
-              "password": "f8f7aCzcPKbsF8p3",
-              "port": 990,
+              "password": "shadowsocks",
+              "port": 443,
               "level": 0
             }
           ]
@@ -1546,233 +1664,6 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇹🇭 Thailand"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
-      ],
-      "tag": "dns_out"
-    },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "38.48.124.130",
-              "ota": false,
-              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
-              "port": 443,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "louber.missionsec.us"
-          }
-        }
-      },
-      {
-        "tag": "proxy2",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "louber.missionsec.us",
-              "ota": false,
-              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
-              "port": 443,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "louber.missionsec.us"
-          }
-        }
-      },
-      {
-        "tag": "proxy3",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "louber.missionsec.us",
-              "ota": false,
-              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
-              "port": 443,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "louber.missionsec.us"
-          }
-        }
-      },
-      {
-        "tag": "proxy4",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "louber.missionsec.us",
-              "ota": false,
-              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
-              "port": 443,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "louber.missionsec.us"
-          }
-        }
-      },
-      {
-        "tag": "proxy5",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "louber.missionsec.us",
-              "ota": false,
-              "password": "BAu7ZSyD3IZppnCOxCzaFXje3SECzZgX83e3x7yZA8SDCacyagKFlEO6O0AlTSwDDe4SF",
-              "port": 443,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "louber.missionsec.us"
-          }
-        }
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇦🇺 Australia"
+    "remarks": "🇨🇭 Switzerland"
   }
 ]
