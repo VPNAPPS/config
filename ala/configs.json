@@ -85,264 +85,15 @@
     ],
     "outbounds": [
       {
-        "tag": "proxy1",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "154.205.159.100",
-              "method": "chacha20-ietf-poly1305",
-              "ota": false,
-              "password": "f8f7aCzcPKbsF8p3",
-              "port": 990,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "3-5",
-            "length": "4-8",
-            "packets": "1-1"
-          }
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇮🇩 Indonesia"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
-      ],
-      "tag": "dns_out"
-    },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": false
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "203.23.128.92",
-              "method": "chacha20-ietf-poly1305",
-              "ota": false,
-              "password": "ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=",
-              "port": 990,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy2",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.218.120.209",
-              "port": 15160,
-              "users": [
-                {
-                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
         "tag": "proxy3",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.218.120.209",
-              "port": 15160,
-              "users": [
-                {
-                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy4",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.218.120.209",
-              "port": 15160,
-              "users": [
-                {
-                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy5",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "8.218.120.209",
-              "port": 15160,
-              "users": [
-                {
-                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy6",
         "protocol": "trojan",
         "settings": {
           "servers": [
             {
-              "address": "203.198.122.129",
+              "address": "160.16.81.84",
               "ota": false,
-              "password": "BxceQaOe",
-              "port": 443,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 2760,
               "level": 0
             }
           ]
@@ -352,21 +103,44 @@
           "security": "tls",
           "tlsSettings": {
             "allowInsecure": false,
-            "serverName": "203.198.122.129"
+            "serverName": "www.nintendogames.net"
           }
         }
       },
       {
-        "tag": "proxy7",
+        "tag": "proxy4",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "160.16.124.55",
+              "ota": false,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 5553,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
+        }
+      },
+      {
+        "tag": "proxy5",
         "protocol": "shadowsocks",
         "settings": {
           "servers": [
             {
-              "address": "45.82.252.109",
+              "address": "134.122.174.192",
               "method": "chacha20-ietf-poly1305",
               "ota": false,
-              "password": "ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=",
-              "port": 990,
+              "password": "5662368d-15f5-4283-88da-9116767478ac",
+              "port": 12222,
               "level": 0
             }
           ]
@@ -376,130 +150,7 @@
         }
       },
       {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "3-5",
-            "length": "4-8",
-            "packets": "1-1"
-          }
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇭🇰 Hong Kong"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
-      ],
-      "tag": "dns_out"
-    },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": false
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
+        "tag": "proxy6",
         "protocol": "vmess",
         "settings": {
           "vnext": [
@@ -513,109 +164,6 @@
                   "level": 0
                 }
               ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy2",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "134.122.174.192",
-              "method": "chacha20-ietf-poly1305",
-              "ota": false,
-              "password": "5662368d-15f5-4283-88da-9116767478ac",
-              "port": 12222,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy3",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "160.16.124.55",
-              "ota": false,
-              "password": "2274c52572e721086f8bd8f88984643c",
-              "port": 5553,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "www.nintendogames.net"
-          }
-        }
-      },
-      {
-        "tag": "proxy4",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "160.16.124.55",
-              "ota": false,
-              "password": "2274c52572e721086f8bd8f88984643c",
-              "port": 5553,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "www.nintendogames.net"
-          }
-        }
-      },
-      {
-        "tag": "proxy5",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "134.122.174.192",
-              "method": "chacha20-ietf-poly1305",
-              "ota": false,
-              "password": "beed149e-d2a2-4944-82c7-3d1afb8a6e4f",
-              "port": 12222,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy6",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "134.122.174.192",
-              "method": "chacha20-ietf-poly1305",
-              "ota": false,
-              "password": "5662368d-15f5-4283-88da-9116767478ac",
-              "port": 12222,
-              "level": 0
             }
           ]
         },
@@ -647,6 +195,90 @@
       },
       {
         "tag": "proxy8",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "134.122.174.192",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "5662368d-15f5-4283-88da-9116767478ac",
+              "port": 12222,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy9",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "160.16.124.55",
+              "ota": false,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 5553,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
+        }
+      },
+      {
+        "tag": "proxy10",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "134.122.174.192",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "beed149e-d2a2-4944-82c7-3d1afb8a6e4f",
+              "port": 12222,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy11",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "160.16.124.55",
+              "ota": false,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 5553,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
+        }
+      },
+      {
+        "tag": "proxy13",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -668,7 +300,7 @@
         }
       },
       {
-        "tag": "proxy9",
+        "tag": "proxy14",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -814,38 +446,15 @@
     ],
     "outbounds": [
       {
-        "tag": "proxy1",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "160.16.132.158",
-              "ota": false,
-              "password": "2274c52572e721086f8bd8f88984643c",
-              "port": 1334,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "www.nintendogames.net"
-          }
-        }
-      },
-      {
         "tag": "proxy2",
         "protocol": "trojan",
         "settings": {
           "servers": [
             {
-              "address": "160.16.132.158",
+              "address": "160.16.196.59",
               "ota": false,
               "password": "2274c52572e721086f8bd8f88984643c",
-              "port": 1334,
+              "port": 3169,
               "level": 0
             }
           ]
@@ -865,6 +474,29 @@
         "settings": {
           "servers": [
             {
+              "address": "160.16.196.59",
+              "ota": false,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 3169,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
+        }
+      },
+      {
+        "tag": "proxy4",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
               "address": "160.16.132.158",
               "ota": false,
               "password": "2274c52572e721086f8bd8f88984643c",
@@ -883,26 +515,76 @@
         }
       },
       {
-        "tag": "proxy4",
-        "protocol": "shadowsocks",
+        "tag": "proxy5",
+        "protocol": "trojan",
         "settings": {
           "servers": [
             {
-              "address": "153.121.43.183",
-              "method": "aes-128-gcm",
+              "address": "160.16.196.59",
               "ota": false,
-              "password": "10086",
-              "port": 10087,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 3169,
               "level": 0
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp"
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
         }
       },
       {
-        "tag": "proxy5",
+        "tag": "proxy6",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "160.16.132.158",
+              "ota": false,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 1334,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
+        }
+      },
+      {
+        "tag": "proxy7",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "160.16.132.158",
+              "ota": false,
+              "password": "2274c52572e721086f8bd8f88984643c",
+              "port": 1334,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "www.nintendogames.net"
+          }
+        }
+      },
+      {
+        "tag": "proxy8",
         "protocol": "shadowsocks",
         "settings": {
           "servers": [
@@ -913,28 +595,6 @@
               "password": "XLOrvLWkCBBBxLqSEe9S8lnC5PLsNfRh",
               "port": 443,
               "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "tag": "proxy6",
-        "protocol": "vmess",
-        "settings": {
-          "vnext": [
-            {
-              "address": "109.123.231.39",
-              "port": 47443,
-              "users": [
-                {
-                  "id": "9e7e9017-ce08-4f50-cc20-2f9bca478072",
-                  "security": "auto",
-                  "level": 0
-                }
-              ]
             }
           ]
         },
@@ -1067,6 +727,559 @@
     "outbounds": [
       {
         "tag": "proxy1",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.218.120.209",
+              "port": 15160,
+              "users": [
+                {
+                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy2",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "203.198.122.129",
+              "ota": false,
+              "password": "BxceQaOe",
+              "port": 443,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "203.198.122.129"
+          }
+        }
+      },
+      {
+        "tag": "proxy3",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.218.120.209",
+              "port": 15160,
+              "users": [
+                {
+                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy4",
+        "protocol": "vmess",
+        "settings": {
+          "vnext": [
+            {
+              "address": "8.218.120.209",
+              "port": 15160,
+              "users": [
+                {
+                  "id": "540a9fd9-9dc8-434f-c971-a10e9befd7fa",
+                  "security": "auto",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy5",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "45.82.252.109",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=",
+              "port": 990,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy6",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "rhk02.ppofo.biz",
+              "method": "aes-256-gcm",
+              "ota": false,
+              "password": "8fa80831-c48b-470a-b08c-b5fce62563b4",
+              "port": 10002,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "3-5",
+            "length": "4-8",
+            "packets": "1-1"
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "http://www.google.com/gen_204",
+      "probeInterval": "1m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇭🇰 Hong Kong"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://9.9.9.9/dns-query"
+      ],
+      "tag": "dns_out"
+    },
+    "fakedns": [
+      {
+        "ipPool": "198.18.0.0/15",
+        "poolSize": 65535
+      }
+    ],
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks"
+          ],
+          "network": "udp",
+          "port": 53,
+          "outboundTag": "dns-out"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy2",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "38.54.107.101",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=",
+              "port": 990,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "3-5",
+            "length": "4-8",
+            "packets": "1-1"
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "http://www.google.com/gen_204",
+      "probeInterval": "1m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇹🇼 Taiwan"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://9.9.9.9/dns-query"
+      ],
+      "tag": "dns_out"
+    },
+    "fakedns": [
+      {
+        "ipPool": "198.18.0.0/15",
+        "poolSize": 65535
+      }
+    ],
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks"
+          ],
+          "network": "udp",
+          "port": 53,
+          "outboundTag": "dns-out"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "103.111.114.29",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "360e21d21977dc11",
+              "port": 57456,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "3-5",
+            "length": "4-8",
+            "packets": "1-1"
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "http://www.google.com/gen_204",
+      "probeInterval": "1m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇮🇳 India"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://9.9.9.9/dns-query"
+      ],
+      "tag": "dns_out"
+    },
+    "fakedns": [
+      {
+        "ipPool": "198.18.0.0/15",
+        "poolSize": 65535
+      }
+    ],
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks"
+          ],
+          "network": "udp",
+          "port": 53,
+          "outboundTag": "dns-out"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "119.59.98.58",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "f8f7aCzcPKbsF8p3",
+              "port": 990,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "tag": "proxy2",
         "protocol": "shadowsocks",
         "settings": {
           "servers": [
@@ -1085,12 +1298,135 @@
         }
       },
       {
-        "tag": "proxy2",
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "3-5",
+            "length": "4-8",
+            "packets": "1-1"
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "http://www.google.com/gen_204",
+      "probeInterval": "1m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇹🇭 Thailand"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://9.9.9.9/dns-query"
+      ],
+      "tag": "dns_out"
+    },
+    "fakedns": [
+      {
+        "ipPool": "198.18.0.0/15",
+        "poolSize": 65535
+      }
+    ],
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks"
+          ],
+          "network": "udp",
+          "port": 53,
+          "outboundTag": "dns-out"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
         "protocol": "shadowsocks",
         "settings": {
           "servers": [
             {
-              "address": "119.59.98.58",
+              "address": "154.205.159.100",
               "method": "chacha20-ietf-poly1305",
               "ota": false,
               "password": "f8f7aCzcPKbsF8p3",
@@ -1139,7 +1475,7 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇹🇭 Thailand"
+    "remarks": "🇮🇩 Indonesia"
   },
   {
     "log": {
@@ -1393,11 +1729,11 @@
         "settings": {
           "servers": [
             {
-              "address": "38.54.107.101",
+              "address": "45.83.131.43",
               "method": "chacha20-ietf-poly1305",
               "ota": false,
-              "password": "ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=",
-              "port": 990,
+              "password": "HfAiyrdFbKJuKIQkGjvJrDFefmH8YDSC",
+              "port": 443,
               "level": 0
             }
           ]
@@ -1442,7 +1778,7 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇹🇼 Taiwan"
+    "remarks": "🇸🇮 Slovenia"
   },
   {
     "log": {
@@ -1531,25 +1867,21 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "vless",
+        "protocol": "shadowsocks",
         "settings": {
-          "vnext": [
+          "servers": [
             {
-              "address": "fx.ircloudmarket.com",
-              "port": 80,
-              "users": [
-                {
-                  "id": "25534285-7978-4239-9b25-8f3f1d8c2234",
-                  "level": 0,
-                  "encryption": "none"
-                }
-              ]
+              "address": "38.60.192.176",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "ARgvGZywA+gacgGV26Bvmu05+wZmRW/j+AdU+Z8Bt44=",
+              "port": 990,
+              "level": 0
             }
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
-          "security": "none"
+          "network": "tcp"
         }
       },
       {
@@ -1588,6 +1920,148 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇦🇿 Azerbaijan"
+    "remarks": "🇲🇾 Malaysia"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://9.9.9.9/dns-query"
+      ],
+      "tag": "dns_out"
+    },
+    "fakedns": [
+      {
+        "ipPool": "198.18.0.0/15",
+        "poolSize": 65535
+      }
+    ],
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks"
+          ],
+          "network": "udp",
+          "port": 53,
+          "outboundTag": "dns-out"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "tph01.ppofo.biz",
+              "method": "aes-256-gcm",
+              "ota": false,
+              "password": "8fa80831-c48b-470a-b08c-b5fce62563b4",
+              "port": 20001,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "3-5",
+            "length": "4-8",
+            "packets": "1-1"
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "http://www.google.com/gen_204",
+      "probeInterval": "1m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇵🇭 Philippines"
   }
 ]
