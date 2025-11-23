@@ -131,6 +131,11 @@ for config in merged_list:
 
 # Final output
 final_config = build_config_json_from_proxies("⚡️ Fastest Location", proxies)
+final_config["ads"] = {
+    "inter_bitcoin": None,
+    "native_bitcoin": None,
+    "bitcoin_ratio": 0.5
+}
 merged_list.insert(0, final_config)
 
 with open("config.json", 'w', encoding='utf-8') as f:
