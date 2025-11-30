@@ -126,7 +126,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -203,7 +203,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -280,7 +280,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -357,7 +357,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -434,7 +434,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -511,7 +511,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -588,7 +588,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -788,7 +788,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -865,7 +865,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -942,7 +942,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -1019,7 +1019,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -1096,7 +1096,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -1173,7 +1173,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -1250,7 +1250,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-1.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -3014,597 +3014,5 @@
     },
     "stats": {},
     "remarks": "🇫🇮 Finland ⛓️ REAL [TLS]"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
-      ],
-      "tag": "dns_out"
-    },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy5",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "206.238.236.206",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "proxy4",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "206.238.236.79",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "proxy3",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "206.238.236.55",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "proxy2",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "206.238.236.89",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "proxy1",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "206.238.236.61",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "proxy0",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "85.192.37.136",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "proxy",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "15.204.94.86",
-              "port": 465,
-              "users": [
-                {
-                  "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "auto",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "smtp.zoho.com",
-            "show": false,
-            "publicKey": "-3FYNptvHNKGKULt4jOkSqSfBbpl9ef_ijzo_8I7OXk",
-            "shortId": "7f2798f9",
-            "fingerprint": "random"
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "0-1",
-            "length": "4-8",
-            "packets": "1-1"
-          }
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇺🇸 United States ⛓️ REAL [TLS]"
   }
 ]
