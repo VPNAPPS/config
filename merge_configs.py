@@ -134,7 +134,10 @@ final_config = build_config_json_from_proxies("⚡️ Fastest Location", proxies
 final_config["ads"] = {
     "inter_bitcoin": None,
     "native_bitcoin": None,
-    "bitcoin_ratio": 0.5
+    "bitcoin_ratio": 0.5,
+    "foxray_ratio": 0.5,
+    "inter_foxray": None,
+    "native_foxray": None,
 }
 merged_list.insert(0, final_config)
 
