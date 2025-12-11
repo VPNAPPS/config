@@ -136,6 +136,7 @@ final_config["ads"] = {
     "native_bitcoin": None,
     "bitcoin_ratio": 0.5,
     "bitcoin_maxretry": 2,
+    "bitcoin_mustwatch": False,
     
     "foxray_ratio": 0.5,
     "foxray_maxretry": 2,
