@@ -142,7 +142,7 @@ final_config["ads"] = {
         "ratio": 0.5,
         "maxretry": 2,
         "mustwatch": False,
-        "timeout": 20000,#ms
+        "timeout": 15000,#ms
     },
     
     "foxray":{
@@ -151,7 +151,7 @@ final_config["ads"] = {
         "ratio": 0.5,
         "maxretry": 2,
         "mustwatch": False,
-        "timeout": 20000,#ms
+        "timeout": 15000,#ms
     },
     "foxray_ratio": 0.5,
     "foxray_maxretry": 2,
