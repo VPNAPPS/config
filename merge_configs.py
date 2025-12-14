@@ -139,8 +139,8 @@ final_config["ads"] = {
     "bitcoin":{
         "inter": None,
         "native": None,
-        "ratio": 0.5,
-        "maxretry": 2,
+        "ratio": 0.7,
+        "maxretry": 1,
         "mustwatch": True,
         "timeout": 40000,#ms
     },
