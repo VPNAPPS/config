@@ -141,8 +141,8 @@ final_config["ads"] = {
         "native": None,
         "ratio": 0.5,
         "maxretry": 2,
-        "mustwatch": False,
-        "timeout": 30000,#ms
+        "mustwatch": True,
+        "timeout": 40000,#ms
     },
     
     "foxray":{
