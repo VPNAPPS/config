@@ -140,7 +140,7 @@ final_config["ads"] = {
         "inter": None,
         "native": None,
         "ratio": 0.6,
-        "maxretry": 1,
+        "maxretry": 3,
         "mustwatch": False,
         "timeout": 90000,#ms
     },
@@ -149,7 +149,7 @@ final_config["ads"] = {
         "inter": None,
         "native": None,
         "ratio": 0.6,
-        "maxretry": 1,
+        "maxretry": 3,
         "mustwatch": False,
         "timeout": 30000,#ms
     },
