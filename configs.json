@@ -126,7 +126,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-4.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -203,7 +203,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-3.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -380,87 +380,51 @@
     }
   },
   {
-    "log": {
-      "loglevel": "warning"
-    },
     "dns": {
-      "queryStrategy": "UseIP",
       "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
+        "1.1.1.1",
+        "1.0.0.1"
       ],
-      "tag": "dns_out"
+      "queryStrategy": "UseIP"
     },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
+    "routing": {},
     "inbounds": [
       {
+        "tag": "socks",
         "port": 10808,
+        "listen": "0.0.0.0",
         "protocol": "socks",
         "settings": {
-          "auth": "noauth",
           "udp": true,
-          "userLevel": 8
+          "auth": "noauth"
         },
         "sniffing": {
+          "enabled": true,
+          "routeOnly": false,
           "destOverride": [
             "http",
             "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
+            "quic"
+          ]
+        }
       },
       {
+        "tag": "http",
         "port": 10809,
+        "listen": "0.0.0.0",
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "allowTransparent": false
         },
-        "tag": "http"
+        "sniffing": {
+          "enabled": true,
+          "routeOnly": false,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ]
+        }
       }
     ],
     "outbounds": [
@@ -506,7 +470,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "de-3.85858569.xyz",
+            "serverName": "de-4.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -542,125 +506,73 @@
         }
       },
       {
+        "tag": "dialer",
         "protocol": "freedom",
         "settings": {
           "fragment": {
-            "interval": "0-1",
             "length": "4-8",
-            "packets": "1-1"
+            "packets": "1-1",
+            "interval": "0-1"
           }
-        },
-        "tag": "dialer"
+        }
       },
       {
         "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
+        "protocol": "freedom"
       },
       {
         "tag": "block",
         "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
       }
     ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇩🇪 Germany ☁️ X [TLS]"
+    "remarks": "🇩🇪 ☁️ X [TLS]"
   },
   {
-    "log": {
-      "loglevel": "warning"
-    },
     "dns": {
-      "queryStrategy": "UseIP",
       "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
+        "1.1.1.1",
+        "1.0.0.1"
       ],
-      "tag": "dns_out"
+      "queryStrategy": "UseIP"
     },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
+    "routing": {},
     "inbounds": [
       {
+        "tag": "socks",
         "port": 10808,
+        "listen": "0.0.0.0",
         "protocol": "socks",
         "settings": {
-          "auth": "noauth",
           "udp": true,
-          "userLevel": 8
+          "auth": "noauth"
         },
         "sniffing": {
+          "enabled": true,
+          "routeOnly": false,
           "destOverride": [
             "http",
             "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
+            "quic"
+          ]
+        }
       },
       {
+        "tag": "http",
         "port": 10809,
+        "listen": "0.0.0.0",
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "allowTransparent": false
         },
-        "tag": "http"
+        "sniffing": {
+          "enabled": true,
+          "routeOnly": false,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ]
+        }
       }
     ],
     "outbounds": [
@@ -706,7 +618,7 @@
           },
           "security": "tls",
           "tlsSettings": {
-            "serverName": "fi-3.85858569.xyz",
+            "serverName": "fi-2.85858569.xyz",
             "allowInsecure": true,
             "show": false,
             "fingerprint": "chrome",
@@ -742,125 +654,73 @@
         }
       },
       {
+        "tag": "dialer",
         "protocol": "freedom",
         "settings": {
           "fragment": {
-            "interval": "0-1",
             "length": "4-8",
-            "packets": "1-1"
+            "packets": "1-1",
+            "interval": "0-1"
           }
-        },
-        "tag": "dialer"
+        }
       },
       {
         "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
+        "protocol": "freedom"
       },
       {
         "tag": "block",
         "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
       }
     ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇫🇮 Finland ☁️ X [TLS]"
+    "remarks": "🇫🇮 ☁️ X [TLS]"
   },
   {
-    "log": {
-      "loglevel": "warning"
-    },
     "dns": {
-      "queryStrategy": "UseIP",
       "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
+        "1.1.1.1",
+        "1.0.0.1"
       ],
-      "tag": "dns_out"
+      "queryStrategy": "UseIP"
     },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
+    "routing": {},
     "inbounds": [
       {
+        "tag": "socks",
         "port": 10808,
+        "listen": "0.0.0.0",
         "protocol": "socks",
         "settings": {
-          "auth": "noauth",
           "udp": true,
-          "userLevel": 8
+          "auth": "noauth"
         },
         "sniffing": {
+          "enabled": true,
+          "routeOnly": false,
           "destOverride": [
             "http",
             "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
+            "quic"
+          ]
+        }
       },
       {
+        "tag": "http",
         "port": 10809,
+        "listen": "0.0.0.0",
         "protocol": "http",
         "settings": {
-          "userLevel": 8
+          "allowTransparent": false
         },
-        "tag": "http"
+        "sniffing": {
+          "enabled": true,
+          "routeOnly": false,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ]
+        }
       }
     ],
     "outbounds": [
@@ -942,41 +802,25 @@
         }
       },
       {
+        "tag": "dialer",
         "protocol": "freedom",
         "settings": {
           "fragment": {
-            "interval": "0-1",
             "length": "4-8",
-            "packets": "1-1"
+            "packets": "1-1",
+            "interval": "0-1"
           }
-        },
-        "tag": "dialer"
+        }
       },
       {
         "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
+        "protocol": "freedom"
       },
       {
         "tag": "block",
         "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
       }
     ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇺🇸 United States ☁️ X [TLS]"
+    "remarks": "🇺🇸 ☁️ X [TLS]"
   }
 ]
