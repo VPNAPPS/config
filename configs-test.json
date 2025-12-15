@@ -1,185 +1,209 @@
-[
-  {
-    "ads": {
-      "inter_bitcoin": null,
-      "native_bitcoin": null,
-      "bitcoin_ratio": 0.5,
-      "bitcoin_maxretry": 2,
-      "bitcoin": {
-        "inter": null,
-        "native": null,
-        "ratio": 0.9,
-        "maxretry": 2,
-        "mustwatch": false,
-        "timeout": 90000
-      },
-      "foxray": {
-        "inter": null,
-        "native": null,
-        "ratio": 0.9,
-        "maxretry": 2,
-        "mustwatch": true,
-        "timeout": 30000
-      },
-      "foxray_ratio": 0.5,
-      "foxray_maxretry": 2,
-      "inter_foxray": null,
-      "native_foxray": null
-    },
-    "dns": {
-      "servers": ["1.1.1.1", "1.0.0.1"],
-      "queryStrategy": "UseIP"
-    },
-    "inbounds": [
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "dns": {
+    "queryStrategy": "UseIP",
+    "servers": [
+      "https://1.1.1.1/dns-query",
+      "https://8.8.8.8/dns-query",
+      "https://9.9.9.9/dns-query"
+    ],
+    "tag": "dns_out"
+  },
+  "routing": {
+    "rules": [
       {
-        "tag": "socks",
-        "port": 10808,
-        "listen": "127.0.0.1",
-        "protocol": "socks",
-        "settings": {
-          "udp": true,
-          "auth": "noauth"
-        },
-        "sniffing": {
-          "enabled": true,
-          "routeOnly": false,
-          "destOverride": ["http", "tls", "quic"]
-        }
-      },
-      {
-        "tag": "http",
-        "port": 10809,
-        "listen": "127.0.0.1",
-        "protocol": "http",
-        "settings": {
-          "allowTransparent": false
-        },
-        "sniffing": {
-          "enabled": true,
-          "routeOnly": false,
-          "destOverride": ["http", "tls", "quic"]
-        }
+        "type": "field",
+        "inboundTag": ["socks"],
+        "network": "udp",
+        "port": 53,
+        "outboundTag": "dns-out"
       }
     ],
-    "outbounds": [
-      {
-        "tag": "proxy",
-        "protocol": "socks",
-        "settings": {
-          "servers": [
-            {
-              "port": 63383,
-              "users": [
-                {
-                  "pass": "xBRd2S9m",
-                  "user": "s87ZDs1N"
-                }
-              ],
-              "address": "172.120.199.80"
-            }
-          ]
-        },
-        "streamSettings": {
-          "sockopt": {
-            "dialerProxy": "proxy2"
+    "domainStrategy": "IPIfNonMatch"
+  },
+  "policy": {
+    "system": {
+      "statsOutboundDownlink": true,
+      "statsOutboundUplink": true
+    }
+  },
+  "inbounds": [
+    {
+      "port": 10808,
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true,
+        "userLevel": 8
+      },
+      "sniffing": {
+        "enabled": false
+      },
+      "tag": "socks"
+    },
+    {
+      "port": 10809,
+      "protocol": "http",
+      "settings": {
+        "userLevel": 8
+      },
+      "tag": "http"
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "port": 1,
+            "users": [
+              {
+                "pass": "",
+                "user": ""
+              }
+            ],
+            "address": ""
           }
+        ]
+      },
+      "streamSettings": {
+        "sockopt": {
+          "dialerProxy": "proxy2"
         }
-      },
-      {
-        "tag": "proxy2",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "www.speedtest.net",
-              "port": 443,
-              "users": [
-                {
-                  "id": "b4fd8388-be5d-4146-9f0f-01132d4ef9d3",
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "xhttp",
-          "xhttpSettings": {
-            "mode": "stream-up",
-            "host": "",
-            "path": "/",
-            "extra": {
-              "xmux": {
-                "cMaxReuseTimes": 0,
-                "maxConcurrency": "16-32",
-                "maxConnections": 0,
-                "hKeepAlivePeriod": 0,
-                "hMaxRequestTimes": "600-900",
-                "hMaxReusableSecs": "1800-3000"
-              },
-              "headers": {},
-              "noGRPCHeader": false,
-              "xPaddingBytes": "100-1000",
-              "scMaxEachPostBytes": 1000000,
-              "scMinPostsIntervalMs": 30,
-              "scStreamUpServerSecs": "20-80"
-            }
-          },
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "de-1.85858569.xyz",
-            "allowInsecure": true,
-            "show": false,
-            "fingerprint": "chrome",
-            "alpn": ["h2"]
-          },
-          "sockopt": {
-            "mark": 0,
-            "V6Only": false,
-            "tproxy": "off",
-            "tcpMptcp": false,
-            "interface": "wg0",
-            "tcpMaxSeg": 1440,
-            "tcpNoDelay": false,
-            "dialerProxy": "dialer",
-            "tcpFastOpen": false,
-            "happyEyeballs": {},
-            "tcpcongestion": "bbr",
-            "domainStrategy": "AsIs",
-            "tcpUserTimeout": 10000,
-            "tcpWindowClamp": 600,
-            "tcpKeepAliveIdle": 300,
-            "acceptProxyProtocol": false,
-            "tcpKeepAliveInterval": 0
-          }
-        },
-        "mux": {
-          "enabled": true,
-          "concurrency": -1,
-          "xudpConcurrency": 16,
-          "xudpProxyUDP443": "reject"
-        }
-      },
-      {
-        "tag": "dialer",
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "length": "4-8",
-            "packets": "1-1",
-            "interval": "0-1"
-          }
-        }
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom"
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
       }
-    ],
-    "remarks": "TEST for ADS"
+    },
+    {
+      "tag": "proxy2",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "206.238.236.206",
+            "port": 443,
+            "users": [
+              {
+                "id": "9174cdc4-29f8-462c-adb7-5a06c34b0915",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "xhttpSettings": {
+          "mode": "stream-up",
+          "host": "",
+          "path": "/",
+          "extra": {
+            "xmux": {
+              "cMaxReuseTimes": 0,
+              "maxConcurrency": "16-32",
+              "maxConnections": 0,
+              "hKeepAlivePeriod": 0,
+              "hMaxRequestTimes": "600-900",
+              "hMaxReusableSecs": "1800-3000"
+            },
+            "headers": {},
+            "noGRPCHeader": false,
+            "xPaddingBytes": "100-1000",
+            "scMaxEachPostBytes": 1000000,
+            "scMinPostsIntervalMs": 30,
+            "scStreamUpServerSecs": "20-80"
+          }
+        },
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "de-2.85858569.xyz",
+          "allowInsecure": true,
+          "show": false,
+          "fingerprint": "chrome",
+          "alpn": ["h2"]
+        },
+        "sockopt": {
+          "mark": 0,
+          "V6Only": false,
+          "tproxy": "off",
+          "tcpMptcp": false,
+          "interface": "wg0",
+          "tcpMaxSeg": 1440,
+          "tcpNoDelay": false,
+          "dialerProxy": "dialer",
+          "tcpFastOpen": false,
+          "happyEyeballs": {},
+          "tcpcongestion": "bbr",
+          "domainStrategy": "AsIs",
+          "tcpUserTimeout": 10000,
+          "tcpWindowClamp": 600,
+          "tcpKeepAliveIdle": 300,
+          "acceptProxyProtocol": false,
+          "tcpKeepAliveInterval": 0
+        }
+      },
+      "mux": {
+        "enabled": true,
+        "concurrency": -1,
+        "xudpConcurrency": 16,
+        "xudpProxyUDP443": "reject"
+      }
+    },
+    {
+      "protocol": "freedom",
+      "settings": {
+        "fragment": {
+          "interval": "0-1",
+          "length": "4-8",
+          "packets": "1-1"
+        }
+      },
+      "tag": "dialer"
+    },
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {
+        "domainStrategy": "UseIP"
+      }
+    },
+    {
+      "tag": "block",
+      "protocol": "blackhole"
+    },
+    {
+      "tag": "dns-out",
+      "protocol": "dns"
+    }
+  ],
+  "stats": {},
+  "remarks": "⚡️ Fastest Location",
+  "ads": {
+    "inter_bitcoin": null,
+    "native_bitcoin": null,
+    "bitcoin_ratio": 0.5,
+    "bitcoin_maxretry": 2,
+    "bitcoin": {
+      "inter": null,
+      "native": null,
+      "ratio": 0.9,
+      "maxretry": 2,
+      "mustwatch": false,
+      "timeout": 90000
+    },
+    "foxray": {
+      "inter": null,
+      "native": null,
+      "ratio": 0.9,
+      "maxretry": 2,
+      "mustwatch": true,
+      "timeout": 30000
+    },
+    "foxray_ratio": 0.5,
+    "foxray_maxretry": 2,
+    "inter_foxray": null,
+    "native_foxray": null
   }
-]
+}
