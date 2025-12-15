@@ -139,7 +139,7 @@ final_config["ads"] = {
     "bitcoin":{
         "inter": None,
         "native": None,
-        "ratio": 0.9,
+        "ratio": 0.6,
         "maxretry": 2,
         "mustwatch": False,
         "timeout": 90000,#ms
@@ -148,7 +148,7 @@ final_config["ads"] = {
     "foxray":{
         "inter": None,
         "native": None,
-        "ratio": 0.9,
+        "ratio": 0.6,
         "maxretry": 2,
         "mustwatch": True,
         "timeout": 30000,#ms
