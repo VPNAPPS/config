@@ -142,16 +142,17 @@ final_config["ads"] = {
         
         "inter": None,
         "native": None,
-        "ratio": 0.6,
+        "ratio": 0.5,
         "timeout": 30000,#ms
     },
     
     "foxray":{
-        "inter": None,
-        "native": None,
-        "ratio": 0.6,
         "maxretry": 3,
         "mustwatch": False,
+        
+        "inter": None,
+        "native": None,
+        "ratio": 0.5,
         "timeout": 30000,#ms
     },
     "foxray_ratio": 0.5,
