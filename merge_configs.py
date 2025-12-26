@@ -5,17 +5,18 @@ from collections import defaultdict
 import copy
 from create_configs_json import build_config_json_from_proxies
 
-FOLDERS = ['freesub']
-OUTPUT_FILE = 'configs.json'
-CANDIDATE_FILES = ['configs.json', 'config.json']
+FOLDERS = ["freesub"]
+OUTPUT_FILE = "configs.json"
+CANDIDATE_FILES = ["configs.json", "config.json"]
 
 merged_list = []
+
 
 def load_json_from_folder(folder: str):
     for filename in CANDIDATE_FILES:
         path = Path(folder) / filename
         if path.exists():
-            with open(path, 'r', encoding='utf-8') as f:
+            with open(path, "r", encoding="utf-8") as f:
                 print(f"Loading: {path}")
                 try:
                     return json.load(f)
@@ -25,6 +26,7 @@ def load_json_from_folder(folder: str):
     print(f"No config file found in {folder}")
     return None
 
+
 def merge_configs_by_remarks(configs_list):
     """
     Merge configs with the same remarks, combining their proxy outbounds.
@@ -32,16 +34,16 @@ def merge_configs_by_remarks(configs_list):
     if len(FOLDERS) <= 1:
         # If only one folder or less, return configs as-is
         return configs_list
-    
+
     # Group configs by remarks
     grouped_by_remarks = defaultdict(list)
-    
+
     for config in configs_list:
         remarks = config.get("remarks", "no_remarks")
         grouped_by_remarks[remarks].append(config)
-    
+
     merged_configs = []
-    
+
     for remarks, config_group in grouped_by_remarks.items():
         if len(config_group) == 1:
             # Only one config with this remark, use as-is
@@ -49,14 +51,14 @@ def merge_configs_by_remarks(configs_list):
         else:
             # Multiple configs with same remarks, merge their outbounds
             print(f"Merging {len(config_group)} configs with remarks: {remarks}")
-            
+
             # Use the first config as base
             merged_config = copy.deepcopy(config_group[0])
-            
+
             # Collect all proxy outbounds from all configs with this remark
             all_proxies = []
             base_outbounds = []
-            
+
             # Get base outbounds (non-proxy) from the first config
             if "outbounds" in merged_config:
                 for outbound in merged_config["outbounds"]:
@@ -64,40 +66,48 @@ def merge_configs_by_remarks(configs_list):
                         base_outbounds.append(outbound)
                     else:
                         all_proxies.append(outbound)
-            
+
             # Collect proxies from other configs with same remarks
             for config in config_group[1:]:
                 if "outbounds" in config:
                     for outbound in config["outbounds"]:
                         if "proxy" in outbound.get("tag", ""):
                             all_proxies.append(outbound)
-            
+
             # Renumber proxy tags to avoid conflicts
             for i, proxy in enumerate(all_proxies, 1):
                 proxy_copy = copy.deepcopy(proxy)
                 proxy_copy["tag"] = f"proxy{i}"
-                all_proxies[i-1] = proxy_copy
-            
+                all_proxies[i - 1] = proxy_copy
+
             # Reconstruct outbounds: keep original proxy first, then all collected proxies, then base outbounds
             new_outbounds = []
-            
+
             # Add original proxy (if exists)
-            original_proxy = next((ob for ob in merged_config.get("outbounds", []) if ob.get("tag") == "proxy"), None)
+            original_proxy = next(
+                (
+                    ob
+                    for ob in merged_config.get("outbounds", [])
+                    if ob.get("tag") == "proxy"
+                ),
+                None,
+            )
             if original_proxy:
                 new_outbounds.append(original_proxy)
-            
+
             # Add all renamed proxies
             new_outbounds.extend(all_proxies)
-            
+
             # Add base outbounds
             new_outbounds.extend(base_outbounds)
-            
+
             # Update the merged config
             merged_config["outbounds"] = new_outbounds
-            
+
             merged_configs.append(merged_config)
-    
+
     return merged_configs
+
 
 # Load configs from all folders
 for folder in FOLDERS:
@@ -136,24 +146,29 @@ final_config["ads"] = {
     "native_bitcoin": None,
     "bitcoin_ratio": 0.5,
     "bitcoin_maxretry": 2,
-    "bitcoin":{
+    "bitcoin": {
         "maxretry": 3,
         "mustwatch": False,
-        
         "inter": None,
         "native": None,
         "ratio": 0.5,
-        "timeout": 30000,#ms
+        "timeout": 30000,  # ms
     },
-    
-    "foxray":{
+    "zorp": {
         "maxretry": 3,
         "mustwatch": False,
-        
         "inter": None,
         "native": None,
         "ratio": 0.5,
-        "timeout": 30000,#ms
+        "timeout": 30000,  # ms
+    },
+    "foxray": {
+        "maxretry": 3,
+        "mustwatch": False,
+        "inter": None,
+        "native": None,
+        "ratio": 0.5,
+        "timeout": 30000,  # ms
     },
     "foxray_ratio": 0.5,
     "foxray_maxretry": 2,
@@ -162,12 +177,12 @@ final_config["ads"] = {
 }
 merged_list.insert(0, final_config)
 
-with open("config.json", 'w', encoding='utf-8') as f:
+with open("config.json", "w", encoding="utf-8") as f:
     json.dump(final_config, f, ensure_ascii=False, indent=2)
     print(f"Final merged config written to config.json")
 
 # Save raw merged list for debugging
-with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     json.dump(merged_list, f, ensure_ascii=False, indent=2)
     print(f"Merged config written to {OUTPUT_FILE}")
     print(f"Total configs after merging: {len(merged_list)}")
