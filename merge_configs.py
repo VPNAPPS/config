@@ -5,7 +5,7 @@ from collections import defaultdict
 import copy
 from create_configs_json import build_config_json_from_proxies
 
-FOLDERS = ["ala"]
+FOLDERS = ["hand"]
 OUTPUT_FILE = "configs.json"
 CANDIDATE_FILES = ["configs.json", "config.json"]
 
