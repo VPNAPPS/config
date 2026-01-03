@@ -162,6 +162,14 @@ final_config["ads"] = {
         "ratio": 0.5,
         "timeout": 30000,  # ms
     },
+    "yellow": {
+        "maxretry": 3,
+        "mustwatch": False,
+        "inter": None,
+        "native": None,
+        "ratio": 0.5,
+        "timeout": 30000,  # ms
+    },
     "foxray": {
         "maxretry": 3,
         "mustwatch": False,
