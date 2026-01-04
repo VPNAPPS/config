@@ -144,7 +144,7 @@ final_config = build_config_json_from_proxies("⚡️ Fastest Location", proxies
 final_config["ads"] = {
     "inter_bitcoin": None,
     "native_bitcoin": None,
-    "bitcoin_ratio": 0.5,
+    "bitcoin_ratio": 0.0,
     "bitcoin_maxretry": 2,
     "bitcoin": {
         "maxretry": 3,
@@ -178,7 +178,7 @@ final_config["ads"] = {
         "ratio": 0.0,
         "timeout": 30000,  # ms
     },
-    "foxray_ratio": 0.5,
+    "foxray_ratio": 0.0,
     "foxray_maxretry": 2,
     "inter_foxray": None,
     "native_foxray": None,
