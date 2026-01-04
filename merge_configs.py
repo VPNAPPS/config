@@ -151,7 +151,7 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.5,
+        "ratio": 0.0,
         "timeout": 30000,  # ms
     },
     "zorp": {
@@ -159,7 +159,7 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.5,
+        "ratio": 0.0,
         "timeout": 30000,  # ms
     },
     "yellow": {
@@ -167,7 +167,7 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.5,
+        "ratio": 0.0,
         "timeout": 30000,  # ms
     },
     "foxray": {
@@ -175,7 +175,7 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.5,
+        "ratio": 0.0,
         "timeout": 30000,  # ms
     },
     "foxray_ratio": 0.5,
