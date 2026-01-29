@@ -65,7 +65,7 @@ def replace_flag_with_country(text):
     for flag in set(flags):
         country_name = flag_to_country_name(flag)
         if country_name:
-            text = text.replace(flag, f"{flag} {country_name}")
+            text = f"{flag} {country_name}" # text.replace(flag, f"{flag} {country_name}")
 
     return text
 
@@ -199,6 +199,60 @@ def main():
             tmp["outbounds"].insert(0, px)
 
         final_data.append(tmp)
+
+    # ---------------------------------------------------------
+    # Merge Logic: Combine configs with same remarks & reorder tags
+    # ---------------------------------------------------------
+    merged_configs = {}
+
+    for config in final_data:
+        rem = config.get("remarks", "")
+        
+        if rem not in merged_configs:
+            merged_configs[rem] = config
+        else:
+            # Found a duplicate remark; merge proxies into the existing entry
+            target_config = merged_configs[rem]
+            
+            # Extract proxies from the current config to merge
+            # Filtering for tags starting with 'proxy' ensures we don't duplicate static outbounds (like direct/block)
+            source_proxies = [
+                out for out in config["outbounds"] 
+                if out.get("tag", "").startswith("proxy")
+            ]
+            
+            # Insert new proxies at the beginning of the target's outbound list
+            for px in reversed(source_proxies):
+                target_config["outbounds"].insert(0, px)
+
+    # Reconstruct final_data with reordered tags
+    final_data_merged = []
+    
+    for rem, config in merged_configs.items():
+        proxies = []
+        others = []
+        
+        # Separate proxies from static outbounds
+        for out in config["outbounds"]:
+            if out.get("tag", "").startswith("proxy"):
+                proxies.append(out)
+            else:
+                others.append(out)
+        
+        # Reorder/Renumber proxy tags sequentially (proxy, proxy1, proxy2...)
+        for i, px in enumerate(proxies):
+            if i == 0:
+                px["tag"] = "proxy"
+            else:
+                px["tag"] = f"proxy{i}"
+        
+        # Combine back: proxies first, then others
+        config["outbounds"] = proxies + others
+        final_data_merged.append(config)
+        
+    # Update final_data reference
+    final_data = final_data_merged
+    # ---------------------------------------------------------
 
     # Save to config.json
     try:

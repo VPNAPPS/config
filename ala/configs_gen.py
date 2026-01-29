@@ -203,7 +203,7 @@ def fetch_and_process_configs():
             print(f"\nTotal filtered configs from valid sources: {len(filtered_configs)}")
             
             # Decide which configs to use
-            if len(filtered_configs) >= 10:
+            if len(filtered_configs) >= 1:
                 print("Using filtered configs from valid sources (>=10 configs found)")
                 configs_to_process = filtered_configs
             else:
@@ -220,7 +220,6 @@ def fetch_and_process_configs():
                 'speed': config_item['speed'],
                 'config': config_item['config']
             })
-        
         # Build final configs array
         configs = []
         
