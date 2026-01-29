@@ -116,19 +116,51 @@ def main():
             continue
         if "REAL" in remarks:
             continue
-        # Check TLS serverName filter (starts with 'nl')
-        try:
-            tls_settings = config["outbounds"][0]["streamSettings"]["tlsSettings"]
-            server_name = tls_settings.get("serverName", "")
-            if server_name.startswith("nl"):
-                continue
-        except (KeyError, IndexError, TypeError):
-            pass
 
         print(f"Processing index {i}: {remarks}")
 
         proxy = config["outbounds"][0]
-
+        # Check TLS serverName filter (starts with 'nl')
+        try:
+            tls_settings = config["outbounds"][0]["streamSettings"]["tlsSettings"]
+            server_name = tls_settings.get("serverName", "")
+            if server_name.startswith("Nl"):
+                proxy = {
+                    "mux": {"concurrency": -1, "enabled": False},
+                    "protocol": "vless",
+                    "settings": {
+                        "vnext": [
+                            {
+                                "address": "ipw.ygdfw.com",
+                                "port": 443,
+                                "users": [
+                                    {
+                                        "encryption": "none",
+                                        "id": "7e58699f-1d5d-4f6b-b181-cb74f0ad9509",
+                                        "level": 8,
+                                    }
+                                ],
+                            }
+                        ]
+                    },
+                    "streamSettings": {
+                        "network": "xhttp",
+                        "security": "tls",
+                        "tlsSettings": {
+                            "allowInsecure": False,
+                            "serverName": "Tp020KlHfZ.tRuStFoRtEaM.cOm",
+                            "show": False,
+                        },
+                        "xhttpSettings": {
+                            "host": "Tp020KlHfZ.tRuStFoRtEaM.cOm",
+                            "mode": "stream-one",
+                            "path": "/",
+                        },
+                    },
+                    "tag": "proxy",
+                }
+        except (KeyError, IndexError, TypeError):
+            pass
         # Deep clone template
         tmp = copy.deepcopy(template)
 
