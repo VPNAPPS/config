@@ -15,8 +15,7 @@ TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
 IPS = [
     "206.238.237.98",
-    "192.200.160.21",
-    "63.141.128.18",
+    "72.56.77.67",
     "185.225.195.61",
     "185.225.195.38",
     "ipw.ygdfw.com",
