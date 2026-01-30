@@ -15,8 +15,8 @@ TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
 IPS = [
     "206.238.237.98",
-    "192.200.160.15",
-    "63.141.128.132",
+    "192.200.160.8",
+    "63.141.128.18",
     "185.225.195.61",
     "185.225.195.38",
     "ipw.ygdfw.com",
@@ -124,7 +124,7 @@ def main():
         try:
             tls_settings = config["outbounds"][0]["streamSettings"]["tlsSettings"]
             server_name = tls_settings.get("serverName", "")
-            if server_name.startswith("Nl"):
+            if server_name.lower().startswith("nl"):
                 proxy = {
                     "mux": {"concurrency": -1, "enabled": False},
                     "protocol": "vless",
@@ -177,14 +177,14 @@ def main():
             try:
                 original_string = px["streamSettings"]["tlsSettings"]["serverName"]
                 new_string = original_string
-
-                if original_string.startswith("de"):
+                if original_string.startswith("DE"):
                     random_num = random.randint(10, 20)
-                    new_string = re.sub(r"de-\d+", f"de-{random_num}", original_string)
+                    new_string = re.sub(r"DE-\d+", f"DE-{random_num}", original_string)
+                    print(new_string)
 
-                elif original_string.startswith("fi"):
+                elif original_string.startswith("FI"):
                     random_num = random.randint(1, 15)
-                    new_string = re.sub(r"fi-\d+", f"fi-{random_num}", original_string)
+                    new_string = re.sub(r"FI-\d+", f"FI-{random_num}", original_string)
 
                 px["streamSettings"]["tlsSettings"]["serverName"] = new_string
             except (KeyError, TypeError):
