@@ -97,11 +97,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "pypi.org",
+              "address": "python.org",
               "port": 80,
               "users": [
                 {
-                  "id": "1b028973-fca2-44be-88ab-3f16d9f0cfb8",
+                  "id": "4d63dcc0-d836-4101-9618-a15306d5d8ba",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -157,166 +157,6 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇩🇪 Germany"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "https://1.1.1.1/dns-query",
-        "https://8.8.8.8/dns-query",
-        "https://9.9.9.9/dns-query"
-      ],
-      "tag": "dns_out"
-    },
-    "fakedns": [
-      {
-        "ipPool": "198.18.0.0/15",
-        "poolSize": 65535
-      }
-    ],
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "outboundTag": "block",
-          "protocol": [
-            "bittorrent"
-          ],
-          "type": "field"
-        },
-        {
-          "type": "field",
-          "inboundTag": [
-            "socks"
-          ],
-          "network": "udp",
-          "port": 53,
-          "outboundTag": "dns-out"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": false
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
-        "protocol": "trojan",
-        "settings": {
-          "servers": [
-            {
-              "address": "xiaozhu1.kkieo555.cn",
-              "ota": false,
-              "password": "7d804247-79ca-4c98-986a-de85a976c9c4",
-              "port": 41275,
-              "level": 0
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "xiaozhu1.kkieo555.cn"
-          }
-        }
-      },
-      {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "1-4",
-            "length": "10-100",
-            "packets": "2-4"
-          },
-          "noises": [
-            {
-              "delay": "5-10",
-              "packet": "5-15",
-              "type": "rand"
-            }
-          ]
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://www.google.com/gen_204",
-      "probeInterval": "10m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇺🇸 United States"
+    "remarks": "🇬🇧 United Kingdom"
   }
 ]
