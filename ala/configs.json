@@ -97,11 +97,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "spd-mynames.global.ssl.fastly.net",
-              "port": 80,
+              "address": "fin1.wizard2shop.org",
+              "port": 8085,
               "users": [
                 {
-                  "id": "8e378a41-d5e1-427a-aaf8-30190d4be0a0",
+                  "id": "4e5c6735-d657-4f9c-931d-52504f31aae8",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -110,7 +110,8 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp"
+          "network": "raw",
+          "security": "none"
         }
       },
       {
@@ -156,7 +157,167 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇳🇱 Netherlands"
+    "remarks": "🇫🇮 Finland"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://9.9.9.9/dns-query"
+      ],
+      "tag": "dns_out"
+    },
+    "fakedns": [
+      {
+        "ipPool": "198.18.0.0/15",
+        "poolSize": 65535
+      }
+    ],
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "outboundTag": "block",
+          "protocol": [
+            "bittorrent"
+          ],
+          "type": "field"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "socks"
+          ],
+          "network": "udp",
+          "port": 53,
+          "outboundTag": "dns-out"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "xiaozhu1.kkieo555.cn",
+              "ota": false,
+              "password": "dc8480dc-f90d-46ed-90e5-0d3e7feb6bf8",
+              "port": 41274,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "xiaozhu1.kkieo555.cn"
+          }
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "1-4",
+            "length": "10-100",
+            "packets": "2-4"
+          },
+          "noises": [
+            {
+              "delay": "5-10",
+              "packet": "5-15",
+              "type": "rand"
+            }
+          ]
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "http://www.google.com/gen_204",
+      "probeInterval": "10m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇹🇼 Taiwan"
   },
   {
     "log": {
@@ -256,11 +417,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "fin1.wizard2shop.org",
-              "port": 8085,
+              "address": "spd-mynames.global.ssl.fastly.net",
+              "port": 80,
               "users": [
                 {
-                  "id": "4e5c6735-d657-4f9c-931d-52504f31aae8",
+                  "id": "8e378a41-d5e1-427a-aaf8-30190d4be0a0",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -269,8 +430,7 @@
           ]
         },
         "streamSettings": {
-          "network": "raw",
-          "security": "none"
+          "network": "xhttp"
         }
       },
       {
@@ -316,6 +476,6 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇫🇮 Finland"
+    "remarks": "🇳🇱 Netherlands"
   }
 ]
