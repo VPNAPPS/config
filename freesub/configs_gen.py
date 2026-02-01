@@ -16,9 +16,10 @@ OUTPUT_FILE = "configs.json"
 IPS = [
     "206.238.237.98",
     "93.118.112.33",
+    "20.157.74.92",
     #"72.56.77.67",
     "185.225.195.61",
-    #"185.225.195.38",
+    "185.225.195.15",
     "ipw.ygdfw.com",
     # "IPA-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
     # "IPB-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
