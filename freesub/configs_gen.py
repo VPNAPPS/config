@@ -14,25 +14,10 @@ TARGET_URL = os.getenv("TARGET_URL")
 TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
 IPS = [
-    "206.238.237.98",
-    "20.157.74.92",
-    "20.174.15.226",
-    "172.64.152.23",
-    #"72.56.77.67",
-    "185.225.195.61",
     "185.225.195.15",
     "ipw.ygdfw.com",
-    # "IPA-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    # "IPB-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    # "IPC-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    # "IPD-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    # "IPE-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "IPF-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    # "dash.systemispichide.xyz",
-    # "h.zzula.ir",
-    # "cfcdn.zopli.ir",
-    # "cdn1.eswap.ir.",
-    # "ip.notomarosww.com",
+    "93.118.112.33",
+    
 ]
 
 
