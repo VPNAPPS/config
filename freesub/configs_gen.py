@@ -13,49 +13,7 @@ load_dotenv()
 TARGET_URL = os.getenv("TARGET_URL")
 TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
-IPS = [
-    "www.speedtest.net",
-    "dqf21.sdssd1.sadqwdw1.carvan1.mimkiscx.ir",
-    "sv11.v2bit.com",
-    "sv22.v2bit.com",
-    "sv33.v2bit.com",
-    "sv44.v2bit.com",
-    "sv55.v2bit.com",
-    "h.zzula.ir",
-    "ipw.ygdfw.com",
-    "185.225.195.38",
-    "185.225.195.61",
-    "72.56.77.67",
-    "206.238.237.98",
-    "dash.systemispichide.xyz",
-    "IPA-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "IPB-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "IPC-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "IPD-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "IPE-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "IPF-AlphaOmega-ComPany.AlphaOmegaComPany-PoWerFull.Ir.",
-    "ip.notomarosww.com",
-    "cdn1.eswap.ir.",
-    "cfcdn.zopli.ir",
-    "sv11.v2bit.com",
-    "ipbaz.ping-box.com",
-    "172.64.152.23",
-    "speed.cloudflare.com",
-    "cdnnn.hexo-music.ir",
-    "ip.hamrahto.com",
-    "Cold.hamrahto.com",
-    "download.wortexnetwork.com",
-    "ipw.gfdv54cvghhgfhgj-njhgj64.info.",
-    "www.leaksfa.com",
-    "Netflix.builtmagman.com",
-    "cpanel.hitgram.ir",
-    "c1.darkstrange.ir",
-    "c2.darkstrange.ir",
-    "c3.darkstrange.ir",
-    "cloudproxycdn.healingfluence.com.",
-    "ping.smartpanel.com.tr",
-    "f2.springpaatogh8.store",
-]
+IPS = ["192.200.160.20", "63.141.128.231", "63.141.128.100", "192.200.160.24"]
 
 
 def starts_with_flag(text):
