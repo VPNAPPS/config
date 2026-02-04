@@ -13,7 +13,7 @@ load_dotenv()
 TARGET_URL = os.getenv("TARGET_URL")
 TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
-IPS = ["192.200.160.20", "63.141.128.231", "63.141.128.100", "192.200.160.24"]
+IPS = ["192.200.160.20", "63.141.128.231", "63.141.128.100", "192.200.160.24", "206.238.237.1", "206.238.239.65"]
 
 
 def starts_with_flag(text):
