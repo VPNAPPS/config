@@ -14,6 +14,7 @@ TARGET_URL = os.getenv("TARGET_URL")
 TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
 IPS = [
+    "www.tgju.org",
     #CA
     "135.84.79.143",
     "23.249.192.196",
