@@ -196,13 +196,13 @@ def main():
                 original_string = px["streamSettings"]["tlsSettings"]["serverName"]
                 new_string = original_string
                 if original_string.startswith("DE"):
-                    random_num = random.randint(10, 20)
-                    new_string = re.sub(r"DE-\d+", f"DE-{random_num}", original_string)
+                    random_num = random.randint(1, 5)
+                    new_string = re.sub(r"DE-\d+", f"APP-DE-{random_num}", original_string)
                     print(new_string)
 
                 elif original_string.startswith("FI"):
-                    random_num = random.randint(1, 15)
-                    new_string = re.sub(r"FI-\d+", f"FI-{random_num}", original_string)
+                    random_num = random.randint(1, 5)
+                    new_string = re.sub(r"FI-\d+", f"APP-FI-{random_num}", original_string)
 
                 px["streamSettings"]["tlsSettings"]["serverName"] = new_string
             except (KeyError, TypeError):
