@@ -225,6 +225,382 @@
         "settings": {
           "vnext": [
             {
+              "address": "ger4.azadrah.drpingi.shop",
+              "port": 443,
+              "users": [
+                {
+                  "id": "dc893677-ef29-43c8-ae2a-4788c5712a23",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy3",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "20.68.188.237",
+              "method": "chacha20-ietf-poly1305",
+              "ota": false,
+              "password": "kaQH3hGdcP80XEDI",
+              "port": 443,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "1-4",
+            "length": "10-100",
+            "packets": "2-4"
+          },
+          "noises": [
+            {
+              "delay": "5-10",
+              "packet": "5-15",
+              "type": "rand"
+            }
+          ]
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "https://cp.cloudflare.com/generate_204",
+      "probeInterval": "5m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇬🇧 United Kingdom"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "1.1.1.1",
+        "1.0.0.1"
+      ]
+    },
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastLoad"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainMatcher": "hybrid",
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "outboundTag": "block",
+          "protocol": [
+            "bittorrent"
+          ],
+          "type": "field"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "92.114.50.193",
+              "port": 47255,
+              "users": [
+                {
+                  "id": "6822d55f-2831-416e-9207-11d8d659d388",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "1-4",
+            "length": "10-100",
+            "packets": "2-4"
+          },
+          "noises": [
+            {
+              "delay": "5-10",
+              "packet": "5-15",
+              "type": "rand"
+            }
+          ]
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "https://cp.cloudflare.com/generate_204",
+      "probeInterval": "5m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇺🇸 United States"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "1.1.1.1",
+        "1.0.0.1"
+      ]
+    },
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastLoad"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainMatcher": "hybrid",
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "outboundTag": "block",
+          "protocol": [
+            "bittorrent"
+          ],
+          "type": "field"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "ger4.azadrah.drpingi.shop",
+              "port": 443,
+              "users": [
+                {
+                  "id": "dc893677-ef29-43c8-ae2a-4788c5712a23",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "ger4.azadrah.drpingi.shop",
+              "port": 443,
+              "users": [
+                {
+                  "id": "dc893677-ef29-43c8-ae2a-4788c5712a23",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy3",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "91.107.183.8",
+              "port": 843,
+              "users": [
+                {
+                  "id": "f112ad3b-9c4c-4f76-b1a9-12ed9dd7e63c",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy4",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
               "address": "91.107.183.8",
               "port": 843,
               "users": [
@@ -369,11 +745,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "v2tr.imesaagetext.ir",
-              "port": 2081,
+              "address": "imgur.com",
+              "port": 80,
               "users": [
                 {
-                  "id": "885d8e08-49f5-4b8f-b9cd-63d743f1c54d",
+                  "id": "2637679c-e2fe-45a2-9962-e2ddf8469c29",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -382,17 +758,8 @@
           ]
         },
         "streamSettings": {
-          "network": "raw",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "client.imesaagetext.ir",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ],
-            "fingerprint": "chrome"
-          }
+          "network": "xhttp",
+          "security": "none"
         }
       },
       {
@@ -401,11 +768,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "v2tr.imesaagetext.ir",
-              "port": 2081,
+              "address": "imgur.com",
+              "port": 80,
               "users": [
                 {
-                  "id": "885d8e08-49f5-4b8f-b9cd-63d743f1c54d",
+                  "id": "2637679c-e2fe-45a2-9962-e2ddf8469c29",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -414,17 +781,8 @@
           ]
         },
         "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "client.imesaagetext.ir",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ],
-            "fingerprint": "chrome"
-          }
+          "network": "xhttp",
+          "security": "none"
         }
       },
       {
@@ -433,11 +791,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "v2tr.imesaagetext.ir",
-              "port": 2081,
+              "address": "imgur.com",
+              "port": 80,
               "users": [
                 {
-                  "id": "885d8e08-49f5-4b8f-b9cd-63d743f1c54d",
+                  "id": "2637679c-e2fe-45a2-9962-e2ddf8469c29",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -446,17 +804,8 @@
           ]
         },
         "streamSettings": {
-          "network": "raw",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "client.imesaagetext.ir",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ],
-            "fingerprint": "random"
-          }
+          "network": "xhttp",
+          "security": "none"
         }
       },
       {
@@ -502,6 +851,6 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇹🇷 Türkiye"
+    "remarks": "🇨🇭 Switzerland"
   }
 ]
