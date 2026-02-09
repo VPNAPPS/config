@@ -152,7 +152,7 @@ final_config["ads"] = {
         "inter": None,
         "native": None,
         "ratio": 0.2,
-        "timeout": 50000,  # ms
+        "timeout": 60000,  # ms
     },
     "zorp": {
         "maxretry": 3,
@@ -160,7 +160,7 @@ final_config["ads"] = {
         "inter": None,
         "native": None,
         "ratio": 0.2,
-        "timeout": 50000,  # ms
+        "timeout": 60000,  # ms
     },
     "yellow": {
         "maxretry": 3,
@@ -168,7 +168,7 @@ final_config["ads"] = {
         "inter": None,
         "native": None,
         "ratio": 0.2,
-        "timeout": 50000,  # ms
+        "timeout": 60000,  # ms
     },
     "foxray": {
         "maxretry": 3,
@@ -176,7 +176,7 @@ final_config["ads"] = {
         "inter": None,
         "native": None,
         "ratio": 0.2,
-        "timeout": 50000,  # ms
+        "timeout": 60000,  # ms
     },
     "foxray_ratio": 0.2,
     "foxray_maxretry": 2,
