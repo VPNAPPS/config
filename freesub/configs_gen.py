@@ -28,9 +28,7 @@ IPS = [
     "47.109.177.88",
     "47.99.108.15",
     "37.153.171.135",
-    "43.163.90.17"
-    
-
+    "43.163.90.17",
 ]
 
 
@@ -137,19 +135,20 @@ def main():
         try:
             tls_settings = config["outbounds"][0]["streamSettings"]["tlsSettings"]
             server_name = tls_settings.get("serverName", "")
-            if server_name.lower().startswith("nl"):
+            if server_name.lower().startswith("uk"):
                 proxy = {
                     "mux": {"concurrency": -1, "enabled": False},
                     "protocol": "vless",
                     "settings": {
                         "vnext": [
                             {
-                                "address": "ipw.ygdfw.com",
+                                "address": "yu.pelatiposi.info",
                                 "port": 443,
                                 "users": [
                                     {
                                         "encryption": "none",
-                                        "id": "7e58699f-1d5d-4f6b-b181-cb74f0ad9509",
+                                        "flow": "",
+                                        "id": "128d1209-9e9f-4952-9faf-df47ae3648d2",
                                         "level": 8,
                                     }
                                 ],
@@ -159,14 +158,17 @@ def main():
                     "streamSettings": {
                         "network": "xhttp",
                         "security": "tls",
+                        "sockopt": {"dialerProxy": "dialer"},
                         "tlsSettings": {
                             "allowInsecure": False,
-                            "serverName": "Tp020KlHfZ.tRuStFoRtEaM.cOm",
+                            "alpn": ["h2"],
+                            "fingerprint": "firefox",
+                            "serverName": "Sn83V68jTb.BlUeCoMeAgIaN.cOm",
                             "show": False,
                         },
                         "xhttpSettings": {
-                            "host": "Tp020KlHfZ.tRuStFoRtEaM.cOm",
-                            "mode": "stream-one",
+                            "host": "Sn83V68jTb.BlUeCoMeAgIaN.cOm",
+                            "mode": "stream-up",
                             "path": "/",
                         },
                     },
@@ -192,12 +194,16 @@ def main():
                 new_string = original_string
                 if original_string.startswith("DE"):
                     random_num = random.randint(1, 5)
-                    new_string = re.sub(r"DE-\d+", f"APP-DE-{random_num}", original_string)
+                    new_string = re.sub(
+                        r"DE-\d+", f"APP-DE-{random_num}", original_string
+                    )
                     print(new_string)
 
                 elif original_string.startswith("FI"):
                     random_num = random.randint(1, 5)
-                    new_string = re.sub(r"FI-\d+", f"APP-FI-{random_num}", original_string)
+                    new_string = re.sub(
+                        r"FI-\d+", f"APP-FI-{random_num}", original_string
+                    )
 
                 px["streamSettings"]["tlsSettings"]["serverName"] = new_string
             except (KeyError, TypeError):
