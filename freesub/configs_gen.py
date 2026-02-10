@@ -17,9 +17,9 @@ IPS = [
     "www.tgju.org",
     # SG
     "23.249.192.196",
+    "23.108.217.103",
     "135.84.79.143",
     "135.84.79.113",
-    "13.214.199.183",
     "8.134.178.208",
     "112.126.1.114",
     "106.15.127.228",
@@ -28,7 +28,8 @@ IPS = [
     "47.109.177.88",
     "47.99.108.15",
     "37.153.171.135",
-    "43.163.90.17",
+    "124.243.138.124",
+    "111.230.217.93",
 ]
 
 
@@ -163,11 +164,11 @@ def main():
                             "allowInsecure": False,
                             "alpn": ["h2"],
                             "fingerprint": "firefox",
-                            "serverName": "Sn83V68jTb.BlUeCoMeAgIaN.cOm",
+                            "serverName": "Ve4Z6r7BbO.bLuEcOmEaGiAn.CoM",
                             "show": False,
                         },
                         "xhttpSettings": {
-                            "host": "Sn83V68jTb.BlUeCoMeAgIaN.cOm",
+                            "host": "Ve4Z6r7BbO.bLuEcOmEaGiAn.CoM",
                             "mode": "stream-up",
                             "path": "/",
                         },
