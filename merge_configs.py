@@ -144,14 +144,14 @@ final_config = build_config_json_from_proxies("⚡️ Fastest Location", proxies
 final_config["ads"] = {
     "inter_bitcoin": None,
     "native_bitcoin": None,
-    "bitcoin_ratio": 0.2,
+    "bitcoin_ratio": 0.5,
     "bitcoin_maxretry": 2,
     "bitcoin": {
         "maxretry": 3,
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.2,
+        "ratio": 0.5,
         "timeout": 60000,  # ms
     },
     "zorp": {
@@ -159,7 +159,7 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.2,
+        "ratio": 0.5,
         "timeout": 60000,  # ms
     },
     "yellow": {
@@ -167,7 +167,7 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.2,
+        "ratio": 0.5,
         "timeout": 60000,  # ms
     },
     "foxray": {
@@ -175,10 +175,10 @@ final_config["ads"] = {
         "mustwatch": False,
         "inter": None,
         "native": None,
-        "ratio": 0.2,
+        "ratio": 0.5,
         "timeout": 60000,  # ms
     },
-    "foxray_ratio": 0.2,
+    "foxray_ratio": 0.5,
     "foxray_maxretry": 2,
     "inter_foxray": None,
     "native_foxray": None,
