@@ -134,7 +134,7 @@ def main():
         try:
             tls_settings = config["outbounds"][0]["streamSettings"]["tlsSettings"]
             server_name = tls_settings.get("serverName", "")
-            if server_name.lower().startswith("uk"):
+            if False:#server_name.lower().startswith("uk"):
                 proxy = {
                     "mux": {"concurrency": -1, "enabled": False},
                     "protocol": "vless",
