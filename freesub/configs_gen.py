@@ -201,7 +201,7 @@ def main():
                     print(new_string)
 
                 elif original_string.startswith("APP-FI"):
-                    random_num = random.randint(1, 5)
+                    random_num = random.randint(1, 6)
                     new_string = re.sub(
                         r"APP-FI-\d+", f"APP-FI-{random_num}", original_string
                     )
