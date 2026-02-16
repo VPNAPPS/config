@@ -183,16 +183,15 @@ def main():
             px = copy.deepcopy(proxy)
 
             try:
-                original_string = px["streamSettings"]["tlsSettings"]["serverName"]
+                original_string = px["streamSettings"]["xhttpSettings"]["host"]
                 new_string = original_string
-                if original_string.startswith("DE"):
-                    random_num = random.randint(1, 10)
+                if original_string.startswith("APP-DE"):
                     new_string = re.sub(
-                        r"DE-\d+", f"APP-DE-{random_num}", original_string
+                        r"DE-\d+", f"APP-DE-{random.randint(1, 10)}", original_string
                     )
                     print(new_string)
 
-                elif original_string.startswith("FI"):
+                elif original_string.startswith("APP-FI"):
                     random_num = random.randint(1, 5)
                     new_string = re.sub(
                         r"FI-\d+", f"APP-FI-{random_num}", original_string
