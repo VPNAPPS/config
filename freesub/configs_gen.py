@@ -5,6 +5,7 @@ import random
 import copy
 import pycountry
 import os
+import string
 from dotenv import load_dotenv
 
 # 1. Load Environment Variables
@@ -187,17 +188,17 @@ def main():
                 new_string = original_string
                 if original_string.startswith("APP-DE"):
                     new_string = re.sub(
-                        r"DE-\d+", f"APP-DE-{random.randint(1, 10)}", original_string
+                        r"APP-DE-\d+", f"APP-DE-{random.randint(1, 10)}", original_string
                     )
                     print(new_string)
 
                 elif original_string.startswith("APP-FI"):
                     random_num = random.randint(1, 5)
                     new_string = re.sub(
-                        r"FI-\d+", f"APP-FI-{random_num}", original_string
+                        r"APP-FI-\d+", f"APP-FI-{random_num}", original_string
                     )
-
-                px["streamSettings"]["tlsSettings"]["serverName"] = new_string
+                px["streamSettings"]["xhttpSettings"]["host"] = new_string
+                px["streamSettings"]["tlsSettings"]["serverName"] = "".join(random.choices(string.ascii_lowercase + string.digits, k=8)) + "".join(px["streamSettings"]["tlsSettings"]["serverName"].partition('.')[1:])
             except (KeyError, TypeError):
                 pass
 
