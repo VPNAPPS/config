@@ -186,7 +186,7 @@ def main():
                 original_string = px["streamSettings"]["tlsSettings"]["serverName"]
                 new_string = original_string
                 if original_string.startswith("DE"):
-                    random_num = random.randint(1, 5)
+                    random_num = random.randint(1, 10)
                     new_string = re.sub(
                         r"DE-\d+", f"APP-DE-{random_num}", original_string
                     )
