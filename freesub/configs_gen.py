@@ -16,17 +16,12 @@ TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
 IPS = [
     "www.tgju.org",
-    
-    "23.249.192.196",
-    "37.153.171.135",
-    "45.142.203.189",
-    "47.116.12.18",
-    
-    "63.141.128.98",
-    
-    "192.200.160.57",
-    
-    "206.238.237.162",
+    "www.speedtest.net",
+    "www.tgju.org",
+    "api-1.zzula.ir",
+    "api-2.zzula.ir",
+    "app-1.zzula.ir",
+    "app-2.zzula.ir",
 ]
 
 
@@ -133,7 +128,7 @@ def main():
         try:
             tls_settings = config["outbounds"][0]["streamSettings"]["tlsSettings"]
             server_name = tls_settings.get("serverName", "")
-            if False:#server_name.lower().startswith("uk"):
+            if False:  # server_name.lower().startswith("uk"):
                 proxy = {
                     "mux": {"concurrency": -1, "enabled": False},
                     "protocol": "vless",
@@ -192,7 +187,9 @@ def main():
                 new_string = original_string
                 if original_string.startswith("APP-DE"):
                     new_string = re.sub(
-                        r"APP-DE-\d+", f"APP-DE-{random.randint(1, 10)}", original_string
+                        r"APP-DE-\d+",
+                        f"APP-DE-{random.randint(1, 10)}",
+                        original_string,
                     )
                     print(new_string)
 
@@ -202,7 +199,11 @@ def main():
                         r"APP-FI-\d+", f"APP-FI-{random_num}", original_string
                     )
                 px["streamSettings"]["xhttpSettings"]["host"] = new_string
-                px["streamSettings"]["tlsSettings"]["serverName"] = "".join(random.choices(string.ascii_lowercase + string.digits, k=8)) + "".join(px["streamSettings"]["tlsSettings"]["serverName"].partition('.')[1:])
+                px["streamSettings"]["tlsSettings"]["serverName"] = "".join(
+                    random.choices(string.ascii_lowercase + string.digits, k=8)
+                ) + "".join(
+                    px["streamSettings"]["tlsSettings"]["serverName"].partition(".")[1:]
+                )
             except (KeyError, TypeError):
                 pass
 
