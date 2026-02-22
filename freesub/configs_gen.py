@@ -90,7 +90,7 @@ def main():
 
     # Fetch Data
     headers = {
-        "User-Agent": "v2rayNG/1.10.32",
+        "User-Agent": "v2rayNG/1.10.34",
         "Accept": "application/json",
     }
 
