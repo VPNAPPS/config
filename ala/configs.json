@@ -104,11 +104,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "172.66.40.99",
-              "port": 8080,
+              "address": "fl.v2online3.site",
+              "port": 24025,
               "users": [
                 {
-                  "id": "42ee6cfa-a6c2-48ec-b833-b072975c7177",
+                  "id": "2ec06433-4bde-4282-8199-bdd0327126fd",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -117,7 +117,7 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
+          "network": "tcp",
           "security": "none"
         }
       },
@@ -169,6 +169,52 @@
       },
       {
         "tag": "proxy5",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "172.66.40.99",
+              "port": 8080,
+              "users": [
+                {
+                  "id": "42ee6cfa-a6c2-48ec-b833-b072975c7177",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy6",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "172.66.40.99",
+              "port": 8080,
+              "users": [
+                {
+                  "id": "42ee6cfa-a6c2-48ec-b833-b072975c7177",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy7",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -328,7 +374,7 @@
               "method": "chacha20-ietf-poly1305",
               "ota": false,
               "password": "ljqdalu13..",
-              "port": 8319,
+              "port": 8313,
               "level": 0
             }
           ]
@@ -618,16 +664,21 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "shadowsocks",
+        "protocol": "socks",
         "settings": {
           "servers": [
             {
-              "address": "3.112.130.53",
-              "method": "chacha20-ietf-poly1305",
+              "address": "pl-tor.pvdata.host",
               "ota": false,
-              "password": "ljqdalu13..",
-              "port": 8316,
-              "level": 0
+              "port": 1080,
+              "level": 0,
+              "users": [
+                {
+                  "user": "0UCWLxzW4T3YlqXi8gcrl0To",
+                  "pas": "@Vip_fragment_v2ray",
+                  "level": 0
+                }
+              ]
             }
           ]
         },
@@ -685,6 +736,157 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇯🇵 Japan"
+    "remarks": "🇵🇱 Poland"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "1.1.1.1",
+        "1.0.0.1"
+      ]
+    },
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainMatcher": "hybrid",
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "outboundTag": "block",
+          "protocol": [
+            "bittorrent"
+          ],
+          "type": "field"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": false
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "eco.farzadmobile.com",
+              "port": 3184,
+              "users": [
+                {
+                  "id": "2dae933f-15e0-41f5-8681-7ae9b2e93056",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "2-4",
+            "length": "10-100",
+            "packets": "1-2"
+          },
+          "noises": [
+            {
+              "delay": "3-8",
+              "packet": "8-15",
+              "type": "rand"
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "TcpNoDelay": true,
+            "mark": 255
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "https://cp.cloudflare.com/generate_204",
+      "probeInterval": "5m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇪🇸 Spain"
   }
 ]
