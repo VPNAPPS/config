@@ -184,27 +184,58 @@ def main():
 
             try:
                 original_string = px["streamSettings"]["xhttpSettings"]["host"]
-                new_string = original_string
-                if original_string.startswith("APP-DE"):
-                    new_string = re.sub(
-                        r"APP-DE-\d+",
-                        f"APP-DE-{random.randint(1, 10)}",
-                        original_string,
-                    )
-                    print(new_string)
+                
+                # Only proceed if original_string is not empty
+                if original_string:
+                    new_string = original_string
+                    
+                    if original_string.upper().startswith("APP-DE"):
+                        new_string = re.sub(
+                            r"APP-DE-\d+",
+                            f"APP-DE-{random.randint(1, 10)}",
+                            original_string,
+                            flags=re.IGNORECASE 
+                        )
+                        print(new_string)
 
-                elif original_string.startswith("APP-FI"):
-                    random_num = random.randint(1, 6)
-                    new_string = re.sub(
-                        r"APP-FI-\d+", f"APP-FI-{random_num}", original_string
+                    elif original_string.upper().startswith("APP-FI"):
+                        random_num = random.randint(1, 6)
+                        new_string = re.sub(
+                            r"APP-FI-\d+", 
+                            f"APP-FI-{random_num}", 
+                            original_string,
+                            flags=re.IGNORECASE
+                        )
+                        
+                    px["streamSettings"]["xhttpSettings"]["host"] = new_string
+                    px["streamSettings"]["tlsSettings"]["serverName"] = "".join(
+                        random.choices(string.ascii_lowercase + string.digits, k=8)
+                    ) + "".join(
+                        px["streamSettings"]["tlsSettings"]["serverName"].partition(".")[1:]
                     )
-                px["streamSettings"]["xhttpSettings"]["host"] = new_string
-                px["streamSettings"]["tlsSettings"]["serverName"] = "".join(
-                    random.choices(string.ascii_lowercase + string.digits, k=8)
-                ) + "".join(
-                    px["streamSettings"]["tlsSettings"]["serverName"].partition(".")[1:]
-                )
-            except (KeyError, TypeError):
+                else:
+                    original_string = px["streamSettings"]["tlsSettings"]["serverName"]
+                    
+                    if original_string.upper().startswith("APP-DE"):
+                        new_string = re.sub(
+                            r"APP-DE-\d+",
+                            f"APP-DE-{random.randint(1, 10)}",
+                            original_string,
+                            flags=re.IGNORECASE 
+                        )
+                        print(new_string)
+
+                    elif original_string.upper().startswith("APP-FI"):
+                        random_num = random.randint(1, 6)
+                        new_string = re.sub(
+                            r"APP-FI-\d+", 
+                            f"APP-FI-{random_num}", 
+                            original_string,
+                            flags=re.IGNORECASE
+                        )
+                        
+                    px["streamSettings"]["tlsSettings"]["serverName"] = new_string
+            except (KeyError, TypeError, AttributeError):
                 pass
 
             try:
