@@ -81,11 +81,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "172.66.40.99",
-              "port": 8080,
+              "address": "193.151.158.94",
+              "port": 9000,
               "users": [
                 {
-                  "id": "42ee6cfa-a6c2-48ec-b833-b072975c7177",
+                  "id": "fe08cb95-a7bd-48d3-b3e8-e083ab8cd9bc",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -94,7 +94,7 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
+          "network": "tcp",
           "security": "none"
         }
       },
@@ -104,11 +104,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "172.66.40.99",
-              "port": 8080,
+              "address": "193.151.158.91",
+              "port": 9000,
               "users": [
                 {
-                  "id": "42ee6cfa-a6c2-48ec-b833-b072975c7177",
+                  "id": "fe08cb95-a7bd-48d3-b3e8-e083ab8cd9bc",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -117,8 +117,7 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
-          "security": "none"
+          "network": "tcp"
         }
       },
       {
@@ -140,7 +139,31 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp"
+          "network": "xhttp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy4",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "172.66.40.99",
+              "port": 8080,
+              "users": [
+                {
+                  "id": "42ee6cfa-a6c2-48ec-b833-b072975c7177",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "none"
         }
       },
       {
@@ -273,167 +296,15 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "socks",
-        "settings": {
-          "servers": [
-            {
-              "address": "lu-lux.pvdata.host",
-              "ota": false,
-              "port": 1080,
-              "level": 0,
-              "users": [
-                {
-                  "user": "0UCWLxzW4T3YlqXi8gcrl0To",
-                  "pas": "@Vip_fragment_v2ray",
-                  "level": 0
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        }
-      },
-      {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "2-4",
-            "length": "10-100",
-            "packets": "1-2"
-          },
-          "noises": [
-            {
-              "delay": "3-8",
-              "packet": "8-15",
-              "type": "rand"
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "sockopt": {
-            "TcpNoDelay": true,
-            "mark": 255
-          }
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "http://cp.cloudflare.com/generate_204",
-      "probeInterval": "1m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇱🇺 Luxembourg"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "1.1.1.1",
-        "1.0.0.1"
-      ]
-    },
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainMatcher": "hybrid",
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "outboundTag": "block",
-          "protocol": [
-            "bittorrent"
-          ],
-          "type": "field"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
         "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "104.16.121.147",
-              "port": 2052,
+              "address": "193.151.158.183",
+              "port": 9000,
               "users": [
                 {
-                  "id": "2271c50f-ac7a-4d7f-8b04-64085b0daa56",
+                  "id": "fe08cb95-a7bd-48d3-b3e8-e083ab8cd9bc",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -442,8 +313,7 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
-          "security": "none"
+          "network": "tcp"
         }
       },
       {
@@ -576,21 +446,25 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "shadowsocks",
+        "protocol": "trojan",
         "settings": {
           "servers": [
             {
-              "address": "46.38.143.236",
-              "method": "2022-blake3-chacha20-poly1305",
+              "address": "5.34.222.4",
               "ota": false,
-              "password": "HnzIN1CLGGEh+mD/uzbbvTQc/Alq+hkmrC7Po3D4k4E=",
-              "port": 60633,
+              "password": "347ca311-8fc2-499c-8fe1-bd0ecb50f1b3",
+              "port": 43642,
               "level": 0
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp"
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "iepl.usq1.cat.bilibili.com"
+          }
         }
       },
       {
@@ -643,6 +517,6 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇹🇷 Türkiye"
+    "remarks": "🇺🇸 United States"
   }
 ]
