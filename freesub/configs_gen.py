@@ -176,7 +176,7 @@ def main():
         tmp["remarks"] = replace_flag_with_country(remarks)
 
         # Add original proxy
-        tmp["outbounds"].insert(0, proxy)
+        #tmp["outbounds"].insert(0, proxy)
 
         # Generate variations for IPs
         for j, ip in enumerate(IPS):
@@ -184,7 +184,7 @@ def main():
 
             try:
                 original_string = px["streamSettings"]["xhttpSettings"]["host"]
-                
+                #print(original_string)
                 # Only proceed if original_string is not empty
                 if original_string:
                     new_string = original_string
@@ -213,29 +213,30 @@ def main():
                     ) + "".join(
                         px["streamSettings"]["tlsSettings"]["serverName"].partition(".")[1:]
                     )
-                else:
-                    original_string = px["streamSettings"]["tlsSettings"]["serverName"]
+                # else:
+                #     original_string = px["streamSettings"]["tlsSettings"]["serverName"]
                     
-                    if original_string.upper().startswith("APP-DE"):
-                        new_string = re.sub(
-                            r"APP-DE-\d+",
-                            f"AP-DE-{random.randint(1, 10)}",
-                            original_string,
-                            flags=re.IGNORECASE 
-                        )
-                        print(new_string)
+                #     if original_string.upper().startswith("APP-DE"):
+                #         new_string = re.sub(
+                #             r"APP-DE-\d+",
+                #             f"AP-DE-{random.randint(1, 10)}",
+                #             original_string,
+                #             flags=re.IGNORECASE 
+                #         )
+                #         print(new_string)
 
-                    elif original_string.upper().startswith("APP-FI"):
-                        random_num = random.randint(1, 6)
-                        new_string = re.sub(
-                            r"APP-FI-\d+", 
-                            f"AP-FI-{random_num}", 
-                            original_string,
-                            flags=re.IGNORECASE
-                        )
+                #     elif original_string.upper().startswith("APP-FI"):
+                #         random_num = random.randint(1, 6)
+                #         new_string = re.sub(
+                #             r"APP-FI-\d+", 
+                #             f"AP-FI-{random_num}", 
+                #             original_string,
+                #             flags=re.IGNORECASE
+                #         )
                         
-                    px["streamSettings"]["tlsSettings"]["serverName"] = new_string
+                #     px["streamSettings"]["tlsSettings"]["serverName"] = new_string
             except (KeyError, TypeError, AttributeError):
+                print("fuckkkkkkk")
                 pass
 
             try:
