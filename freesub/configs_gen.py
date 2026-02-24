@@ -190,29 +190,31 @@ def main():
                     new_string = original_string
                     
                     if original_string.upper().startswith("APP-DE"):
-                        new_string = re.sub(
-                            r"APP-DE-\d+",
-                            f"APPS-DE-{random.randint(1, 10)}",
-                            original_string,
-                            flags=re.IGNORECASE 
-                        )
+                        new_string = f"APPS-DE-{random.randint(1, 10)}.orgtgju.org"
+                        # new_string = re.sub(
+                        #     r"APP-DE-\d+",
+                        #     f"APPS-DE-{random.randint(1, 10)}",
+                        #     original_string,
+                        #     flags=re.IGNORECASE 
+                        # )
                         print(new_string)
 
                     elif original_string.upper().startswith("APP-FI"):
-                        random_num = random.randint(1, 6)
-                        new_string = re.sub(
-                            r"APP-FI-\d+", 
-                            f"APPS-FI-{random_num}", 
-                            original_string,
-                            flags=re.IGNORECASE
-                        )
+                        new_string = f"APPS-FI-{random.randint(1, 6)}.orgtgju.org"
+                        # new_string = re.sub(
+                        #     r"APP-FI-\d+", 
+                        #     f"APPS-FI-{random_num}", 
+                        #     original_string,
+                        #     flags=re.IGNORECASE
+                        # )
                         
                     px["streamSettings"]["xhttpSettings"]["host"] = new_string
-                    px["streamSettings"]["tlsSettings"]["serverName"] = "".join(
-                        random.choices(string.ascii_lowercase + string.digits, k=8)
-                    ) + "".join(
-                        px["streamSettings"]["tlsSettings"]["serverName"].partition(".")[1:]
-                    )
+                    px["streamSettings"]["tlsSettings"]["serverName"] = "tgju.orgtgju.org"
+                    # "".join(
+                    #     random.choices(string.ascii_lowercase + string.digits, k=8)
+                    # ) + "".join(
+                    #     px["streamSettings"]["tlsSettings"]["serverName"].partition(".")[1:]
+                    # )
                 # else:
                 #     original_string = px["streamSettings"]["tlsSettings"]["serverName"]
                     
