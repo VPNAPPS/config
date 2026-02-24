@@ -192,7 +192,7 @@ def main():
                     if original_string.upper().startswith("APP-DE"):
                         new_string = re.sub(
                             r"APP-DE-\d+",
-                            f"AP-DE-{random.randint(1, 10)}",
+                            f"APPS-DE-{random.randint(1, 10)}",
                             original_string,
                             flags=re.IGNORECASE 
                         )
@@ -202,7 +202,7 @@ def main():
                         random_num = random.randint(1, 6)
                         new_string = re.sub(
                             r"APP-FI-\d+", 
-                            f"AP-FI-{random_num}", 
+                            f"APPS-FI-{random_num}", 
                             original_string,
                             flags=re.IGNORECASE
                         )
