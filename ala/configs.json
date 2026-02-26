@@ -284,22 +284,154 @@
         }
       },
       {
-        "tag": "proxy4",
-        "protocol": "shadowsocks",
+        "protocol": "freedom",
         "settings": {
-          "servers": [
+          "fragment": {
+            "interval": "2-4",
+            "length": "10-100",
+            "packets": "1-2"
+          },
+          "noises": [
             {
-              "address": "46.38.143.236",
-              "method": "2022-blake3-chacha20-poly1305",
-              "ota": false,
-              "password": "HnzIN1CLGGEh+mD/uzbbvTQc/Alq+hkmrC7Po3D4k4E=",
-              "port": 60633,
-              "level": 0
+              "delay": "3-8",
+              "packet": "8-15",
+              "type": "rand"
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp"
+          "network": "tcp",
+          "sockopt": {
+            "TcpNoDelay": true,
+            "mark": 255
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "https://www.gstatic.com/generate_204",
+      "probeInterval": "3m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇬🇧 United Kingdom"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "1.1.1.1",
+        "1.0.0.1"
+      ]
+    },
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainMatcher": "hybrid",
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "outboundTag": "block",
+          "protocol": [
+            "bittorrent"
+          ],
+          "type": "field"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": true
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "172.65.111.43",
+              "port": 22,
+              "users": [
+                {
+                  "id": "monacoVPN",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none"
         }
       },
       {
@@ -352,7 +484,7 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇬🇧 United Kingdom"
+    "remarks": "🇨🇭 Switzerland"
   },
   {
     "log": {
@@ -630,13 +762,14 @@
         "settings": {
           "vnext": [
             {
-              "address": "172.65.111.43",
-              "port": 22,
+              "address": "pxqhkkokwtgf.eu-central-1.clawcloudrun.com",
+              "port": 43144,
               "users": [
                 {
-                  "id": "monacoVPN",
+                  "id": "d749c2c0-4ba4-45fe-f8f4-2f422d689a21",
                   "level": 0,
-                  "encryption": "none"
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
                 }
               ]
             }
@@ -644,7 +777,39 @@
         },
         "streamSettings": {
           "network": "tcp",
-          "security": "none"
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "devblogs.microsoft.com"
+          }
+        }
+      },
+      {
+        "tag": "proxy2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "pxqhkkokwtgf.eu-central-1.clawcloudrun.com",
+              "port": 43144,
+              "users": [
+                {
+                  "id": "d749c2c0-4ba4-45fe-f8f4-2f422d689a21",
+                  "level": 0,
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "🔒"
+          }
         }
       },
       {
@@ -697,7 +862,7 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇨🇭 Switzerland"
+    "remarks": "🇩🇪 Germany"
   },
   {
     "log": {
@@ -776,7 +941,30 @@
     ],
     "outbounds": [
       {
-        "tag": "proxy1",
+        "tag": "proxy2",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "199.232.208.116",
+              "port": 80,
+              "users": [
+                {
+                  "id": "3d142a41-8e57-47d7-a579-f52c6eae79f7",
+                  "level": 0,
+                  "encryption": "none"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "xhttp",
+          "security": "none"
+        }
+      },
+      {
+        "tag": "proxy3",
         "protocol": "vless",
         "settings": {
           "vnext": [
@@ -928,58 +1116,26 @@
     "outbounds": [
       {
         "tag": "proxy1",
-        "protocol": "vless",
+        "protocol": "socks",
         "settings": {
-          "vnext": [
+          "servers": [
             {
-              "address": "pxqhkkokwtgf.eu-central-1.clawcloudrun.com",
-              "port": 43144,
+              "address": "pl-tor.pvdata.host",
+              "ota": false,
+              "port": 1080,
+              "level": 0,
               "users": [
                 {
-                  "id": "d749c2c0-4ba4-45fe-f8f4-2f422d689a21",
-                  "level": 0,
-                  "encryption": "none",
-                  "flow": "xtls-rprx-vision"
+                  "user": "0UCWLxzW4T3YlqXi8gcrl0To",
+                  "pas": "@Vip_fragment_v2ray",
+                  "level": 0
                 }
               ]
             }
           ]
         },
         "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "devblogs.microsoft.com"
-          }
-        }
-      },
-      {
-        "tag": "proxy2",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "pxqhkkokwtgf.eu-central-1.clawcloudrun.com",
-              "port": 43144,
-              "users": [
-                {
-                  "id": "d749c2c0-4ba4-45fe-f8f4-2f422d689a21",
-                  "level": 0,
-                  "encryption": "none",
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "devblogs.microsoft.com¬e"
-          }
+          "network": "tcp"
         }
       },
       {
@@ -1032,6 +1188,158 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇩🇪 Germany"
+    "remarks": "🇵🇱 Poland"
+  },
+  {
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "queryStrategy": "UseIP",
+      "servers": [
+        "1.1.1.1",
+        "1.0.0.1"
+      ]
+    },
+    "routing": {
+      "balancers": [
+        {
+          "tag": "balancer",
+          "selector": [
+            "proxy"
+          ],
+          "strategy": {
+            "type": "leastPing"
+          },
+          "fallbackTag": "proxy1"
+        }
+      ],
+      "domainMatcher": "hybrid",
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+        {
+          "outboundTag": "block",
+          "protocol": [
+            "bittorrent"
+          ],
+          "type": "field"
+        },
+        {
+          "type": "field",
+          "balancerTag": "balancer",
+          "network": "tcp,udp"
+        }
+      ]
+    },
+    "policy": {
+      "system": {
+        "statsOutboundDownlink": true,
+        "statsOutboundUplink": true
+      }
+    },
+    "inbounds": [
+      {
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "fakedns"
+          ],
+          "enabled": true
+        },
+        "tag": "socks"
+      },
+      {
+        "port": 10809,
+        "protocol": "http",
+        "settings": {
+          "userLevel": 8
+        },
+        "tag": "http"
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy1",
+        "protocol": "socks",
+        "settings": {
+          "servers": [
+            {
+              "address": "ee-tal.pvdata.host",
+              "ota": false,
+              "port": 1080,
+              "level": 0,
+              "users": [
+                {
+                  "user": "0UCWLxzW4T3YlqXi8gcrl0To",
+                  "pas": "@Vip_fragment_v2ray",
+                  "level": 0
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        }
+      },
+      {
+        "protocol": "freedom",
+        "settings": {
+          "fragment": {
+            "interval": "2-4",
+            "length": "10-100",
+            "packets": "1-2"
+          },
+          "noises": [
+            {
+              "delay": "3-8",
+              "packet": "8-15",
+              "type": "rand"
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "TcpNoDelay": true,
+            "mark": 255
+          }
+        },
+        "tag": "dialer"
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom",
+        "settings": {
+          "domainStrategy": "UseIP"
+        }
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      },
+      {
+        "tag": "dns-out",
+        "protocol": "dns"
+      }
+    ],
+    "observatory": {
+      "subjectSelector": [
+        "proxy"
+      ],
+      "probeURL": "https://www.gstatic.com/generate_204",
+      "probeInterval": "3m",
+      "enableConcurrency": true
+    },
+    "stats": {},
+    "remarks": "🇪🇪 Estonia"
   }
 ]
