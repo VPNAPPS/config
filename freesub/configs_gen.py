@@ -15,13 +15,10 @@ TARGET_URL = os.getenv("TARGET_URL")
 TEMPLATE_FILE = "../template.json"
 OUTPUT_FILE = "configs.json"
 IPS = [
-    "www.speedtest.net",
-    "www.tgju.org",
-    "api-1.zzula.ir",
-    "api-2.zzula.ir",
-    "app-1.zzula.ir",
-    "app-2.zzula.ir",
-    "www.tgju.org",
+    "104.17.148.22",
+    "104.17.147.22",
+    "172.67.73.163",
+    "104.26.14.85",
 ]
 
 
