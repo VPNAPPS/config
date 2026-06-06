@@ -81,166 +81,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "121.127.43.215",
-              "port": 8443,
-              "users": [
-                {
-                  "id": "394f6981-a782-4779-9a85-e6cf22935d93",
-                  "level": 0,
-                  "encryption": "none"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "qro-mx-01.fromblancwithlove.com"
-          }
-        }
-      },
-      {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "2-4",
-            "length": "10-100",
-            "packets": "1-2"
-          },
-          "noises": [
-            {
-              "delay": "3-8",
-              "packet": "8-15",
-              "type": "rand"
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "sockopt": {
-            "TcpNoDelay": true,
-            "mark": 255
-          }
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "https://www.gstatic.com/generate_204",
-      "probeInterval": "3m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇲🇽 Mexico"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "1.1.1.1",
-        "1.0.0.1"
-      ]
-    },
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainMatcher": "hybrid",
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "outboundTag": "block",
-          "protocol": [
-            "bittorrent"
-          ],
-          "type": "field"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "it-xh-02.hpdata.click",
+              "address": "18.198.227.192",
               "port": 443,
               "users": [
                 {
-                  "id": "1014818b-5c5c-46b1-98fe-eaf8d5eba642",
+                  "id": "84b07d94-0c33-4c9e-a2e8-9e4ead9ba63e",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -249,13 +94,7 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "it-xh-02.hpdata.click",
-            "fingerprint": "chrome"
-          }
+          "network": "tcp"
         }
       },
       {
@@ -308,7 +147,7 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇺🇸 United States"
+    "remarks": "🇩🇪 Germany"
   },
   {
     "log": {
@@ -411,6 +250,58 @@
             "allowInsecure": false,
             "serverName": "ru-vk-5.1001notes.ru",
             "fingerprint": "chrome"
+          }
+        }
+      },
+      {
+        "tag": "proxy2",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "13.36.253.90",
+              "ota": false,
+              "password": "telegram-id-directvpn",
+              "port": 22223,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "trojan.burgerip.co.uk",
+            "alpn": [
+              "http/1.1"
+            ]
+          }
+        }
+      },
+      {
+        "tag": "proxy3",
+        "protocol": "trojan",
+        "settings": {
+          "servers": [
+            {
+              "address": "13.36.253.90",
+              "ota": false,
+              "password": "telegram-id-privatevpns",
+              "port": 22222,
+              "level": 0
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "allowInsecure": false,
+            "serverName": "trojan.burgerip.co.uk",
+            "alpn": [
+              "http/1.1"
+            ]
           }
         }
       },
@@ -548,11 +439,11 @@
         "settings": {
           "vnext": [
             {
-              "address": "169.150.228.24",
-              "port": 8443,
+              "address": "138.197.123.50",
+              "port": 18972,
               "users": [
                 {
-                  "id": "394f6981-a782-4779-9a85-e6cf22935d93",
+                  "id": "a1df9595-0475-491e-8b5b-32c3f6eb0da3",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -562,152 +453,20 @@
         },
         "streamSettings": {
           "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "bog-co-01.fromblancwithlove.com"
-          }
+          "security": "none"
         }
       },
       {
-        "protocol": "freedom",
-        "settings": {
-          "fragment": {
-            "interval": "2-4",
-            "length": "10-100",
-            "packets": "1-2"
-          },
-          "noises": [
-            {
-              "delay": "3-8",
-              "packet": "8-15",
-              "type": "rand"
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "sockopt": {
-            "TcpNoDelay": true,
-            "mark": 255
-          }
-        },
-        "tag": "dialer"
-      },
-      {
-        "tag": "direct",
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        }
-      },
-      {
-        "tag": "block",
-        "protocol": "blackhole"
-      },
-      {
-        "tag": "dns-out",
-        "protocol": "dns"
-      }
-    ],
-    "observatory": {
-      "subjectSelector": [
-        "proxy"
-      ],
-      "probeURL": "https://www.gstatic.com/generate_204",
-      "probeInterval": "3m",
-      "enableConcurrency": true
-    },
-    "stats": {},
-    "remarks": "🇨🇴 Colombia"
-  },
-  {
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "queryStrategy": "UseIP",
-      "servers": [
-        "1.1.1.1",
-        "1.0.0.1"
-      ]
-    },
-    "routing": {
-      "balancers": [
-        {
-          "tag": "balancer",
-          "selector": [
-            "proxy"
-          ],
-          "strategy": {
-            "type": "leastPing"
-          },
-          "fallbackTag": "proxy1"
-        }
-      ],
-      "domainMatcher": "hybrid",
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "outboundTag": "block",
-          "protocol": [
-            "bittorrent"
-          ],
-          "type": "field"
-        },
-        {
-          "type": "field",
-          "balancerTag": "balancer",
-          "network": "tcp,udp"
-        }
-      ]
-    },
-    "policy": {
-      "system": {
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "inbounds": [
-      {
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "fakedns"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
-      },
-      {
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "tag": "http"
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy1",
+        "tag": "proxy2",
         "protocol": "vless",
         "settings": {
           "vnext": [
             {
-              "address": "ru-vk-4.1001notes.ru",
-              "port": 443,
+              "address": "138.197.123.50",
+              "port": 18972,
               "users": [
                 {
-                  "id": "1014818b-5c5c-46b1-98fe-eaf8d5eba642",
+                  "id": "a1df9595-0475-491e-8b5b-32c3f6eb0da3",
                   "level": 0,
                   "encryption": "none"
                 }
@@ -716,13 +475,8 @@
           ]
         },
         "streamSettings": {
-          "network": "xhttp",
-          "security": "tls",
-          "tlsSettings": {
-            "allowInsecure": false,
-            "serverName": "ru-vk-4.1001notes.ru",
-            "fingerprint": "chrome"
-          }
+          "network": "tcp",
+          "security": "none"
         }
       },
       {
@@ -775,6 +529,6 @@
       "enableConcurrency": true
     },
     "stats": {},
-    "remarks": "🇨🇦 Canada"
+    "remarks": "🇺🇸 United States"
   }
 ]
