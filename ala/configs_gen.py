@@ -1,47 +1,21 @@
 import requests
 import re
 import json
-import pycountry
 from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from create_configs_json import build_config
+from country_utils import country_name_from_code, code_to_flag
 
-def country_code_to_flag(country_code):
-    """Convert country code to flag emoji"""
-    # Convert country code to regional indicator symbols
-    if len(country_code) == 2:
-        return ''.join(chr(ord(c) + 0x1F1E6 - ord('A')) for c in country_code.upper())
-    return '🏳️'  # Default flag for unknown codes
+SPECIAL_CASES = {'HK': 'Hong Kong', 'TW': 'Taiwan', 'MO': 'Macau'}
 
 def get_country_info(country_code):
-    """Get country name and flag emoji from country code using pycountry"""
-    try:
-        # Handle special cases that might not be in pycountry
-        special_cases = {
-            'HK': 'Hong Kong',
-            'TW': 'Taiwan',
-            'MO': 'Macau'
-        }
-        
-        if country_code in special_cases:
-            country_name = special_cases[country_code]
-        else:
-            # Use pycountry to get the country name
-            country = pycountry.countries.get(alpha_2=country_code)
-            if country:
-                country_name = country.name
-            else:
-                # Fallback to country code if not found
-                country_name = country_code
-        
-        flag_emoji = country_code_to_flag(country_code)
-        return country_name, flag_emoji
-        
-    except Exception:
-        # Fallback case for any errors
-        return country_code, '🏳️'
+    """Get country name and flag emoji from a country code."""
+    return (
+        country_name_from_code(country_code, special_cases=SPECIAL_CASES),
+        code_to_flag(country_code),
+    )
 
 def check_file_last_commit(file_path):
     """Check if a file's last commit was less than 2 hours ago"""

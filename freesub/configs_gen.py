@@ -3,10 +3,12 @@ import requests
 import re
 import random
 import copy
-import pycountry
 import os
-import string
+import sys
 from dotenv import load_dotenv
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from country_utils import is_flag_emoji, country_name_from_flag
 
 # 1. Load Environment Variables
 load_dotenv()
@@ -26,28 +28,7 @@ def starts_with_flag(text):
     """
     Checks if the text starts with a flag emoji.
     """
-    if not text:
-        return False
-    # Regex for two regional indicator symbols
-    flag_regex = r"^[\U0001F1E6-\U0001F1FF]{2}"
-    return bool(re.match(flag_regex, text))
-
-
-def flag_to_country_name(flag_char):
-    """
-    Converts a unicode flag emoji to a country name using pycountry.
-    """
-    try:
-        # Convert Flag Emoji to ASCII ISO Code (e.g., 🇩🇪 -> DE)
-        # Regional Indicator Symbol A is 127462. 'A' is 65. Difference is 127397.
-        code = "".join([chr(ord(c) - 127397) for c in flag_char])
-
-        country = pycountry.countries.get(alpha_2=code)
-        if country:
-            return country.name
-        return None
-    except Exception:
-        return None
+    return is_flag_emoji(text[:2]) if text else False
 
 
 def replace_flag_with_country(text):
@@ -62,7 +43,7 @@ def replace_flag_with_country(text):
 
     # Use set to avoid duplicates
     for flag in set(flags):
-        country_name = flag_to_country_name(flag)
+        country_name = country_name_from_flag(flag, default=None)
         if country_name:
             text = (
                 f"{flag} {country_name}"  # text.replace(flag, f"{flag} {country_name}")

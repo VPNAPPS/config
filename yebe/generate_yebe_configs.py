@@ -1,5 +1,4 @@
 import requests
-import pycountry
 import re
 import os
 import sys
@@ -8,6 +7,7 @@ from typing import Dict, List
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from create_configs_json import build_config
+from country_utils import code_to_flag, country_name_from_code
 import json
 
 # Load environment variables from .env file
@@ -18,24 +18,17 @@ class CountryDataFetcher:
     def __init__(self):
         self.base_url = os.getenv("BASE_URL")
         self.github_api_url = os.getenv("GGITHUB_API_URL")
-        self.flag_offset = 127397
 
     def get_flag_emoji(self, country_code: str) -> str:
         """Convert ISO 3166-1 alpha-2 country code to flag emoji"""
         try:
-            return "".join(
-                chr(self.flag_offset + ord(char)) for char in country_code.upper()
-            )
-        except:
+            return code_to_flag(country_code)
+        except Exception:
             return "⚡️"
 
     def get_country_name(self, country_code: str) -> str:
         """Get country name from country code using pycountry"""
-        try:
-            country = pycountry.countries.get(alpha_2=country_code.upper())
-            return country.name if country else f"Fastest Location"
-        except:
-            return f"Fastest Location"
+        return country_name_from_code(country_code, default="Fastest Location")
 
     def fetch_available_country_codes(self) -> List[str]:
         """Fetch all available country codes from the GitHub repository"""

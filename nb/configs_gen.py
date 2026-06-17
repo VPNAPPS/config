@@ -3,56 +3,30 @@ import json
 from collections import defaultdict
 import copy
 import os
+import sys
 from dotenv import load_dotenv
-import pycountry
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from country_utils import is_flag_emoji, country_name_from_flag
 
 # Load environment variables from .env file
 load_dotenv()
 
+# Markers that are not flag emojis but appear in remarks.
+SPECIAL_CASES = {
+    "(nm_zorp)": "Zorp",
+    "🛜": "WiFi",
+    "✅": "Checked",
+    "❌": "Blocked",
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿": "England",  # England flag is a special case
+}
+
 def emoji_to_country_name(emoji):
-    """
-    Convert flag emoji to country name using pycountry.
-    Flag emojis are made of regional indicator symbols that correspond to ISO alpha-2 codes.
-    """
-    if not is_flag_emoji(emoji):
-        # Handle special cases that aren't flag emojis
-        special_cases = {
-            "(nm_zorp)": "Zorp",
-            "🛜": "WiFi",
-            "✅": "Checked",
-            "❌": "Blocked",
-            "🏴󠁧󠁢󠁥󠁮󠁧󠁿": "England"  # England flag is a special case
-        }
-        return special_cases.get(emoji, emoji)
-    
-    # Convert flag emoji to country code
-    # Flag emojis use regional indicator symbols (U+1F1E6 to U+1F1FF)
-    # Each corresponds to A-Z, so we convert back to get the country code
-    if len(emoji) == 2:
-        try:
-            # Convert each character back to its corresponding letter
-            code = ''.join(chr(ord(char) - 0x1F1E6 + ord('A')) for char in emoji)
-            
-            # Look up the country using pycountry
-            country = pycountry.countries.get(alpha_2=code)
-            if country:
-                return country.name
-            else:
-                return emoji  # Return emoji if country not found
-        except (ValueError, AttributeError):
-            return emoji
-    
-    return emoji
+    """Convert a flag emoji (or known marker) to a country name."""
+    return country_name_from_flag(emoji, special_cases=SPECIAL_CASES)
 
 with open("../template.json", "r") as f:
   TEMPLATE = json.loads(f.read())
-
-def is_flag_emoji(char):
-    """Check if a character is a flag emoji (regional indicator symbols)"""
-    # Flag emojis are composed of regional indicator symbols (U+1F1E6 to U+1F1FF)
-    if len(char) == 2:  # Flag emojis are typically 2 characters
-        return all(0x1F1E6 <= ord(c) <= 0x1F1FF for c in char)
-    return False
 
 
 def fetch_and_group_data():

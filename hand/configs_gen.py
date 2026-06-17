@@ -1,12 +1,12 @@
 import re
 import json
-import pycountry
 from collections import defaultdict
 import sys
 import os
 
 # Add parent directory to path to import create_configs_json
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from country_utils import country_name_from_code, code_to_flag, COMMON_CODE_NAMES
 try:
     from create_configs_json import build_config
 except ImportError:
@@ -14,41 +14,12 @@ except ImportError:
     def build_config(name, content, check=False):
         return {"name": name, "content": content}
 
-def country_code_to_flag(country_code):
-    """Convert country code to flag emoji"""
-    if len(country_code) == 2:
-        return ''.join(chr(ord(c) + 0x1F1E6 - ord('A')) for c in country_code.upper())
-    return '🏳️'
-
 def get_country_info(country_code):
-    """Get country name and flag emoji from country code using pycountry"""
-    try:
-        special_cases = {
-            'HK': 'Hong Kong',
-            'TW': 'Taiwan',
-            'MO': 'Macau',
-            'UK': 'United Kingdom',
-            'US': 'United States',
-            'RU': 'Russia',
-            'IR': 'Iran'
-        }
-        
-        country_code = country_code.upper().strip()
-        
-        if country_code in special_cases:
-            country_name = special_cases[country_code]
-        else:
-            country = pycountry.countries.get(alpha_2=country_code)
-            if country:
-                country_name = country.name
-            else:
-                country_name = country_code
-        
-        flag_emoji = country_code_to_flag(country_code)
-        return country_name, flag_emoji
-        
-    except Exception:
-        return country_code, '🏳️'
+    """Get country name and flag emoji from a country code."""
+    return (
+        country_name_from_code(country_code, special_cases=COMMON_CODE_NAMES),
+        code_to_flag(country_code),
+    )
 
 def parse_config_line(line):
     """
