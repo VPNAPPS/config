@@ -24,6 +24,13 @@ FASTEST_REMARKS = "⚡️ Fastest Location"
 FASTEST_CONFIG_FILE = "config.json"
 ALL_CONFIGS_FILE = "configs.json"
 
+# The Android client passes the chosen config to its VPN service through a Binder
+# transaction, which has a hard ~1 MB limit (TransactionTooLargeException). Each
+# proxy is ~900 bytes once parceled, so we cap every config's proxy count to keep
+# it well under that limit. 450 still gives the leastPing balancer plenty to pick
+# from while leaving a wide safety margin (~400 KB parceled).
+MAX_PROXIES_PER_CONFIG = 450
+
 # Ad-network settings attached to the fastest config (timeouts are in ms).
 ADS_CONFIG = {
     "inter_bitcoin": None,
@@ -152,19 +159,59 @@ def merge_by_remarks(configs):
 
 
 def collect_all_proxies(configs):
-    """Gather every proxy outbound across configs into one renumbered list."""
-    proxies = []
+    """Gather the unique proxies across all configs (as tagless copies)."""
+    all_outbounds = []
     for config in configs:
         outbounds = config.get("outbounds")
         if not outbounds:
             print("Warning: config has no 'outbounds'. Skipping.")
             continue
-        for outbound in outbounds:
-            if is_proxy(outbound):
-                proxy = copy.deepcopy(outbound)
-                proxy["tag"] = f"proxy{len(proxies) + 1}"
-                proxies.append(proxy)
+        all_outbounds.extend(outbounds)
+    return dedupe_proxies(all_outbounds)
+
+
+def dedupe_proxies(outbounds):
+    """Return unique proxy outbounds as tagless copies, preserving order.
+
+    Proxies are compared by their definition (ignoring the ``tag``, which we
+    assign ourselves), since the per-source fan-out produces many exact dupes.
+    """
+    unique = []
+    seen = set()
+    for outbound in outbounds:
+        if not is_proxy(outbound):
+            continue
+        proxy = copy.deepcopy(outbound)
+        proxy.pop("tag", None)
+        fingerprint = json.dumps(proxy, sort_keys=True, ensure_ascii=False)
+        if fingerprint in seen:
+            continue
+        seen.add(fingerprint)
+        unique.append(proxy)
+    return unique
+
+
+def cap_and_number(proxies):
+    """Cap to MAX_PROXIES_PER_CONFIG and assign proxy1/proxy2/... tags in place.
+
+    The template's balancer selector (``["proxy"]``) is a prefix match and its
+    ``fallbackTag`` is ``proxy1``, so 1-based ``proxyN`` tags are what's expected.
+    """
+    proxies = proxies[:MAX_PROXIES_PER_CONFIG]
+    for i, proxy in enumerate(proxies, 1):
+        proxy["tag"] = f"proxy{i}"
     return proxies
+
+
+def cap_config_proxies(config):
+    """De-duplicate and cap a single config's proxies in place."""
+    outbounds = config.get("outbounds")
+    if not outbounds:
+        return config
+    proxies = cap_and_number(dedupe_proxies(outbounds))
+    others = [ob for ob in outbounds if not is_proxy(ob)]
+    config["outbounds"] = proxies + others
+    return config
 
 
 def write_json(path, data):
@@ -176,10 +223,22 @@ def main():
     configs = load_all_sources(SOURCE_FOLDERS)
     configs = merge_by_remarks(configs)
 
-    proxies = collect_all_proxies(configs)
-
-    fastest_config = build_config_json_from_proxies(FASTEST_REMARKS, proxies)
+    # Build the Fastest Location config from the full de-duplicated proxy pool.
+    fastest_proxies = collect_all_proxies(configs)
+    total_unique = len(fastest_proxies)
+    fastest_proxies = cap_and_number(fastest_proxies)
+    if total_unique > MAX_PROXIES_PER_CONFIG:
+        print(
+            f"Capping fastest-location proxies from {total_unique} to "
+            f"{MAX_PROXIES_PER_CONFIG} to stay under the Android Binder size limit"
+        )
+    fastest_config = build_config_json_from_proxies(FASTEST_REMARKS, fastest_proxies)
     fastest_config["ads"] = ADS_CONFIG
+
+    # De-duplicate + cap every per-country config so none can exceed the limit.
+    for config in configs:
+        cap_config_proxies(config)
+
     configs.insert(0, fastest_config)
 
     write_json(FASTEST_CONFIG_FILE, fastest_config)
