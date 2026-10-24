@@ -63,9 +63,10 @@ import argparse
 import base64
 import gzip
 import hashlib
+import http.client
 import json
 import os
-import http.client
+import re
 import socket
 import ssl
 import sys
@@ -73,9 +74,13 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zlib
 
 PACKAGE_NAME = "com.kidi.vkk.anp"
 DEFAULT_BASE_URL = "https://api.gem-panel.com"
+# Mirrors observed in the panel's own payload ("domains"). CDNs like CloudFront
+# are usually reachable from CI networks that Cloudflare blocks outright.
+FALLBACK_SOURCES = ("https://dp2l1bztx8f43.cloudfront.net",)
 APP_DATA_PATH = "/api/v1/apps/app-data"
 USER_AGENT = "okhttp/4.12.0"
 
@@ -350,10 +355,11 @@ def validate_payload(cfg: dict) -> None:
             raise ValueError(f"Repo CDN payload.configs.smart[{i}] is neither string nor object with config")
 
 
-def build_sources(state: dict, override: str | None = None) -> list[str]:
+def build_sources(state: dict, override: list[str] | str | None = None) -> list[str]:
     """Base URLs to try, in the order the app prefers them (pw0.c)."""
     if override:
-        return [override.rstrip("/")]
+        items = [override] if isinstance(override, str) else list(override)
+        return [u.strip().rstrip("/") for u in items if u and u.strip()]
     candidates: list[str] = []
     remembered = state.get("baseUrl")
     for d in (state.get("domains") or []):
@@ -362,6 +368,7 @@ def build_sources(state: dict, override: str | None = None) -> list[str]:
     if isinstance(remembered, str) and remembered.strip():
         candidates.append(remembered.strip().rstrip("/"))
     candidates.append(DEFAULT_BASE_URL)
+    candidates.extend(FALLBACK_SOURCES)
     # de-duplicate, keep order
     seen, out = set(), []
     for c in candidates:
@@ -420,15 +427,69 @@ def parse_proxy(value: str | None) -> tuple[str, int] | None:
     return host, int(port)
 
 
+def _decode_body(body: bytes, content_encoding: str | None) -> bytes:
+    """Undo gzip/deflate so error pages are readable instead of mojibake."""
+    enc = (content_encoding or "").lower()
+    if not body:
+        return body
+    try:
+        if "gzip" in enc or body[:2] == b"\x1f\x8b":
+            return gzip.decompress(body)
+        if "deflate" in enc:
+            return zlib.decompress(body)
+    except (OSError, zlib.error):
+        pass
+    return body
+
+
+def _error_detail(body: bytes, content_encoding: str | None,
+                  headers=None) -> str:
+    """One readable line from an error response (HTML block pages included)."""
+    text = _decode_body(body, content_encoding).decode("utf-8", "replace")
+    title = re.search(r"<title[^>]*>(.*?)</title>", text, re.S | re.I)
+    if title:
+        text = title.group(1)
+    text = re.sub(r"[^\x20-\x7e\u00a0-\uffff]+", " ", text)
+    text = " ".join(text.split())[:300]
+    return text or "(empty body)"
+
+
+def _http_error(url: str, status: int, reason: str, headers, body: bytes):
+    """Build an HTTPError whose message is safe to print in a CI log."""
+    enc = None
+    if headers is not None:
+        try:
+            enc = headers.get("Content-Encoding")
+        except AttributeError:
+            enc = None
+    detail = _error_detail(body, enc, headers)
+    ray = None
+    if headers is not None:
+        try:
+            ray = headers.get("cf-ray")
+        except AttributeError:
+            ray = None
+    msg = f"HTTP {status}: {detail}"
+    if ray:
+        msg += f" [cf-ray {ray}]"
+    if status == 403:
+        msg += (" - the panel sits behind Cloudflare and blocks many datacenter/CI "
+                "addresses; retry with --proxy <host:port> from a residential/other egress")
+    return urllib.error.HTTPError(url, status, msg, headers, None)
+
+
 def http_get(url: str, timeout: float = 15.0,
              proxy: tuple[str, int] | None = None,
-             api_key: str | None = API_KEY) -> bytes:
+             api_key: str | None = API_KEY,
+             debug: bool = False) -> bytes:
     """GET url, optionally through SOCKS5, with the panel API key header."""
     parts = urllib.parse.urlsplit(url)
     headers = {
         "User-Agent": USER_AGENT,
         "Accept-Encoding": "gzip",
-        "Accept": "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive",
     }
     if api_key:
         headers["authorization"] = f"ApiKey {api_key}"
@@ -441,12 +502,14 @@ def http_get(url: str, timeout: float = 15.0,
             conn.request("GET", path, headers=headers)
             resp = conn.getresponse()
             body = resp.read()
-            if (resp.getheader("Content-Encoding") or "").lower() == "gzip":
-                body = gzip.decompress(body)
+            if debug:
+                print(f"debug: GET {url} -> {resp.status} {resp.reason}", file=sys.stderr)
+                for h in ("content-type", "content-encoding", "server", "cf-ray", "cache-control"):
+                    if resp.getheader(h):
+                        print(f"debug:   {h}: {resp.getheader(h)}", file=sys.stderr)
             if resp.status != 200:
-                detail = body.decode("utf-8", "replace")[:200]
-                raise urllib.error.HTTPError(url, resp.status, detail, resp.headers, None)
-            return body
+                raise _http_error(url, resp.status, resp.reason, resp.headers, body)
+            return _decode_body(body, resp.getheader("Content-Encoding"))
         finally:
             conn.close()
 
@@ -454,27 +517,63 @@ def http_get(url: str, timeout: float = 15.0,
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             body = resp.read()
-            if resp.headers.get("Content-Encoding", "").lower() == "gzip":
-                body = gzip.decompress(body)
-            return body
+            if debug:
+                print(f"debug: GET {url} -> {resp.status} {resp.reason}", file=sys.stderr)
+                for h in ("content-type", "content-encoding", "server", "cf-ray", "cache-control"):
+                    if resp.headers.get(h):
+                        print(f"debug:   {h}: {resp.headers.get(h)}", file=sys.stderr)
+            return _decode_body(body, resp.headers.get("Content-Encoding"))
     except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", "replace")[:200] if exc.fp else ""
-        raise urllib.error.HTTPError(url, exc.code, detail or exc.reason, exc.headers, None)
+        body = exc.read() if exc.fp else b""
+        raise _http_error(url, exc.code, exc.reason, exc.headers, body)
 
 
 def fetch_wrapper(base_url: str, timeout: float = 15.0,
-                  proxy=None, api_key: str | None = API_KEY) -> tuple[str, int]:
+                  proxy=None, api_key: str | None = API_KEY,
+                  debug: bool = False) -> tuple[str, int]:
     """GET <base>/api/v1/apps/app-data -> (base64 data, timestamp)."""
-    body = http_get(base_url + APP_DATA_PATH, timeout=timeout, proxy=proxy, api_key=api_key)
+    body = http_get(base_url + APP_DATA_PATH, timeout=timeout, proxy=proxy,
+                    api_key=api_key, debug=debug)
     wrapper = json.loads(body.decode("utf-8"))
     if not isinstance(wrapper, dict) or "data" not in wrapper:
         raise ValueError("unsupported response wrapper")
     return wrapper["data"], int(wrapper.get("timestamp") or 0)
 
 
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+
+
+def _fetch_with_retries(base: str, timeout: float, proxy, api_key, debug: bool,
+                        attempts: int = 2):
+    """Fetch one source, retrying transient failures with a short backoff."""
+    last = None
+    for attempt in range(attempts + 1):
+        try:
+            return fetch_wrapper(base, timeout=timeout, proxy=proxy,
+                                 api_key=api_key, debug=debug)
+        except urllib.error.HTTPError as exc:
+            last = exc
+            if exc.code in _RETRYABLE_STATUS and attempt < attempts:
+                if debug:
+                    print(f"debug: {base} -> {exc.reason}; retrying", file=sys.stderr)
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            raise
+        except (urllib.error.URLError, TimeoutError, OSError, ssl.SSLError) as exc:
+            last = exc
+            if attempt < attempts:
+                if debug:
+                    print(f"debug: {base} -> {type(exc).__name__}; retrying", file=sys.stderr)
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            raise
+    raise last  # pragma: no cover
+
+
 def load_config(sources, cert_hex, state=None, timeout=15.0, force=False,
                 proxy: tuple[str, int] | None = None,
-                api_key: str | None = API_KEY):
+                api_key: str | None = API_KEY,
+                debug: bool = False):
     """
     Reproduce the app's source race/gate (simplified to a sequential attempt):
     timestamp must be newer than the cached one, otherwise the cached config
@@ -486,8 +585,11 @@ def load_config(sources, cert_hex, state=None, timeout=15.0, force=False,
     errors = []
 
     for base in sources:
+        if debug:
+            print(f"debug: trying {base}", file=sys.stderr)
         try:
-            data_b64, ts = fetch_wrapper(base, timeout=timeout, proxy=proxy, api_key=api_key)
+            data_b64, ts = _fetch_with_retries(base, timeout=timeout, proxy=proxy,
+                                               api_key=api_key, debug=debug)
             current = ts if ts > 0 else cached_ts
             payload = decrypt_payload(data_b64, key)
             validate_payload(payload)
@@ -503,16 +605,25 @@ def load_config(sources, cert_hex, state=None, timeout=15.0, force=False,
             if accepted:
                 return payload, meta
             errors.append(f"{base}: timestamp gate rejected (server={ts} cached={cached_ts})")
+        except urllib.error.HTTPError as exc:
+            errors.append(f"{base}: {exc.reason}")
+            if debug:
+                print(f"debug: {base} -> {exc.reason}", file=sys.stderr)
         except Exception as exc:  # network, decode, validation
             errors.append(f"{base}: {type(exc).__name__}: {exc}")
+            if debug:
+                print(f"debug: {base} -> {type(exc).__name__}: {exc}", file=sys.stderr)
 
     if state.get("config"):
+        for err in errors:
+            print(f"warning: {err}", file=sys.stderr)
         return state["config"], {
             "source": "cache",
             "accepted": False,
             "proxy": f"{proxy[0]}:{proxy[1]}" if proxy else None,
             "errors": errors,
-            "note": "server timestamp not newer than the cached one (pass --force to accept anyway)",
+            "note": (errors[0] if errors else
+                     "server timestamp not newer than the cached one (pass --force to accept anyway)"),
         }
     raise RuntimeError("no usable source: " + " | ".join(errors))
 
@@ -628,7 +739,9 @@ def emit(text: str, out_path: str | None = None, summary: str | None = None) -> 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Load Kidi VPN remote app configs")
-    ap.add_argument("--source", help="base URL override (default: from state, then api.gem-panel.com)")
+    ap.add_argument("--source", action="append", metavar="URL",
+                    help="base URL override; repeat for several (default: from state, "
+                         "then api.gem-panel.com and its CDN mirror)")
     ap.add_argument("--state", default="kidi_state.json", help="cache/state file")
     ap.add_argument("--cert-hex", help="file with the pinned certificate hex")
     ap.add_argument("--raw", help="parse a saved HTTP response body instead of fetching")
@@ -648,6 +761,8 @@ def main(argv=None) -> int:
                     help="keep the panel's own remarks instead of '<flag> <country name>'")
     ap.add_argument("--xray-one", type=int, metavar="N",
                     help="print only the N-th config (1-based) as minified JSON, for a single paste")
+    ap.add_argument("--debug", action="store_true",
+                    help="print response status/headers and the full error text to stderr")
     ap.add_argument("--out", metavar="PATH",
                     help="write the selected output (e.g. --xrayjson) to PATH instead of stdout")
     ap.add_argument("--no-save", action="store_true", help="do not update the state file")
@@ -687,7 +802,8 @@ def main(argv=None) -> int:
             cfg, meta = load_config(sources, cert_hex, state=state,
                                     timeout=args.timeout, force=args.force,
                                     proxy=proxy,
-                                    api_key=None if args.no_auth else API_KEY)
+                                    api_key=None if args.no_auth else API_KEY,
+                                    debug=args.debug)
         except RuntimeError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
