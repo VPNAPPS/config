@@ -125,8 +125,13 @@ jobs:
       - name: Run no script
         run: |
           cd no
-          python no_conf.py
-          
+          python no_conf.py --all --jobs 10 --xrayjson --inject-credential --pretty --out configs.json
+
+      - name: Run kid script
+        run: |
+          cd kid
+          python kid_config.py --xrayjson --out configs.json
+
       - name: Run hand script
         run: |
           cd hand
