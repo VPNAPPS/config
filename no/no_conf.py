@@ -30,6 +30,8 @@ Usage
   python3 noraconf.py --all --xrayjson     # JSON array of the Xray configs
   python3 noraconf.py --all --xrayjson --inject-credential > configs.json
   python3 noraconf.py --all --prepared --out prepared.json
+  python3 noraconf.py --mint-identity      # new local identity (standalone, bootstrap pool)
+  python3 noraconf.py --mint-attested      # new attested identity via the app (real pool)
 """
 from __future__ import annotations
 
@@ -67,7 +69,40 @@ NATIVE_MATERIAL = bytes.fromhex(
     "92e29dd2693e3018ababbaf67ede9a53d778dd3e31d59a2469b7d911adbf9518"
 )
 
-DEFAULT_UA = "Nora,131,Android(35),Xiaomi,M2012K11AG,en"
+DEFAULT_UA = "Nora,131,Android(35),POCO,M2012K11AG,en"   # observed app UA on the test device
+
+# Realistic Android devices for per-run fingerprint randomisation. The API only
+# consumes the User-Agent string, so (brand, model, sdk) triples are enough.
+DEVICE_POOL = [
+    ('samsung', 'SM-S928B', 34), ('samsung', 'SM-S921B', 34), ('samsung', 'SM-A556E', 34),
+    ('samsung', 'SM-A346E', 33), ('samsung', 'SM-F946B', 34),
+    ('Google', 'Pixel 8 Pro', 34), ('Google', 'Pixel 8', 34), ('Google', 'Pixel 7a', 33),
+    ('Google', 'Pixel 6', 33),
+    ('Xiaomi', '23113RKC6G', 34), ('Xiaomi', '2211133G', 33), ('Xiaomi', 'M2101K6G', 33),
+    ('Redmi', '2312DRA50G', 34), ('POCO', '23122PCD1G', 34),
+    ('OnePlus', 'CPH2449', 34), ('OnePlus', 'LE2101', 33),
+    ('OPPO', 'CPH2525', 34), ('OPPO', 'PJF110', 33),
+    ('vivo', 'V2227', 33), ('vivo', 'V2230', 33),
+    ('realme', 'RMX3706', 33), ('realme', 'RMX3630', 33),
+    ('motorola', 'moto g84 5G', 33), ('motorola', 'moto g54 5G', 33),
+    ('HONOR', 'ANY-LX1', 33), ('HONOR', 'RKY-LX1', 33),
+    ('HUAWEI', 'ELS-NX9', 31), ('HUAWEI', 'NOH-NX9', 31),
+    ('Nokia', 'TA-1043', 30), ('Sony', 'XQ-DQ72', 33), ('Nothing', 'A065', 33),
+]
+LOCALE_POOL = ['en', 'fa', 'ar', 'tr', 'ru', 'id', 'hi', 'fr', 'de', 'es', 'pt', 'it']
+
+
+def random_user_agent(version=131, seed=None, lang='en'):
+    """Build a User-Agent modeled on cs3.m0(): Nora,<vc>,Android(<sdk>),<brand>,<model>,<lang>.
+
+    The API localises server Location names by this language token, so it is kept
+    at English unless the caller asks otherwise ('random' picks one per run).
+    """
+    rng = random.Random(seed) if seed is not None else random.SystemRandom()
+    brand, model, sdk = rng.choice(DEVICE_POOL)
+    if lang in (None, '', 'random'):
+        lang = rng.choice(LOCALE_POOL)
+    return f'Nora,{version},Android({sdk}),{brand},{model},{lang}'
 
 
 # --------------------------------------------------------------------------- #
@@ -386,18 +421,27 @@ class NoraClient:
         return self.request('/v1/config')
 
     def normal_server(self):
-        return self._server(self.request('/v1/servers/normal'))
+        return self._server(self.request('/v1/servers/normal'), 'normal')
+
+    def home_config(self):
+        """The 'HomeCf' server from /v1/config: what the app's home button connects with."""
+        startup = self.startup_config() or {}
+        raw = startup.get('HomeCf')
+        if not isinstance(raw, dict):
+            raise NoraError('startup config has no HomeCf')
+        return self._server(raw, 'home')
 
     def selective_servers(self):
         return self.request('/v1/servers/selective') or []
 
     def selective_server(self, server_id):
-        return self._server(self.request(f'/v1/servers/selective/{int(server_id)}'))
+        return self._server(self.request(f'/v1/servers/selective/{int(server_id)}'), 'selective')
 
-    def _server(self, raw):
+    def _server(self, raw, source='normal'):
         if not raw:
             raise NoraError('empty server response')
         entry = {
+            'source': source,
             'id': raw.get('Id'),
             'location': raw.get('Location'),
             'flag': raw.get('Flag'),
@@ -468,6 +512,161 @@ def prepare(cfg: dict, entry: dict) -> dict:
     return cfg
 
 
+def load_state(path):
+    """Read a persisted identity (uuid + phone UA) from --state, if it exists."""
+    if not path:
+        return {}
+    try:
+        with open(path, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    out = {}
+    if isinstance(data.get('uuid'), str) and data['uuid'].strip():
+        out['uuid'] = data['uuid'].strip()
+    if isinstance(data.get('user_agent'), str) and data['user_agent'].strip():
+        out['user_agent'] = data['user_agent'].strip()
+    return out
+
+
+def load_uuid_pool(path):
+    """Load a list of identities ({'uuid','user_agent'}) from JSON for rotation."""
+    if not path:
+        return []
+    try:
+        with open(path, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+    except (OSError, ValueError) as exc:
+        raise NoraError(f'cannot read --uuid-pool: {exc}') from None
+    if isinstance(data, dict):
+        data = data.get('identities') or []
+    out = []
+    for item in data:
+        if isinstance(item, str):
+            out.append({'uuid': item})
+        elif isinstance(item, dict) and item.get('uuid'):
+            out.append({'uuid': item['uuid'], 'user_agent': item.get('user_agent')})
+    return out
+
+
+def save_state(path, uuid, user_agent=None):
+    """Persist an identity so later runs keep the same UUID (and phone fingerprint)."""
+    if not path:
+        return
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        payload = {'uuid': uuid, 'created_at': int(time.time())}
+        if user_agent:
+            payload['user_agent'] = user_agent
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(payload, fh, indent=2)
+        print(f'noraconf: saved identity to {path}', file=sys.stderr)
+    except OSError as exc:
+        print(f'noraconf: cannot persist identity to {path}: {exc}', file=sys.stderr)
+
+
+def mint_identity(seed=None, lang='en'):
+    """Create a brand-new client identity locally: random UUID + random phone UA.
+
+    Fully standalone (no adb, no device). The API only knows this UUID as an
+    unattested client, so it is served the shared bootstrap node; use
+    --mint-attested (or --from-device) if you need the real server pool.
+    """
+    return {'uuid': str(uuidlib.uuid4()), 'user_agent': random_user_agent(seed=seed, lang=lang)}
+
+
+def mint_attested_identity(serial=None, wait=40.0, settle=10.0, verbose=False):
+    """Wipe the app data and let a fresh install attest a NEW identity.
+
+    Device-assisted and destructive: only this path yields an *entitled* identity.
+
+    The API only serves the real server pool (unique leases, REALITY or ECH nodes)
+    to UUIDs the genuine app has attested with an Android Keystore hardware key; a synthetic UUID
+    gets one shared bootstrap node. Clearing the data and launching the app once
+    makes it create and attest a brand-new UUID — i.e. a fresh "random phone" that is
+    also entitled. Destructive: erases the app's data on that device.
+    """
+    import re
+    import subprocess
+
+    def sh(*args, timeout=40):
+        cmd = ['adb'] + (['-s', serial] if serial else []) + ['shell', *args]
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout).stdout.strip()
+
+    if 'uid=0' not in sh('id'):
+        raise NoraError('--mint-identity needs adb root (run `adb root` first)')
+
+    if verbose:
+        print('noraconf: force-stopping and clearing app data', file=sys.stderr)
+    sh('am', 'force-stop', PACKAGE)
+    sh('pm', 'clear', PACKAGE)
+    sh('am', 'start', '-n', f'{PACKAGE}/.ui.SplashActivity')
+
+    deadline = time.time() + wait
+    uuid = None
+    while time.time() < deadline:
+        time.sleep(1.5)
+        xml = sh('cat', f'/data/data/{PACKAGE}/shared_prefs/nora_client_identity.xml')
+        match = re.search(r'name="uuid"[^>]*>([0-9a-fA-F-]{36})<', xml or '')
+        if match:
+            uuid = match.group(1)
+            if verbose:
+                print(f'noraconf: app created uuid {uuid}; waiting for first-run attestation',
+                      file=sys.stderr)
+            break
+    if not uuid:
+        raise NoraError('the app did not create a new identity in time')
+
+    # Give the first run time to attest and fetch its configs.
+    time.sleep(settle)
+    return device_identity(serial)
+
+
+def device_identity(serial=None):
+    """Read the installed app's UUID and the phone's properties via adb.
+
+    The app is not debuggable, so the UUID needs adb root (userdebug/eng builds or
+    `adb root`). Returns {'uuid', 'brand', 'model', 'sdk', 'lang', 'version'}.
+    """
+    import re
+    import subprocess
+
+    def sh(*args):
+        cmd = ['adb'] + (['-s', serial] if serial else []) + ['shell', *args]
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+        return proc.stdout.strip()
+
+    def prop(name, default=''):
+        return sh('getprop', name).strip() or default
+
+    xml = sh('cat', f'/data/data/{PACKAGE}/shared_prefs/nora_client_identity.xml')
+    if not xml:
+        xml = sh('su', '-c', f'cat /data/data/{PACKAGE}/shared_prefs/nora_client_identity.xml')
+    match = re.search(r'name="uuid"[^>]*>([0-9a-fA-F-]{36})<', xml or '')
+    if not match:
+        raise NoraError(
+            'cannot read the app UUID from the device; run `adb root` first '
+            '(LineageOS userdebug) or pass --uuid/--state')
+
+    version = '131'
+    dump = sh('dumpsys', 'package', PACKAGE)
+    vm = re.search(r'versionCode=(\d+)', dump or '')
+    if vm:
+        version = vm.group(1)
+
+    brand = prop('ro.product.brand', 'Android').replace(',', ' ')
+    model = prop('ro.product.model', 'device').replace(',', ' ')
+    sdk = prop('ro.build.version.sdk', '35')
+    locale = prop('persist.sys.locale') or prop('ro.product.locale', 'en')
+    lang = locale.split('-')[0] or 'en'
+    return {
+        'uuid': match.group(1),
+        'brand': brand, 'model': model, 'sdk': sdk, 'lang': lang,
+        'version': version,
+        'ua': f'Nora,{version},Android({sdk}),{brand},{model},{lang}',
+    }
+
+
 def remarks_label(entry: dict, mode: str = 'country'):
     """Build the '<flag> <country>' label for the Xray `remarks` field.
 
@@ -483,6 +682,76 @@ def remarks_label(entry: dict, mode: str = 'country'):
         location = location.split(' - ', 1)[0].strip()
     parts = [part for part in (flag, location) if part]
     return ' '.join(parts) or None
+
+
+def is_ech(entry: dict) -> bool:
+    """True when the profile's TLS stream settings carry an ECHConfigList."""
+    try:
+        tls = entry['xray']['outbounds'][0]['streamSettings'].get('tlsSettings') or {}
+    except (KeyError, IndexError, TypeError):
+        return False
+    return bool(tls.get('echConfigList'))
+
+
+def server_key(entry: dict) -> str:
+    try:
+        v = entry['xray']['outbounds'][0]['settings']['vnext'][0]
+        return f"{v.get('address')}:{v.get('port')}"
+    except (KeyError, IndexError, TypeError):
+        return str(entry.get('id'))
+
+
+def collect_ech(clients, want_normal, want_selective, args, log=print):
+    """Fetch repeatedly, rotating identities, until ECH-bearing profiles are found.
+
+    The pool mixes ECH / REALITY / bootstrap, and per-UUID throttling kicks in after a
+    couple of calls, so a pool of enrolled identities is spread across requests.
+    """
+    if not isinstance(clients, (list, tuple)):
+        clients = [clients]
+    collected, seen = {}, set()
+    attempts = max(1, args.ech_attempts)
+    limit = args.limit
+
+    for round_no in range(1, attempts + 1):
+        targets = []
+        if want_normal or not want_selective:
+            targets.append(('normal', None))
+        if want_selective:
+            if not hasattr(collect_ech, '_ids'):
+                listing = client.selective_servers()
+                if limit:
+                    listing = listing[:limit]
+                collect_ech._ids = [item['Id'] for item in listing]
+            targets += [('selective', sid) for sid in collect_ech._ids
+                        if sid not in seen]
+        if not targets:
+            break
+
+        for idx, (kind, sid) in enumerate(targets):
+            client = clients[idx % len(clients)]
+            if getattr(client, 'uuid', None) is not None:
+                pass
+            try:
+                entry = client.normal_server() if kind == 'normal' else client.selective_server(sid)
+            except NoraError as exc:
+                log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} failed: {exc}', file=sys.stderr)
+                continue
+            key = server_key(entry)
+            if is_ech(entry) and key not in collected:
+                collected[key] = entry
+                log(f'noraconf: ECH {entry.get("location")} -> {key}', file=sys.stderr)
+            else:
+                seen.add(sid) if sid is not None else None
+            if len(collected) >= args.ech_count:
+                return list(collected.values())
+            time.sleep(args.ech_delay)
+
+        log(f'noraconf: round {round_no}/{attempts}: {len(collected)} ECH config(s)', file=sys.stderr)
+        if round_no < attempts:
+            time.sleep(args.ech_delay)
+
+    return list(collected.values())
 
 
 # --------------------------------------------------------------------------- #
@@ -502,24 +771,70 @@ def main(argv=None):
     ap.add_argument('--selective', action='store_true',
                     help='fetch the selective server list (and their configs)')
     ap.add_argument('--normal', action='store_true', help='fetch the normal server (default)')
+    ap.add_argument('--uuid-pool', metavar='FILE',
+                    help='JSON list of enrolled identities to rotate for --ech '
+                         '([{"uuid": "...", "user_agent": "..."}]); avoids per-UUID throttling')
+    ap.add_argument('--ech', action='store_true',
+                    help='collect ECH profiles only: retry (the pool mixes REALITY/ECH/bootstrap) '
+                         'until ECH configs are found')
+    ap.add_argument('--ech-count', type=int, default=1,
+                    help='stop after this many distinct ECH servers (default 1)')
+    ap.add_argument('--ech-attempts', type=int, default=10,
+                    help='maximum fetch rounds in --ech mode (default 10)')
+    ap.add_argument('--ech-delay', type=float, default=4.0,
+                    help='seconds between --ech requests (default 4)')
+    ap.add_argument('--home', action='store_true',
+                    help='also include the HomeCf server from /v1/config (what the app '
+                         'uses for its main connect button)')
     ap.add_argument('--inject-credential', action='store_true',
                     help='write the lease credential into each config (as the app does)')
     ap.add_argument('--prepared', action='store_true',
                     help='also apply the app\'s DNS/route hardening (implies --inject-credential)')
     ap.add_argument('--pretty', action='store_true', help='pretty-print JSON output')
     ap.add_argument('--out', metavar='FILE', help='write output to FILE instead of stdout')
-    ap.add_argument('--uuid', help='client UUID to use (default: random, like a fresh install)')
+    ap.add_argument('--uuid',
+                    help='client UUID to use (default: a fresh random one per run, i.e. a new '
+                         '"install"; the app instead keeps one UUID forever)')
+    ap.add_argument('--state', metavar='FILE',
+                    help='persist the client UUID in FILE and reuse it on later runs '
+                         '(mimics the app\'s nora_client_identity); ignored when --uuid is set')
     ap.add_argument('--base-url', default=DEFAULT_BASE_URL)
     ap.add_argument('--apk', help='APK path; derive keys from its signing certificate')
     ap.add_argument('--cert-sha256', help='override the APK certificate SHA-256 (hex)')
-    ap.add_argument('--user-agent', default=DEFAULT_UA,
-                    help=f'User-Agent (default: {DEFAULT_UA!r})')
+    ap.add_argument('--random-ua', action='store_true',
+                    help='always send a random fake phone in the User-Agent, ignoring any '
+                         'device fingerprint stored in --state (hides your real model)')
+    ap.add_argument('--user-agent', default=None,
+                    help='pin the User-Agent; default is a random realistic Android device '
+                         'per run (brand/model/sdk/language)')
+    ap.add_argument('--seed', type=int,
+                    help='seed for the random device fingerprint (reproducible runs)')
+    ap.add_argument('--lang', default='en',
+                    help='language token in the random User-Agent; the API localises server '
+                         'Location names by it (default: en; use "random" to vary)')
+    ap.add_argument('--from-device', nargs='?', const='', metavar='SERIAL',
+                    help='read the UUID and device properties from a connected phone via adb '
+                         '(needs `adb root` for the UUID); gives exact app parity')
+    ap.add_argument('--mint-identity', action='store_true',
+                    help='create a brand-new identity locally (random UUID + random phone UA); '
+                         'standalone, no device needed. Unattested, so the API serves the '
+                         'bootstrap node')
+    ap.add_argument('--mint-attested', action='store_true',
+                    help='enroll a NEW uuid through the app on a connected phone: wipes the app '
+                         'data, launches it once so Android hardware key attestation registers '
+                         'the uuid, then uses it (destructive, needs adb root). Combine with '
+                         '--state to keep using it locally afterwards')
+    ap.add_argument('--enroll', action='store_true',
+                    help='alias for --mint-attested (one-time device enrollment; pair it with '
+                         '--state so later runs need no device)')
     ap.add_argument('--jobs', type=int, default=1,
                     help='parallel fetches for --all/--selective (default 1; each call '
                          'provisions a lease and takes several seconds)')
     ap.add_argument('--limit', type=int, help='only fetch the first N selective servers')
     ap.add_argument('--delay', type=float, default=0.3,
                     help='seconds between sequential requests (default 0.3)')
+    ap.add_argument('--mint-settle', type=float, default=10.0,
+                    help='seconds to wait after a minted install before using it (default 10)')
     ap.add_argument('--timeout', type=float, default=25)
     ap.add_argument('--retries', type=int, default=3)
     ap.add_argument('--insecure', action='store_true', help='skip TLS verification')
@@ -529,21 +844,108 @@ def main(argv=None):
     if args.prepared:
         args.inject_credential = True
 
-    client = NoraClient(base_url=args.base_url, uuid=args.uuid, apk=args.apk,
-                        cert_sha256=args.cert_sha256, user_agent=args.user_agent,
+    if args.ech and not (args.uuid or args.state or args.uuid_pool
+                         or args.from_device is not None
+                         or args.mint_attested or args.enroll):
+        print("noraconf: --ech needs an enrolled identity (--uuid, --state, --uuid-pool\n"
+              "          or --enroll). A brand-new local identity is not attested, so the\n"
+              "          API only serves the shared bootstrap node and never an ECH profile.\n"
+              "          Note: every enrollment made by the same phone shares that phone's\n"
+              "          hardware attestation key, so the service can correlate them.", file=sys.stderr)
+        return 2
+
+
+    device = None
+    local = None
+    if args.mint_attested or args.enroll:
+        if args.uuid:
+            print('noraconf: --mint-attested cannot be combined with --uuid', file=sys.stderr)
+            return 1
+        try:
+            device = mint_attested_identity(args.from_device or None,
+                                            settle=args.mint_settle, verbose=args.verbose)
+        except (NoraError, OSError) as exc:
+            print(f'noraconf: --mint-attested failed: {exc}', file=sys.stderr)
+            return 1
+        print(f"noraconf: enrolled identity {device['uuid']} "
+              f"({device['brand']} {device['model']})", file=sys.stderr)
+        save_state(args.state, device['uuid'], device['ua'])
+        if not args.state:
+            print('noraconf: tip: add --state FILE next time to reuse this identity locally '
+                  'without the device', file=sys.stderr)
+    elif args.mint_identity:
+        if args.uuid:
+            print('noraconf: --mint-identity cannot be combined with --uuid', file=sys.stderr)
+            return 1
+        local = mint_identity(seed=args.seed, lang=args.lang)
+        print(f"noraconf: minted identity {local['uuid']} ({local['user_agent']})",
+              file=sys.stderr)
+        save_state(args.state, local['uuid'], local['user_agent'])
+    elif args.from_device is not None:
+        try:
+            device = device_identity(args.from_device or None)
+        except (NoraError, OSError) as exc:
+            print(f'noraconf: --from-device failed: {exc}', file=sys.stderr)
+            return 1
+
+    state = load_state(args.state)
+    client_uuid = (args.uuid
+                   or (device or {}).get('uuid')
+                   or (local or {}).get('uuid')
+                   or state.get('uuid'))
+    if args.user_agent:
+        user_agent = args.user_agent
+    elif args.random_ua:
+        user_agent = random_user_agent(seed=args.seed, lang=args.lang)
+    elif device:
+        user_agent = device['ua']
+    elif local:
+        user_agent = local['user_agent']
+    elif state.get('user_agent'):
+        user_agent = state['user_agent']
+    else:
+        user_agent = random_user_agent(seed=args.seed, lang=args.lang)
+
+    client = NoraClient(base_url=args.base_url, uuid=client_uuid, apk=args.apk,
+                        cert_sha256=args.cert_sha256, user_agent=user_agent,
                         timeout=args.timeout, retries=args.retries,
                         verify_tls=not args.insecure, verbose=args.verbose)
+    if args.verbose:
+        print(f'noraconf: uuid={client.uuid} session={client.session_id}', file=sys.stderr)
+        print(f'noraconf: ua={client.user_agent}', file=sys.stderr)
 
     want_selective = args.all or args.selective
     want_normal = args.all or args.normal or not want_selective
 
     entries, errors = [], []
-    if want_normal:
+    if args.ech:
+        pool = load_uuid_pool(args.uuid_pool)
+        clients = [client]
+        for ident in pool:
+            if ident['uuid'] == client.uuid:
+                continue
+            clients.append(NoraClient(base_url=args.base_url, uuid=ident['uuid'],
+                                      apk=args.apk, cert_sha256=args.cert_sha256,
+                                      user_agent=ident.get('user_agent') or client.user_agent,
+                                      timeout=args.timeout, retries=args.retries,
+                                      verify_tls=not args.insecure, verbose=args.verbose))
+        entries = collect_ech(clients, want_normal, want_selective, args)
+        if not entries:
+            print('noraconf: no ECH profile found (pool may be throttling); '
+                  'retry later or raise --ech-attempts', file=sys.stderr)
+            return 1
+    elif want_normal:
         try:
             entries.append(client.normal_server())
         except NoraError as exc:
             errors.append(f'normal: {exc}')
-    if want_selective:
+    if args.home and not args.ech:
+        try:
+            entries.append(client.home_config())
+        except NoraError as exc:
+            errors.append(f'home: {exc}')
+
+    if want_selective and not args.ech:
         try:
             listing = client.selective_servers()
         except NoraError as exc:
