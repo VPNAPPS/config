@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from create_configs_json import build_config_json_from_proxies
 
-SOURCE_FOLDERS = ["freesub", "ala", "no", "kid"]
+SOURCE_FOLDERS = ["freesub", "ala", "no"]
 CANDIDATE_FILES = ["configs.json", "config.json"]
 
 FASTEST_REMARKS = "⚡️ Fastest Location"
