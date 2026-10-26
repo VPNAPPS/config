@@ -39,6 +39,7 @@ import argparse
 import base64
 import hashlib
 import hmac
+import itertools
 import json
 import os
 import random
@@ -622,6 +623,38 @@ def mint_attested_identity(serial=None, wait=40.0, settle=10.0, verbose=False):
     return device_identity(serial)
 
 
+def append_uuid_pool(path, uuid):
+    """Append a UUID to a --uuid-pool file (created if missing, duplicates skipped).
+
+    Only the UUID is stored: the pool is meant to stay fingerprint-free so every run can
+    present a fresh random User-Agent.
+    """
+    if not path:
+        return
+    items = []
+    try:
+        with open(path, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+        if isinstance(data, dict):
+            data = data.get('identities') or []
+        items = [i if isinstance(i, dict) else {'uuid': i} for i in data if i]
+    except (OSError, ValueError):
+        items = []
+    if any(str(i.get('uuid', '')).strip() == uuid for i in items):
+        print(f'noraconf: {uuid} already in {path}', file=sys.stderr)
+        return
+    items.append({'uuid': uuid})
+    try:
+        parent = os.path.dirname(os.path.abspath(path))
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as fh:
+            json.dump(items, fh, indent=2)
+        print(f'noraconf: added {uuid} to {path} ({len(items)} identities)', file=sys.stderr)
+    except OSError as exc:
+        print(f'noraconf: cannot write {path}: {exc}', file=sys.stderr)
+
+
 def device_identity(serial=None):
     """Read the installed app's UUID and the phone's properties via adb.
 
@@ -705,33 +738,36 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
     """Fetch repeatedly, rotating identities, until ECH-bearing profiles are found.
 
     The pool mixes ECH / REALITY / bootstrap, and per-UUID throttling kicks in after a
-    couple of calls, so a pool of enrolled identities is spread across requests.
+    couple of calls, so every single request rotates to the next identity.
     """
     if not isinstance(clients, (list, tuple)):
         clients = [clients]
+    clients = list(clients)
+    rotor = itertools.cycle(clients)
     collected, seen = {}, set()
     attempts = max(1, args.ech_attempts)
     limit = args.limit
+    selective_ids = None
 
     for round_no in range(1, attempts + 1):
         targets = []
         if want_normal or not want_selective:
             targets.append(('normal', None))
         if want_selective:
-            if not hasattr(collect_ech, '_ids'):
-                listing = client.selective_servers()
+            if selective_ids is None:
+                listing = clients[0].selective_servers()
                 if limit:
                     listing = listing[:limit]
-                collect_ech._ids = [item['Id'] for item in listing]
-            targets += [('selective', sid) for sid in collect_ech._ids
-                        if sid not in seen]
+                selective_ids = [item['Id'] for item in listing]
+            targets += [('selective', sid) for sid in selective_ids if sid not in seen]
         if not targets:
             break
 
-        for idx, (kind, sid) in enumerate(targets):
-            client = clients[idx % len(clients)]
-            if getattr(client, 'uuid', None) is not None:
-                pass
+        for kind, sid in targets:
+            client = next(rotor)
+            if args.verbose:
+                label = f'{kind}/{sid}' if sid is not None else kind
+                log(f'noraconf: {label} via {client.uuid} ({client.user_agent})', file=sys.stderr)
             try:
                 entry = client.normal_server() if kind == 'normal' else client.selective_server(sid)
             except NoraError as exc:
@@ -741,8 +777,8 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
             if is_ech(entry) and key not in collected:
                 collected[key] = entry
                 log(f'noraconf: ECH {entry.get("location")} -> {key}', file=sys.stderr)
-            else:
-                seen.add(sid) if sid is not None else None
+            elif sid is not None:
+                seen.add(sid)
             if len(collected) >= args.ech_count:
                 return list(collected.values())
             time.sleep(args.ech_delay)
@@ -870,6 +906,7 @@ def main(argv=None):
         print(f"noraconf: enrolled identity {device['uuid']} "
               f"({device['brand']} {device['model']})", file=sys.stderr)
         save_state(args.state, device['uuid'], device['ua'])
+        append_uuid_pool(args.uuid_pool, device['uuid'])
         if not args.state:
             print('noraconf: tip: add --state FILE next time to reuse this identity locally '
                   'without the device', file=sys.stderr)
@@ -881,6 +918,7 @@ def main(argv=None):
         print(f"noraconf: minted identity {local['uuid']} ({local['user_agent']})",
               file=sys.stderr)
         save_state(args.state, local['uuid'], local['user_agent'])
+        append_uuid_pool(args.uuid_pool, local['uuid'])
     elif args.from_device is not None:
         try:
             device = device_identity(args.from_device or None)
@@ -893,6 +931,13 @@ def main(argv=None):
                    or (device or {}).get('uuid')
                    or (local or {}).get('uuid')
                    or state.get('uuid'))
+    if not client_uuid and args.state:
+        created = mint_identity(seed=args.seed, lang=args.lang)
+        save_state(args.state, created['uuid'], created['user_agent'])
+        print(f'noraconf: {args.state} did not exist; created identity {created["uuid"]}',
+              file=sys.stderr)
+        local = created
+        client_uuid = created['uuid']
     if args.user_agent:
         user_agent = args.user_agent
     elif args.random_ua:
@@ -910,9 +955,15 @@ def main(argv=None):
                         cert_sha256=args.cert_sha256, user_agent=user_agent,
                         timeout=args.timeout, retries=args.retries,
                         verify_tls=not args.insecure, verbose=args.verbose)
+    explicit_id = bool(args.uuid or args.state or args.from_device is not None
+                       or args.mint_attested or args.enroll or args.mint_identity)
     if args.verbose:
-        print(f'noraconf: uuid={client.uuid} session={client.session_id}', file=sys.stderr)
-        print(f'noraconf: ua={client.user_agent}', file=sys.stderr)
+        if args.uuid_pool and not explicit_id:
+            print(f'noraconf: rotating {len(load_uuid_pool(args.uuid_pool))} pooled identit'
+                  f'(ies); ua={client.user_agent}', file=sys.stderr)
+        else:
+            print(f'noraconf: uuid={client.uuid} session={client.session_id}', file=sys.stderr)
+            print(f'noraconf: ua={client.user_agent}', file=sys.stderr)
 
     want_selective = args.all or args.selective
     want_normal = args.all or args.normal or not want_selective
@@ -920,7 +971,7 @@ def main(argv=None):
     entries, errors = [], []
     if args.ech:
         pool = load_uuid_pool(args.uuid_pool)
-        clients = [client]
+        clients = [client] if (explicit_id or not pool) else []
         for ident in pool:
             if ident['uuid'] == client.uuid:
                 continue
