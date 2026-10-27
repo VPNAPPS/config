@@ -633,12 +633,14 @@ def load_config(sources, cert_hex, state=None, timeout=15.0, force=False,
 # ---------------------------------------------------------------------------
 
 def xray_configs(cfg: dict, drop_invalid: bool = True,
-                 country_remarks: bool = True) -> list[dict]:
+                 country_remarks: bool = True,
+                 exclude: set[str] | None = None) -> list[dict]:
     """
     Return the per-profile configs exactly as the panel ships them, parsed into
     objects, in payload order (normal, then smart). Each element is a complete
     v2ray/sing-box JSON document suitable for v2rayNG's "Add profile from JSON".
     """
+    exclude_set = {p.strip().lower() for p in (exclude or set()) if p.strip()}
     out: list[dict] = []
     for item in (cfg["configs"].get("normal") or []) + (cfg["configs"].get("smart") or []):
         raw = item if isinstance(item, str) else (item or {}).get("config")
@@ -653,6 +655,22 @@ def xray_configs(cfg: dict, drop_invalid: bool = True,
             continue
         if not isinstance(doc, dict):
             continue
+
+        if exclude_set:
+            proto = None
+            p = doc.get("protocol")
+            if isinstance(p, str):
+                proto = p.strip().lower()
+            if not proto:
+                for ob in doc.get("outbounds") or []:
+                    if isinstance(ob, dict):
+                        op = ob.get("protocol")
+                        if isinstance(op, str) and op.strip():
+                            proto = op.strip().lower()
+                            break
+            if proto and proto in exclude_set:
+                continue
+
         if country_remarks:
             code = item.get("country") if isinstance(item, dict) else None
             if code:
@@ -821,7 +839,7 @@ def main(argv=None) -> int:
     if args.json:
         return emit(json.dumps(cfg, indent=2, ensure_ascii=False), args.out)
     if args.xrayjson or args.xray_one:
-        docs = xray_configs(cfg, country_remarks=not args.keep_remarks)
+        docs = xray_configs(cfg, country_remarks=not args.keep_remarks, exclude=exclude)
         if args.xray_one is not None:
             if not 1 <= args.xray_one <= len(docs):
                 print(f"error: --xray-one expects 1..{len(docs)}", file=sys.stderr)
