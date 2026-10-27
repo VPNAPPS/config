@@ -17,7 +17,8 @@ from collections import defaultdict
 
 from create_configs_json import build_config_json_from_proxies
 
-SOURCE_FOLDERS = ["freesub", "ala", "no", "kid"]
+SOURCE_FOLDERS = ["freesub", "ala"]
+IRAN_SOURCE_FOLDERS = ["no", "kid"]
 CANDIDATE_FILES = ["configs.json", "config.json"]
 
 FASTEST_REMARKS = "⚡️ Fastest Location"
@@ -219,6 +220,22 @@ def write_json(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def load_iran_sources(folders):
+    """Load configs from Iran sources."""
+    configs = []
+    for folder in folders:
+        data = load_source(folder)
+        if data is None:
+            continue
+        if isinstance(data, list):
+            configs.extend(data)
+        elif isinstance(data, dict):
+            configs.append(data)
+        else:
+            print(f"Unsupported data type in {folder}: {type(data)}")
+    return configs
+
+
 def main():
     configs = load_all_sources(SOURCE_FOLDERS)
     configs = merge_by_remarks(configs)
@@ -238,6 +255,27 @@ def main():
     # De-duplicate + cap every per-country config so none can exceed the limit.
     for config in configs:
         cap_config_proxies(config)
+
+    # Load and process Iran configs
+    iran_configs = load_iran_sources(IRAN_SOURCE_FOLDERS)
+    if iran_configs:
+        # Track duplicate remarks to add #number separator
+        iran_remarks_count = defaultdict(int)
+        for config in iran_configs:
+            remarks = config.get("remarks", "")
+            iran_remarks_count[remarks] += 1
+
+        iran_remarks_seen = defaultdict(int)
+        for config in iran_configs:
+            remarks = config.get("remarks", "")
+            if iran_remarks_count[remarks] > 1:
+                iran_remarks_seen[remarks] += 1
+                config["remarks"] = f"{remarks}#{iran_remarks_seen[remarks]} (for Iran)"
+            else:
+                config["remarks"] = f"{remarks} (for Iran)"
+            cap_config_proxies(config)
+        # Append Iran configs under the fastest location
+        configs.extend(iran_configs)
 
     configs.insert(0, fastest_config)
 
