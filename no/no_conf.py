@@ -39,6 +39,7 @@ import argparse
 import base64
 import hashlib
 import hmac
+import http.client
 import itertools
 import json
 import os
@@ -398,7 +399,10 @@ class NoraClient:
                     time.sleep(min(delay, 10))
                     continue
                 raise NoraError(f'HTTP {code} for {path}') from None
-            except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+            except (urllib.error.URLError, OSError, http.client.HTTPException) as exc:
+                # OSError covers socket.timeout (not a TimeoutError before Python 3.10),
+                # ConnectionReset/Aborted, ssl.SSLError; HTTPException covers
+                # RemoteDisconnected and BadStatusLine.
                 if attempt <= self.retries:
                     time.sleep(0.5 * attempt)
                     continue
@@ -441,6 +445,14 @@ class NoraClient:
     def _server(self, raw, source='normal'):
         if not raw:
             raise NoraError('empty server response')
+        try:
+            return self._server_entry(raw, source)
+        except NoraError:
+            raise
+        except (KeyError, TypeError, ValueError) as exc:
+            raise NoraError(f'malformed server response: {exc!r}') from None
+
+    def _server_entry(self, raw, source='normal'):
         entry = {
             'source': source,
             'id': raw.get('Id'),
@@ -770,7 +782,7 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
                 log(f'noraconf: {label} via {client.uuid} ({client.user_agent})', file=sys.stderr)
             try:
                 entry = client.normal_server() if kind == 'normal' else client.selective_server(sid)
-            except NoraError as exc:
+            except Exception as exc:  # noqa: BLE001 - one bad request must not end the run
                 log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} failed: {exc}', file=sys.stderr)
                 continue
             key = server_key(entry)
@@ -988,18 +1000,18 @@ def main(argv=None):
     elif want_normal:
         try:
             entries.append(client.normal_server())
-        except NoraError as exc:
+        except Exception as exc:  # noqa: BLE001
             errors.append(f'normal: {exc}')
     if args.home and not args.ech:
         try:
             entries.append(client.home_config())
-        except NoraError as exc:
+        except Exception as exc:  # noqa: BLE001
             errors.append(f'home: {exc}')
 
     if want_selective and not args.ech:
         try:
             listing = client.selective_servers()
-        except NoraError as exc:
+        except Exception as exc:  # noqa: BLE001
             print(f'noraconf: {exc}', file=sys.stderr)
             return 1
         if args.limit:
@@ -1009,7 +1021,7 @@ def main(argv=None):
         def fetch(item, index):
             try:
                 return client.selective_server(item['Id'])
-            except NoraError as exc:
+            except Exception as exc:  # noqa: BLE001
                 errors.append(f"{item.get('Location') or item.get('Id')}: {exc}")
                 return None
 
@@ -1064,4 +1076,11 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print('noraconf: interrupted', file=sys.stderr)
+        raise SystemExit(130) from None
+    except NoraError as exc:
+        print(f'noraconf: {exc}', file=sys.stderr)
+        raise SystemExit(1) from None
