@@ -779,12 +779,23 @@ def main(argv=None) -> int:
                     help="keep the panel's own remarks instead of '<flag> <country name>'")
     ap.add_argument("--xray-one", type=int, metavar="N",
                     help="print only the N-th config (1-based) as minified JSON, for a single paste")
+    ap.add_argument("--exclude", action="append", metavar="PROTO",
+                    help="exclude configs by protocol (e.g. hysteria, hysteria2). Can be repeated or comma-separated")
     ap.add_argument("--debug", action="store_true",
                     help="print response status/headers and the full error text to stderr")
     ap.add_argument("--out", metavar="PATH",
                     help="write the selected output (e.g. --xrayjson) to PATH instead of stdout")
     ap.add_argument("--no-save", action="store_true", help="do not update the state file")
     args = ap.parse_args(argv)
+
+    exclude = set()
+    for e in (args.exclude or []):
+        if not e:
+            continue
+        for part in e.replace(" ", ",").split(","):
+            p = part.strip().lower()
+            if p:
+                exclude.add(p)
 
     try:
         proxy = parse_proxy(args.proxy)
