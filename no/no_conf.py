@@ -56,6 +56,8 @@ import uuid as uuidlib
 # Recovered constants
 # --------------------------------------------------------------------------- #
 
+BOOTSTRAP_HOST = '91.107.144.29'
+
 DEFAULT_BASE_URL = "https://api.clyracore.com"
 PACKAGE = "com.nora.vpn"
 INSTALLER = "Play Store"           # xh1.a() mixes this literal into the master key
@@ -746,6 +748,23 @@ def server_key(entry: dict) -> str:
         return str(entry.get('id'))
 
 
+def describe_profile(entry: dict) -> str:
+    """Short human label for a fetched profile: ECH / REALITY (bootstrap|real pool) / other."""
+    try:
+        out = entry['xray']['outbounds'][0]
+        ss = out.get('streamSettings') or {}
+        security = ss.get('security', '?')
+        if is_ech(entry):
+            return 'ECH'
+        if security == 'reality':
+            addr = (out.get('settings', {}).get('vnext', [{}])[0] or {}).get('address', '?')
+            kind = 'bootstrap' if addr == BOOTSTRAP_HOST else 'real pool'
+            return f'REALITY {addr} ({kind})'
+        return str(security)
+    except (KeyError, IndexError, TypeError):
+        return 'unknown'
+
+
 def collect_ech(clients, want_normal, want_selective, args, log=print):
     """Fetch repeatedly, rotating identities, until ECH-bearing profiles are found.
 
@@ -785,6 +804,9 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
             except Exception as exc:  # noqa: BLE001 - one bad request must not end the run
                 log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} failed: {exc}', file=sys.stderr)
                 continue
+            if args.verbose:
+                log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} -> '
+                    f'{describe_profile(entry)}', file=sys.stderr)
             key = server_key(entry)
             if is_ech(entry) and key not in collected:
                 collected[key] = entry
@@ -822,6 +844,9 @@ def main(argv=None):
     ap.add_argument('--uuid-pool', metavar='FILE',
                     help='JSON list of enrolled identities to rotate for --ech '
                          '([{"uuid": "...", "user_agent": "..."}]); avoids per-UUID throttling')
+    ap.add_argument('--allow-empty', action='store_true',
+                    help='exit 0 even when nothing was retrieved (writes [] with --out); '
+                         'use in CI so a throttled run does not fail the job')
     ap.add_argument('--ech', action='store_true',
                     help='collect ECH profiles only: retry (the pool mixes REALITY/ECH/bootstrap) '
                          'until ECH configs are found')
@@ -996,7 +1021,9 @@ def main(argv=None):
         if not entries:
             print('noraconf: no ECH profile found (pool may be throttling); '
                   'retry later or raise --ech-attempts', file=sys.stderr)
-            return 1
+            if not args.allow_empty:
+                return 1
+            print('noraconf: --allow-empty set, continuing with 0 configs', file=sys.stderr)
     elif want_normal:
         try:
             entries.append(client.normal_server())
@@ -1045,7 +1072,9 @@ def main(argv=None):
 
     if not entries:
         print('noraconf: no configs retrieved', file=sys.stderr)
-        return 1
+        if not args.allow_empty:
+            return 1
+        print('noraconf: --allow-empty set, continuing with 0 configs', file=sys.stderr)
     for message in errors:
         print(f'noraconf: skipped {message}', file=sys.stderr)
 
