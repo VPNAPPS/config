@@ -9,7 +9,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'  # Run every 1 hour
+    - cron: '*/5 * * * *'  # Run every 5 minutes
 
 permissions:
   contents: write
@@ -17,24 +17,17 @@ permissions:
 
 jobs:
   build-and-commit:
-    # Pin to 24.04: setup-python has no Python 3.9 build for Ubuntu 26.04
-    # (which is what ubuntu-latest now resolves to).
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
+    timeout-minutes: 15
     steps:
       - name: Check-out repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install requests cryptography python-dotenv pycountry
+          python3 -m pip install --user --break-system-packages requests cryptography python-dotenv pycountry
 
       # Step 4: Download and Set Up Xray-core
       - name: Download and Set Up Xray-core
@@ -91,14 +84,14 @@ jobs:
       - name: Run decryption script
         run: |
           cd begz
-          python decrypt_script.py
+          python3 decrypt_script.py
 
       - name: Run generator script
         env:
           URL: ${{ secrets.URL }}
         run: |
           cd nb
-          python configs_gen.py
+          python3 configs_gen.py
 
       - name: Create .env file for yebe
         run: |
@@ -108,7 +101,7 @@ jobs:
       # - name: Run yebe script
       #   run: |
       #     cd yebe
-      #     python generate_yebe_configs.py
+      #     python3 generate_yebe_configs.py
       - name: Create .env file for freesub
         run: |
           echo "TARGET_URL=${{ secrets.TARGET_URL }}" > freesub/.env
@@ -116,13 +109,13 @@ jobs:
       - name: Run freesub script
         run: |
           cd freesub
-          python configs_gen.py
+          python3 configs_gen.py
         #  curl -o configs.json ${{ secrets.freesub }}
 
       - name: Run ala script
         run: |
           cd ala
-          python configs_gen.py
+          python3 configs_gen.py
 
       - name: Run no script
         run: |
@@ -132,16 +125,16 @@ jobs:
       - name: Run kid script
         run: |
           cd kid
-          python kid_config.py --xrayjson --exclude hysteria,hysteria2 --out configs.json
+          python3 kid_config.py --xrayjson --exclude hysteria,hysteria2 --out configs.json
           rm kidi_state.json
 
       - name: Run hand script
         run: |
           cd hand
-          python configs_gen.py
+          python3 configs_gen.py
 
       - name: Merge all configs
-        run: python merge_configs.py
+        run: python3 merge_configs.py
 
       - name: Commit and push updated configs
         run: |
