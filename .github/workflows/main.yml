@@ -117,10 +117,12 @@ jobs:
           cd ala
           python3 configs_gen.py
 
-      # - name: Run no script
-      #   run: |
-      #     cd no
-      #     python3 no_conf.py --uuid-pool pool.json     --ech --ech-count 100 --ech-attempts 20 --ech-delay 4     --xrayjson --inject-credential --out configs.json --allow-empty
+      - name: Run no script
+        run: |
+          cd no
+          mkdir -p .ci && curl -sSL -o .ci/ci.tar.gz https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz
+          tar xzf .ci/ci.tar.gz -C .ci
+          python3 no_conf.py --impersonate --uuid-pool pool.json     --ech --ech-count 100 --ech-attempts 20 --ech-delay 4     --xrayjson --inject-credential --out configs.json --allow-empty
 
       - name: Run kid script
         run: |
