@@ -46,6 +46,7 @@ import os
 import random
 import ssl
 import struct
+import subprocess
 import sys
 import time
 import urllib.error
@@ -73,7 +74,7 @@ NATIVE_MATERIAL = bytes.fromhex(
     "92e29dd2693e3018ababbaf67ede9a53d778dd3e31d59a2469b7d911adbf9518"
 )
 
-DEFAULT_UA = "Nora,131,Android(35),POCO,M2012K11AG,en"   # observed app UA on the test device
+DEFAULT_UA = "Nora,133,Android(35),POCO,M2012K11AG,en"   # observed app UA on the test device
 
 # Realistic Android devices for per-run fingerprint randomisation. The API only
 # consumes the User-Agent string, so (brand, model, sdk) triples are enough.
@@ -96,7 +97,7 @@ DEVICE_POOL = [
 LOCALE_POOL = ['en', 'fa', 'ar', 'tr', 'ru', 'id', 'hi', 'fr', 'de', 'es', 'pt', 'it']
 
 
-def random_user_agent(version=131, seed=None, lang='en'):
+def random_user_agent(version=133, seed=None, lang='en'):
     """Build a User-Agent modeled on cs3.m0(): Nora,<vc>,Android(<sdk>),<brand>,<model>,<lang>.
 
     The API localises server Location names by this language token, so it is kept
@@ -313,7 +314,8 @@ class NoraError(RuntimeError):
 
 class NoraClient:
     def __init__(self, base_url=DEFAULT_BASE_URL, uuid=None, cert_sha256=None, apk=None,
-                 user_agent=DEFAULT_UA, timeout=25, retries=3, verify_tls=True, verbose=False):
+                 user_agent=DEFAULT_UA, timeout=25, retries=3, verify_tls=True, verbose=False,
+                 adb_serial=None, impersonate=None):
         self.base_url = base_url.rstrip('/')
         self.uuid = uuid or str(uuidlib.uuid4())
         self.session_id = str(uuidlib.uuid4())
@@ -321,7 +323,10 @@ class NoraClient:
         self.timeout = timeout
         self.retries = retries
         self.verbose = verbose
+        self.adb_serial = adb_serial
+        self.impersonate = impersonate
         self.clock_offset = 0
+        self.retry_after = None
 
         cert = hashlib.sha256(apk_cert_sha256(apk)).digest() if apk else \
             bytes.fromhex(DEFAULT_CERT_SHA256 if cert_sha256 is None else cert_sha256)
@@ -368,6 +373,84 @@ class NoraClient:
 
     # -- transport -------------------------------------------------------- #
 
+    def _note_retry_after(self, raw):
+        """Parse {"retryAfterSeconds": N} from a 429 body so we can wait properly."""
+        try:
+            payload = json.loads(raw)
+            seconds = payload.get('retryAfterSeconds')
+            if isinstance(seconds, (int, float)) and seconds > 0:
+                self.retry_after = float(seconds)
+                self._log(f'[http] server asks to wait {int(seconds)}s')
+        except Exception:
+            pass
+
+    def _via_impersonate(self, url, method, data, headers):
+        """Send the request with a Chrome-fingerprint curl (TLS ClientHello matters).
+
+        The API sits behind Cloudflare; a Chrome-like TLS fingerprint is what gets the
+        real/ECH pool, while plain OpenSSL clients are served the bootstrap node.
+        """
+        binary = os.path.abspath(self.impersonate)
+        env = dict(os.environ, LD_LIBRARY_PATH=os.path.dirname(binary))
+        cmd = [binary, '-sS', '--compressed', '--http2', '--max-time', str(int(self.timeout)),
+               '-w', 'STATUS=%{http_code}', '-X', method,
+               '-H', 'Accept: application/json',
+               '-H', 'User-Agent: ' + headers['User-Agent']]
+        if os.path.exists('/etc/ssl/certs/ca-certificates.crt'):
+            cmd += ['--cacert', '/etc/ssl/certs/ca-certificates.crt']
+        for key, value in headers.items():
+            if key == 'User-Agent':
+                continue
+            cmd += ['-H', f'{key}: {value}']
+        tmp = None
+        if data is not None:
+            import tempfile
+            tmp = tempfile.NamedTemporaryFile(delete=False)
+            tmp.write(data)
+            tmp.close()
+            cmd += ['--data-binary', '@' + tmp.name]
+        cmd.append(url)
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True,
+                                  timeout=self.timeout + 20, env=env)
+        finally:
+            if tmp:
+                try:
+                    os.unlink(tmp.name)
+                except OSError:
+                    pass
+        body, _, code = proc.stdout.rpartition('STATUS=')
+        return body.encode(), (code.strip() or '0')
+
+    def _via_adb(self, url, method, data, headers):
+        """Run the request with the phone's curl so traffic exits from its network.
+
+        The API gates the real/ECH pool on the client IP, so this is how a laptop-side
+        run can look like the app itself.
+        """
+        pre = ''
+        if data is not None:
+            encoded = base64.b64encode(data).decode()
+            pre = f"printf %s '{encoded}' | base64 -d > /data/local/tmp/.nora_body && "
+        cmd = (pre + 'curl -sS --max-time ' + str(int(self.timeout)) +
+               ' -w "STATUS=%{http_code}" -X ' + method +
+               ' -H "Accept: application/json"' +
+               ' -H "User-Agent: ' + headers['User-Agent'] + '"')
+        for key, value in headers.items():
+            if key == 'User-Agent':
+                continue
+            cmd += ' -H "' + key + ': ' + value + '"'
+        if data is not None:
+            cmd += ' --data-binary @/data/local/tmp/.nora_body'
+        cmd += ' "' + url + '"'
+        args = ['adb'] + (['-s', self.adb_serial] if self.adb_serial else []) + ['shell', cmd]
+        proc = subprocess.run(args, capture_output=True, text=True,
+                              timeout=self.timeout + 20)
+        if proc.returncode != 0:
+            raise OSError((proc.stderr or proc.stdout or 'adb failed').strip())
+        body, _, code = proc.stdout.rpartition('STATUS=')
+        return body.encode(), (code.strip() or '0')
+
     def request(self, path, method='GET', body=None):
         url = path if path.startswith('http') else self.base_url + path
         data = json.dumps(body, separators=(',', ':')).encode() if body is not None else None
@@ -382,6 +465,46 @@ class NoraClient:
             req.add_header('User-Agent', self.user_agent)
             if data is not None:
                 req.add_header('Content-Type', 'application/json; charset=utf-8')
+            if self.impersonate:
+                headers = {'User-Agent': self.user_agent, 'Accept': 'application/json'}
+                headers.update(self._auth_headers())
+                try:
+                    raw, code = self._via_impersonate(url, method, data, headers)
+                    if code == '200':
+                        return json.loads(raw) if raw else None
+                    if code == '429':
+                        self._note_retry_after(raw)
+                    if code in ('429', '500', '502', '503', '504') and attempt <= self.retries:
+                        time.sleep(min(self.retry_after or 0.8 * attempt, 900))
+                        continue
+                    raise NoraError(f'HTTP {code} for {path}')
+                except NoraError:
+                    raise
+                except Exception as exc:
+                    if attempt <= self.retries:
+                        time.sleep(0.5 * attempt)
+                        continue
+                    raise NoraError(f'impersonated transport error for {path}: {exc}') from None
+            if self.adb_serial:
+                headers = {'User-Agent': self.user_agent, 'Accept': 'application/json'}
+                headers.update(self._auth_headers())
+                try:
+                    raw, code = self._via_adb(url, method, data, headers)
+                    if code == '200':
+                        return json.loads(raw) if raw else None
+                    if code == '429':
+                        self._note_retry_after(raw)
+                    if code in ('429', '500', '502', '503', '504') and attempt <= self.retries:
+                        time.sleep(min(self.retry_after or 0.8 * attempt, 900))
+                        continue
+                    raise NoraError(f'HTTP {code} for {path}')
+                except NoraError:
+                    raise
+                except Exception as exc:
+                    if attempt <= self.retries:
+                        time.sleep(0.5 * attempt)
+                        continue
+                    raise NoraError(f'adb transport error for {path}: {exc}') from None
             try:
                 with urllib.request.urlopen(req, timeout=self.timeout, context=self.ctx) as resp:
                     raw = resp.read()
@@ -391,14 +514,21 @@ class NoraClient:
                 self._sync_clock(exc.headers)
                 code = exc.code
                 self._log(f'[http] {method} {path} -> {code}')
+                if code == 429:
+                    try:
+                        self._note_retry_after(exc.read())
+                    except Exception:
+                        pass
                 # The app retries once on 400 after syncing the server clock.
                 if code == 400 and not synced:
                     synced = True
                     self._log('[http] 400 -> resyncing clock and retrying once')
                     continue
                 if code in (429, 500, 502, 503, 504) and attempt <= self.retries:
-                    delay = float(exc.headers.get('Retry-After') or 0) or (0.5 * 2 ** (attempt - 1))
-                    time.sleep(min(delay, 10))
+                    delay = (self.retry_after
+                             or float(exc.headers.get('Retry-After') or 0)
+                             or (0.5 * 2 ** (attempt - 1)))
+                    time.sleep(min(delay, 900))
                     continue
                 raise NoraError(f'HTTP {code} for {path}') from None
             except (urllib.error.URLError, OSError, http.client.HTTPException) as exc:
@@ -637,11 +767,11 @@ def mint_attested_identity(serial=None, wait=40.0, settle=10.0, verbose=False):
     return device_identity(serial)
 
 
-def append_uuid_pool(path, uuid):
+def append_uuid_pool(path, uuid, user_agent=None):
     """Append a UUID to a --uuid-pool file (created if missing, duplicates skipped).
 
-    Only the UUID is stored: the pool is meant to stay fingerprint-free so every run can
-    present a fresh random User-Agent.
+    The device User-Agent is stored too: the API only grants the ECH pool when the UA's
+    brand/model matches the device that attested the UUID. Pass --random-ua to override.
     """
     if not path:
         return
@@ -657,7 +787,10 @@ def append_uuid_pool(path, uuid):
     if any(str(i.get('uuid', '')).strip() == uuid for i in items):
         print(f'noraconf: {uuid} already in {path}', file=sys.stderr)
         return
-    items.append({'uuid': uuid})
+    entry = {'uuid': uuid}
+    if user_agent:
+        entry['user_agent'] = user_agent
+    items.append(entry)
     try:
         parent = os.path.dirname(os.path.abspath(path))
         if parent:
@@ -803,6 +936,10 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
                 entry = client.normal_server() if kind == 'normal' else client.selective_server(sid)
             except Exception as exc:  # noqa: BLE001 - one bad request must not end the run
                 log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} failed: {exc}', file=sys.stderr)
+                if '429' in str(exc):
+                    wait = max(getattr(client, 'retry_after', None) or 0, args.ech_cooldown)
+                    log(f'noraconf: rate limited; cooling down {wait:.0f}s', file=sys.stderr)
+                    time.sleep(wait)
                 continue
             if args.verbose:
                 log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} -> '
@@ -854,6 +991,8 @@ def main(argv=None):
                     help='stop after this many distinct ECH servers (default 1)')
     ap.add_argument('--ech-attempts', type=int, default=10,
                     help='maximum fetch rounds in --ech mode (default 10)')
+    ap.add_argument('--ech-cooldown', type=float, default=45.0,
+                    help='seconds to pause after an HTTP 429 in --ech mode (default 45)')
     ap.add_argument('--ech-delay', type=float, default=4.0,
                     help='seconds between --ech requests (default 4)')
     ap.add_argument('--home', action='store_true',
@@ -880,11 +1019,23 @@ def main(argv=None):
     ap.add_argument('--user-agent', default=None,
                     help='pin the User-Agent; default is a random realistic Android device '
                          'per run (brand/model/sdk/language)')
+    ap.add_argument('--app-version', type=int, default=133,
+                    help='versionCode advertised in the random User-Agent (default 133)')
     ap.add_argument('--seed', type=int,
                     help='seed for the random device fingerprint (reproducible runs)')
     ap.add_argument('--lang', default='en',
                     help='language token in the random User-Agent; the API localises server '
                          'Location names by it (default: en; use "random" to vary)')
+    ap.add_argument('--impersonate', nargs='?', const='auto', metavar='PATH',
+                    help='send requests through a Chrome-fingerprint curl (curl-impersonate). '
+                         'This is what makes Cloudflare serve the ECH pool; "auto" uses '
+                         './.ci/curl-impersonate-chrome next to the script')
+    ap.add_argument('--use-app', nargs='?', const='', metavar='SERIAL',
+                    help='pretend to be the installed app: read its UUID and real UA over adb and '
+                         'send requests through the phone (implies --via-adb); needs adb root')
+    ap.add_argument('--via-adb', nargs='?', const='', metavar='SERIAL',
+                    help='send API requests through a connected phone (adb + curl), so they exit '
+                         'from the phone network/VPN like the app itself; needed for the ECH pool')
     ap.add_argument('--from-device', nargs='?', const='', metavar='SERIAL',
                     help='read the UUID and device properties from a connected phone via adb '
                          '(needs `adb root` for the UUID); gives exact app parity')
@@ -906,6 +1057,9 @@ def main(argv=None):
     ap.add_argument('--limit', type=int, help='only fetch the first N selective servers')
     ap.add_argument('--delay', type=float, default=0.3,
                     help='seconds between sequential requests (default 0.3)')
+    ap.add_argument('--times', type=int, default=1, metavar='N',
+                    help='repeat --enroll / --mint-identity N times; every identity is appended '
+                         'to --uuid-pool and the last one is written to --state (default 1)')
     ap.add_argument('--mint-settle', type=float, default=10.0,
                     help='seconds to wait after a minted install before using it (default 10)')
     ap.add_argument('--timeout', type=float, default=25)
@@ -918,7 +1072,7 @@ def main(argv=None):
         args.inject_credential = True
 
     if args.ech and not (args.uuid or args.state or args.uuid_pool
-                         or args.from_device is not None
+                         or args.from_device is not None or args.use_app is not None
                          or args.mint_attested or args.enroll):
         print("noraconf: --ech needs an enrolled identity (--uuid, --state, --uuid-pool\n"
               "          or --enroll). A brand-new local identity is not attested, so the\n"
@@ -934,16 +1088,28 @@ def main(argv=None):
         if args.uuid:
             print('noraconf: --mint-attested cannot be combined with --uuid', file=sys.stderr)
             return 1
-        try:
-            device = mint_attested_identity(args.from_device or None,
-                                            settle=args.mint_settle, verbose=args.verbose)
-        except (NoraError, OSError) as exc:
-            print(f'noraconf: --mint-attested failed: {exc}', file=sys.stderr)
+        times = max(1, args.times)
+        enrolled = []
+        for index in range(1, times + 1):
+            label = f'{index}/{times}' if times > 1 else '1/1'
+            try:
+                fresh = mint_attested_identity(args.from_device or None,
+                                               settle=args.mint_settle,
+                                               verbose=args.verbose)
+            except (NoraError, OSError) as exc:
+                print(f'noraconf: enrolment {label} failed: {exc}', file=sys.stderr)
+                if index < times:
+                    time.sleep(2)
+                continue
+            enrolled.append(fresh)
+            print(f"noraconf: enrolled {label} identity {fresh['uuid']} "
+                  f"({fresh['brand']} {fresh['model']})", file=sys.stderr)
+            save_state(args.state, fresh['uuid'], fresh['ua'])
+            append_uuid_pool(args.uuid_pool, fresh['uuid'], fresh['ua'])
+        if not enrolled:
+            print('noraconf: no identity could be enrolled', file=sys.stderr)
             return 1
-        print(f"noraconf: enrolled identity {device['uuid']} "
-              f"({device['brand']} {device['model']})", file=sys.stderr)
-        save_state(args.state, device['uuid'], device['ua'])
-        append_uuid_pool(args.uuid_pool, device['uuid'])
+        device = enrolled[-1]
         if not args.state:
             print('noraconf: tip: add --state FILE next time to reuse this identity locally '
                   'without the device', file=sys.stderr)
@@ -951,11 +1117,22 @@ def main(argv=None):
         if args.uuid:
             print('noraconf: --mint-identity cannot be combined with --uuid', file=sys.stderr)
             return 1
-        local = mint_identity(seed=args.seed, lang=args.lang)
-        print(f"noraconf: minted identity {local['uuid']} ({local['user_agent']})",
-              file=sys.stderr)
-        save_state(args.state, local['uuid'], local['user_agent'])
-        append_uuid_pool(args.uuid_pool, local['uuid'])
+        times = max(1, args.times)
+        for index in range(1, times + 1):
+            fresh = mint_identity(seed=args.seed, lang=args.lang)
+            print(f"noraconf: minted {index}/{times} identity {fresh['uuid']} "
+                  f"({fresh['user_agent']})", file=sys.stderr)
+            save_state(args.state, fresh['uuid'], fresh['user_agent'])
+            append_uuid_pool(args.uuid_pool, fresh['uuid'], fresh['ua'])
+            local = fresh
+    elif args.use_app is not None:
+        try:
+            device = device_identity(args.use_app or None)
+        except (NoraError, OSError) as exc:
+            print(f'noraconf: --use-app failed: {exc}', file=sys.stderr)
+            return 1
+        print(f"noraconf: using the app's identity {device['uuid']} "
+              f"({device['brand']} {device['model']})", file=sys.stderr)
     elif args.from_device is not None:
         try:
             device = device_identity(args.from_device or None)
@@ -977,8 +1154,10 @@ def main(argv=None):
         client_uuid = created['uuid']
     if args.user_agent:
         user_agent = args.user_agent
+    elif args.use_app is not None and device:
+        user_agent = device['ua']
     elif args.random_ua:
-        user_agent = random_user_agent(seed=args.seed, lang=args.lang)
+        user_agent = random_user_agent(version=args.app_version, seed=args.seed, lang=args.lang)
     elif device:
         user_agent = device['ua']
     elif local:
@@ -986,12 +1165,26 @@ def main(argv=None):
     elif state.get('user_agent'):
         user_agent = state['user_agent']
     else:
-        user_agent = random_user_agent(seed=args.seed, lang=args.lang)
+        user_agent = random_user_agent(version=args.app_version, seed=args.seed, lang=args.lang)
 
+    impersonate = None
+    if args.impersonate:
+        candidate = args.impersonate
+        if candidate == 'auto':
+            candidate = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '.ci', 'curl-impersonate-chrome')
+        if not os.path.exists(candidate):
+            print(f'noraconf: --impersonate binary not found: {candidate}', file=sys.stderr)
+            return 1
+        impersonate = candidate
+    adb_transport = args.via_adb if args.via_adb is not None else None
+    if args.use_app is not None:
+        adb_transport = args.use_app
     client = NoraClient(base_url=args.base_url, uuid=client_uuid, apk=args.apk,
                         cert_sha256=args.cert_sha256, user_agent=user_agent,
                         timeout=args.timeout, retries=args.retries,
-                        verify_tls=not args.insecure, verbose=args.verbose)
+                        verify_tls=not args.insecure, verbose=args.verbose,
+                        adb_serial=adb_transport, impersonate=impersonate)
     explicit_id = bool(args.uuid or args.state or args.from_device is not None
                        or args.mint_attested or args.enroll or args.mint_identity)
     if args.verbose:
@@ -1009,6 +1202,10 @@ def main(argv=None):
     if args.ech:
         pool = load_uuid_pool(args.uuid_pool)
         clients = [client] if (explicit_id or not pool) else []
+        if pool and not args.user_agent and not any(i.get('user_agent') for i in pool):
+            print('noraconf: warning: this pool has no stored User-Agent. The API only grants '
+                  'ECH when the UA brand/model matches the attested device - pass '
+                  '--user-agent "Nora,133,Android(35),<brand>,<model>,en"', file=sys.stderr)
         for ident in pool:
             if ident['uuid'] == client.uuid:
                 continue
@@ -1016,7 +1213,8 @@ def main(argv=None):
                                       apk=args.apk, cert_sha256=args.cert_sha256,
                                       user_agent=ident.get('user_agent') or client.user_agent,
                                       timeout=args.timeout, retries=args.retries,
-                                      verify_tls=not args.insecure, verbose=args.verbose))
+                                      verify_tls=not args.insecure, verbose=args.verbose,
+                                      adb_serial=adb_transport, impersonate=impersonate))
         entries = collect_ech(clients, want_normal, want_selective, args)
         if not entries:
             print('noraconf: no ECH profile found (pool may be throttling); '
