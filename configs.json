@@ -18120,7 +18120,7 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "hamshahrionline.ir": "179.43.187.243"
+        "tejaratbank.ir": "179.43.187.243"
       },
       "servers": [
         "1.1.1.1",
@@ -18170,7 +18170,7 @@
       {
         "protocol": "vless",
         "settings": {
-          "address": "hamshahrionline.ir",
+          "address": "tejaratbank.ir",
           "port": 443,
           "id": "ec22568f-2481-49f2-8cbf-6f0cd775f729",
           "encryption": "none",
@@ -18236,22 +18236,6 @@
     },
     "routing": {
       "domainStrategy": "IPIfNonMatch",
-      "balancers": [
-        {
-          "tag": "proxy-balancer",
-          "selector": [
-            "proxy-"
-          ],
-          "strategy": {
-            "type": "leastLoad",
-            "settings": {
-              "expected": 1,
-              "maxRTT": "1.5s",
-              "tolerance": 0.25
-            }
-          }
-        }
-      ],
       "rules": [
         {
           "type": "field",
@@ -18278,7 +18262,7 @@
           "domain": [
             "geosite:category-ads-all"
           ],
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         },
         {
           "type": "field",
@@ -18300,28 +18284,28 @@
           "domain": [
             "geosite:category-ru"
           ],
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         },
         {
           "type": "field",
           "ip": [
             "geoip:ru"
           ],
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         },
         {
           "type": "field",
           "domain": [
             "geosite:cn"
           ],
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         },
         {
           "type": "field",
           "ip": [
             "geoip:cn"
           ],
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         },
         {
           "type": "field",
@@ -18336,27 +18320,14 @@
           "inboundTag": [
             "dns-module"
           ],
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         },
         {
           "type": "field",
           "network": "tcp,udp",
-          "balancerTag": "proxy-balancer"
+          "outboundTag": "proxy-1"
         }
       ]
-    },
-    "burstObservatory": {
-      "subjectSelector": [
-        "proxy-"
-      ],
-      "pingConfig": {
-        "destination": "https://connectivitycheck.gstatic.com/generate_204",
-        "connectivity": "",
-        "interval": "15s",
-        "sampling": 2,
-        "timeout": "3s",
-        "httpMethod": "HEAD"
-      }
     }
   }
 ]
