@@ -59,6 +59,9 @@ import uuid as uuidlib
 
 BOOTSTRAP_HOST = '91.107.144.29'
 
+# Cloudflare edge IPs to fall back to when the DNS-advertised ones are unreachable
+DEFAULT_EDGE_IPS = ('172.66.0.96', '172.66.1.96', '172.66.0.97')
+
 DEFAULT_BASE_URL = "https://api.clyracore.com"
 PACKAGE = "com.nora.vpn"
 INSTALLER = "Play Store"           # xh1.a() mixes this literal into the master key
@@ -315,7 +318,7 @@ class NoraError(RuntimeError):
 class NoraClient:
     def __init__(self, base_url=DEFAULT_BASE_URL, uuid=None, cert_sha256=None, apk=None,
                  user_agent=DEFAULT_UA, timeout=25, retries=3, verify_tls=True, verbose=False,
-                 adb_serial=None, impersonate=None):
+                 adb_serial=None, impersonate=None, connect_ips=None):
         self.base_url = base_url.rstrip('/')
         self.uuid = uuid or str(uuidlib.uuid4())
         self.session_id = str(uuidlib.uuid4())
@@ -325,6 +328,7 @@ class NoraClient:
         self.verbose = verbose
         self.adb_serial = adb_serial
         self.impersonate = impersonate
+        self.connect_ips = list(connect_ips or [])
         self.clock_offset = 0
         self.retry_after = None
 
@@ -410,17 +414,31 @@ class NoraClient:
             tmp.close()
             cmd += ['--data-binary', '@' + tmp.name]
         cmd.append(url)
+        host = urllib.parse.urlsplit(url).hostname or 'api.clyracore.com'
+        port = urllib.parse.urlsplit(url).port or 443
+        candidates = self.connect_ips or list(DEFAULT_EDGE_IPS)
+        last = (b'', '0')
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True,
-                                  timeout=self.timeout + 20, env=env)
+            for ip in [None] + candidates:
+                run = list(cmd)
+                if ip:
+                    run[run.index(url):run.index(url)] = ['--resolve', f'{host}:{port}:{ip}']
+                proc = subprocess.run(run, capture_output=True, text=True,
+                                      timeout=self.timeout + 20, env=env)
+                body, _, code = proc.stdout.rpartition('STATUS=')
+                last = (body.encode(), code.strip() or '0')
+                if last[1] not in ('000', ''):
+                    if ip:
+                        self._log(f'[http] reached {host} via edge {ip}')
+                    return last
+                self._log(f'[http] edge {ip or "dns"} unreachable, trying next')
         finally:
             if tmp:
                 try:
                     os.unlink(tmp.name)
                 except OSError:
                     pass
-        body, _, code = proc.stdout.rpartition('STATUS=')
-        return body.encode(), (code.strip() or '0')
+        return last
 
     def _via_adb(self, url, method, data, headers):
         """Run the request with the phone's curl so traffic exits from its network.
@@ -474,7 +492,7 @@ class NoraClient:
                         return json.loads(raw) if raw else None
                     if code == '429':
                         self._note_retry_after(raw)
-                    if code in ('429', '500', '502', '503', '504') and attempt <= self.retries:
+                    if code in ('000', '429', '500', '502', '503', '504') and attempt <= self.retries:
                         time.sleep(min(self.retry_after or 0.8 * attempt, 900))
                         continue
                     raise NoraError(f'HTTP {code} for {path}')
@@ -494,7 +512,7 @@ class NoraClient:
                         return json.loads(raw) if raw else None
                     if code == '429':
                         self._note_retry_after(raw)
-                    if code in ('429', '500', '502', '503', '504') and attempt <= self.retries:
+                    if code in ('000', '429', '500', '502', '503', '504') and attempt <= self.retries:
                         time.sleep(min(self.retry_after or 0.8 * attempt, 900))
                         continue
                     raise NoraError(f'HTTP {code} for {path}')
@@ -909,6 +927,7 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
     clients = list(clients)
     rotor = itertools.cycle(clients)
     collected, seen = {}, set()
+    bootstrap_draws = 0
     attempts = max(1, args.ech_attempts)
     limit = args.limit
     selective_ids = None
@@ -945,6 +964,8 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
                 log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} -> '
                     f'{describe_profile(entry)}', file=sys.stderr)
             key = server_key(entry)
+            if not is_ech(entry) and describe_profile(entry).endswith('(bootstrap)'):
+                bootstrap_draws += 1
             if is_ech(entry) and key not in collected:
                 collected[key] = entry
                 log(f'noraconf: ECH {entry.get("location")} -> {key}', file=sys.stderr)
@@ -958,6 +979,10 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
         if round_no < attempts:
             time.sleep(args.ech_delay)
 
+    if not collected and bootstrap_draws:
+        log(f'noraconf: all {bootstrap_draws} draws were the bootstrap node - these identities '
+            f'are not attested (or their attestation expired). Check with --check-pool and '
+            f'enroll fresh ones with --enroll --times N.', file=sys.stderr)
     return list(collected.values())
 
 
@@ -981,6 +1006,9 @@ def main(argv=None):
     ap.add_argument('--uuid-pool', metavar='FILE',
                     help='JSON list of enrolled identities to rotate for --ech '
                          '([{"uuid": "...", "user_agent": "..."}]); avoids per-UUID throttling')
+    ap.add_argument('--check-pool', action='store_true',
+                    help='test every identity in --uuid-pool and report whether it is entitled to '
+                         'the real/ECH pool (bootstrap = not attested or expired)')
     ap.add_argument('--allow-empty', action='store_true',
                     help='exit 0 even when nothing was retrieved (writes [] with --out); '
                          'use in CI so a throttled run does not fail the job')
@@ -1026,6 +1054,9 @@ def main(argv=None):
     ap.add_argument('--lang', default='en',
                     help='language token in the random User-Agent; the API localises server '
                          'Location names by it (default: en; use "random" to vary)')
+    ap.add_argument('--connect-ip', action='append', metavar='IP', default=None,
+                    help='connect to this Cloudflare edge IP for the API host (repeatable); '
+                         'useful when the DNS-advertised edge is unreachable')
     ap.add_argument('--impersonate', nargs='?', const='auto', metavar='PATH',
                     help='send requests through a Chrome-fingerprint curl (curl-impersonate). '
                          'This is what makes Cloudflare serve the ECH pool; "auto" uses '
@@ -1068,8 +1099,50 @@ def main(argv=None):
     ap.add_argument('--verbose', '-v', action='store_true')
     args = ap.parse_args(argv)
 
+    impersonate = None
+    if args.impersonate:
+        candidate = args.impersonate
+        if candidate == 'auto':
+            candidate = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '.ci', 'curl-impersonate-chrome')
+        if not os.path.exists(candidate):
+            print(f'noraconf: --impersonate binary not found: {candidate}\n'
+                  '          download it once with:\n'
+                  '          mkdir -p .ci && curl -sSL -o .ci/ci.tar.gz '
+                  'https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/'
+                  'curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz && tar xzf .ci/ci.tar.gz -C .ci',
+                  file=sys.stderr)
+            return 1
+        impersonate = candidate
+
     if args.prepared:
         args.inject_credential = True
+
+    if args.check_pool:
+        pool = load_uuid_pool(args.uuid_pool)
+        if not pool:
+            print('noraconf: --check-pool needs --uuid-pool FILE', file=sys.stderr)
+            return 1
+        ua = args.user_agent or DEFAULT_UA
+        good = 0
+        for index, ident in enumerate(pool, 1):
+            client = NoraClient(base_url=args.base_url, uuid=ident['uuid'],
+                                apk=args.apk, cert_sha256=args.cert_sha256,
+                                user_agent=ident.get('user_agent') or ua,
+                                timeout=args.timeout, retries=args.retries,
+                                verify_tls=not args.insecure, verbose=args.verbose,
+                                impersonate=impersonate,
+                                connect_ips=args.connect_ip)
+            try:
+                kind = describe_profile(client.normal_server())
+            except Exception as exc:  # noqa: BLE001
+                kind = f'error: {str(exc)[:60]}'
+            if kind == 'ECH':
+                good += 1
+            print(f"{index:3}/{len(pool)}  {ident['uuid']}  {kind}", flush=True)
+            time.sleep(max(1.0, args.ech_delay / 2))
+        print(f'noraconf: {good}/{len(pool)} identities entitled to ECH', file=sys.stderr)
+        return 0
 
     if args.ech and not (args.uuid or args.state or args.uuid_pool
                          or args.from_device is not None or args.use_app is not None
@@ -1167,16 +1240,6 @@ def main(argv=None):
     else:
         user_agent = random_user_agent(version=args.app_version, seed=args.seed, lang=args.lang)
 
-    impersonate = None
-    if args.impersonate:
-        candidate = args.impersonate
-        if candidate == 'auto':
-            candidate = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                     '.ci', 'curl-impersonate-chrome')
-        if not os.path.exists(candidate):
-            print(f'noraconf: --impersonate binary not found: {candidate}', file=sys.stderr)
-            return 1
-        impersonate = candidate
     adb_transport = args.via_adb if args.via_adb is not None else None
     if args.use_app is not None:
         adb_transport = args.use_app
@@ -1184,7 +1247,8 @@ def main(argv=None):
                         cert_sha256=args.cert_sha256, user_agent=user_agent,
                         timeout=args.timeout, retries=args.retries,
                         verify_tls=not args.insecure, verbose=args.verbose,
-                        adb_serial=adb_transport, impersonate=impersonate)
+                        adb_serial=adb_transport, impersonate=impersonate,
+                        connect_ips=args.connect_ip)
     explicit_id = bool(args.uuid or args.state or args.from_device is not None
                        or args.mint_attested or args.enroll or args.mint_identity)
     if args.verbose:
@@ -1214,7 +1278,8 @@ def main(argv=None):
                                       user_agent=ident.get('user_agent') or client.user_agent,
                                       timeout=args.timeout, retries=args.retries,
                                       verify_tls=not args.insecure, verbose=args.verbose,
-                                      adb_serial=adb_transport, impersonate=impersonate))
+                                      adb_serial=adb_transport, impersonate=impersonate,
+                        connect_ips=args.connect_ip))
         entries = collect_ech(clients, want_normal, want_selective, args)
         if not entries:
             print('noraconf: no ECH profile found (pool may be throttling); '
