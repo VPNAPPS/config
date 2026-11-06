@@ -19338,6 +19338,259 @@
   {
     "dns": {
       "hosts": {
+        "geosite:category-ads-all": "127.0.0.1",
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": [
+          "223.5.5.5",
+          "223.6.6.6",
+          "2400:3200::1",
+          "2400:3200:baba::1"
+        ],
+        "dns.cloudflare.com": [
+          "162.159.61.8",
+          "172.64.41.8",
+          "2a06:98c1:52::8",
+          "2803:f800:53::8"
+        ],
+        "cloudflare-dns.com": [
+          "104.16.248.249",
+          "104.16.249.249",
+          "2606:4700::6810:f8f9",
+          "2606:4700::6810:f9f9"
+        ],
+        "dns.google": [
+          "8.8.8.8",
+          "8.8.4.4",
+          "2001:4860:4860::8888",
+          "2001:4860:4860::8844"
+        ],
+        "dns.quad9.net": [
+          "9.9.9.9",
+          "149.112.112.112",
+          "2620:fe::fe",
+          "2620:fe::9"
+        ],
+        "one.one.one.one": [
+          "1.1.1.1",
+          "1.0.0.1",
+          "2606:4700:4700::1111",
+          "2606:4700:4700::1001"
+        ],
+        "rqbank.ir": "188.221.119.60"
+      },
+      "servers": [
+        "1.1.1.1",
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "geosite:private"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_0_0"
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_2_0"
+        }
+      ],
+      "tag": "dns-module"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "enabled": true,
+          "routeOnly": false
+        },
+        "tag": "socks"
+      }
+    ],
+    "log": {
+      "loglevel": "warning"
+    },
+    "outbounds": [
+      {
+        "mux": {
+          "concurrency": -1,
+          "enabled": false
+        },
+        "protocol": "vless",
+        "settings": {
+          "address": "rqbank.ir",
+          "encryption": "none",
+          "flow": "",
+          "id": "4a9098a9-a89d-4c95-8fdb-ffd8215e17d2",
+          "level": 8,
+          "port": 443
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "tls",
+          "tlsSettings": {
+            "serverName": "gateway.huivert.ir",
+            "allowInsecure": false,
+            "fingerprint": "chrome",
+            "alpn": [
+              "h2",
+              "http/1.1"
+            ],
+            "echConfigList": "AGX+DQBhAAAgACBpZ4CnNEkS4jV9GFJPdnYw4rYKulE6vtHuI2dOj27kBgAkAAEAAQABAAIAAQADAAIAAQACAAIAAgADAAMAAQADAAIAAwADABJnYXRld2F5Lmh1aXZlcnQuaXIAAA=="
+          },
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          },
+          "tcpSettings": {
+            "header": {
+              "type": "none"
+            }
+          }
+        },
+        "tag": "proxy1"
+      },
+      {
+        "protocol": "freedom",
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "direct"
+      },
+      {
+        "protocol": "blackhole",
+        "settings": {},
+        "tag": "block"
+      }
+    ],
+    "policy": {
+      "levels": {
+        "8": {
+          "connIdle": 300,
+          "downlinkOnly": 1,
+          "handshake": 4,
+          "uplinkOnly": 1
+        }
+      }
+    },
+    "remarks": "🇳🇱 Netherlands#4 (for Iran)",
+    "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "balancers": [
+        {
+          "tag": "proxy-balancer",
+          "selector": [
+            "proxy-"
+          ],
+          "strategy": {
+            "type": "leastLoad",
+            "settings": {
+              "expected": 1,
+              "maxRTT": "1.5s",
+              "tolerance": 0.25
+            }
+          }
+        }
+      ],
+      "rules": [
+        {
+          "network": "udp",
+          "outboundTag": "block",
+          "port": "443",
+          "type": "field"
+        },
+        {
+          "ip": [
+            "ext:geoip-only-cn-private.dat:private"
+          ],
+          "outboundTag": "direct",
+          "type": "field"
+        },
+        {
+          "domain": [
+            "geosite:private"
+          ],
+          "outboundTag": "direct",
+          "type": "field"
+        },
+        {
+          "domain": [
+            "geosite:category-ads-all"
+          ],
+          "outboundTag": "block",
+          "type": "field"
+        },
+        {
+          "domain": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "outboundTag": "direct",
+          "type": "field"
+        },
+        {
+          "ip": [
+            "geoip:ir"
+          ],
+          "outboundTag": "direct",
+          "type": "field"
+        },
+        {
+          "inboundTag": [
+            "domestic-dns_0_0",
+            "domestic-dns_2_0"
+          ],
+          "outboundTag": "direct",
+          "type": "field"
+        },
+        {
+          "inboundTag": [
+            "dns-module"
+          ],
+          "balancerTag": "proxy-balancer",
+          "type": "field"
+        },
+        {
+          "network": "tcp,udp",
+          "balancerTag": "proxy-balancer",
+          "type": "field"
+        }
+      ]
+    },
+    "burstObservatory": {
+      "subjectSelector": [
+        "proxy-"
+      ],
+      "pingConfig": {
+        "destination": "https://connectivitycheck.gstatic.com/generate_204",
+        "connectivity": "",
+        "interval": "15s",
+        "sampling": 2,
+        "timeout": "3s",
+        "httpMethod": "HEAD"
+      }
+    }
+  },
+  {
+    "dns": {
+      "hosts": {
         "cloudflare-dns.com": [
           "104.16.248.249",
           "104.16.249.249",
@@ -19488,7 +19741,7 @@
         }
       }
     },
-    "remarks": "🇳🇱 Netherlands#4 (for Iran)",
+    "remarks": "🇳🇱 Netherlands#5 (for Iran)",
     "routing": {
       "domainStrategy": "IPIfNonMatch",
       "rules": [
@@ -19583,259 +19836,6 @@
           "type": "field"
         }
       ]
-    }
-  },
-  {
-    "dns": {
-      "hosts": {
-        "geosite:category-ads-all": "127.0.0.1",
-        "domain:googleapis.cn": "googleapis.com",
-        "dns.alidns.com": [
-          "223.5.5.5",
-          "223.6.6.6",
-          "2400:3200::1",
-          "2400:3200:baba::1"
-        ],
-        "dns.cloudflare.com": [
-          "162.159.61.8",
-          "172.64.41.8",
-          "2a06:98c1:52::8",
-          "2803:f800:53::8"
-        ],
-        "cloudflare-dns.com": [
-          "104.16.248.249",
-          "104.16.249.249",
-          "2606:4700::6810:f8f9",
-          "2606:4700::6810:f9f9"
-        ],
-        "dns.google": [
-          "8.8.8.8",
-          "8.8.4.4",
-          "2001:4860:4860::8888",
-          "2001:4860:4860::8844"
-        ],
-        "dns.quad9.net": [
-          "9.9.9.9",
-          "149.112.112.112",
-          "2620:fe::fe",
-          "2620:fe::9"
-        ],
-        "one.one.one.one": [
-          "1.1.1.1",
-          "1.0.0.1",
-          "2606:4700:4700::1111",
-          "2606:4700:4700::1001"
-        ],
-        "snapp.ninja": "188.221.119.58"
-      },
-      "servers": [
-        "1.1.1.1",
-        {
-          "address": "223.5.5.5",
-          "domains": [
-            "geosite:private"
-          ],
-          "skipFallback": true,
-          "tag": "domestic-dns_0_0"
-        },
-        {
-          "address": "223.5.5.5",
-          "domains": [
-            "domain:ir",
-            "geosite:category-ir"
-          ],
-          "skipFallback": true,
-          "tag": "domestic-dns_2_0"
-        }
-      ],
-      "tag": "dns-module"
-    },
-    "inbounds": [
-      {
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "quic"
-          ],
-          "enabled": true,
-          "routeOnly": false
-        },
-        "tag": "socks"
-      }
-    ],
-    "log": {
-      "loglevel": "warning"
-    },
-    "outbounds": [
-      {
-        "mux": {
-          "concurrency": -1,
-          "enabled": false
-        },
-        "protocol": "vless",
-        "settings": {
-          "address": "snapp.ninja",
-          "encryption": "none",
-          "flow": "",
-          "id": "4a9098a9-a89d-4c95-8fdb-ffd8215e17d2",
-          "level": 8,
-          "port": 443
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "tls",
-          "tlsSettings": {
-            "serverName": "gateway.huivert.ir",
-            "allowInsecure": false,
-            "fingerprint": "chrome",
-            "alpn": [
-              "h2",
-              "http/1.1"
-            ],
-            "echConfigList": "AGX+DQBhAAAgACBpZ4CnNEkS4jV9GFJPdnYw4rYKulE6vtHuI2dOj27kBgAkAAEAAQABAAIAAQADAAIAAQACAAIAAgADAAMAAQADAAIAAwADABJnYXRld2F5Lmh1aXZlcnQuaXIAAA=="
-          },
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          },
-          "tcpSettings": {
-            "header": {
-              "type": "none"
-            }
-          }
-        },
-        "tag": "proxy1"
-      },
-      {
-        "protocol": "freedom",
-        "streamSettings": {
-          "network": "tcp",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        },
-        "tag": "direct"
-      },
-      {
-        "protocol": "blackhole",
-        "settings": {},
-        "tag": "block"
-      }
-    ],
-    "policy": {
-      "levels": {
-        "8": {
-          "connIdle": 300,
-          "downlinkOnly": 1,
-          "handshake": 4,
-          "uplinkOnly": 1
-        }
-      }
-    },
-    "remarks": "🇳🇱 Netherlands#5 (for Iran)",
-    "routing": {
-      "domainStrategy": "IPIfNonMatch",
-      "balancers": [
-        {
-          "tag": "proxy-balancer",
-          "selector": [
-            "proxy-"
-          ],
-          "strategy": {
-            "type": "leastLoad",
-            "settings": {
-              "expected": 1,
-              "maxRTT": "1.5s",
-              "tolerance": 0.25
-            }
-          }
-        }
-      ],
-      "rules": [
-        {
-          "network": "udp",
-          "outboundTag": "block",
-          "port": "443",
-          "type": "field"
-        },
-        {
-          "ip": [
-            "ext:geoip-only-cn-private.dat:private"
-          ],
-          "outboundTag": "direct",
-          "type": "field"
-        },
-        {
-          "domain": [
-            "geosite:private"
-          ],
-          "outboundTag": "direct",
-          "type": "field"
-        },
-        {
-          "domain": [
-            "geosite:category-ads-all"
-          ],
-          "outboundTag": "block",
-          "type": "field"
-        },
-        {
-          "domain": [
-            "domain:ir",
-            "geosite:category-ir"
-          ],
-          "outboundTag": "direct",
-          "type": "field"
-        },
-        {
-          "ip": [
-            "geoip:ir"
-          ],
-          "outboundTag": "direct",
-          "type": "field"
-        },
-        {
-          "inboundTag": [
-            "domestic-dns_0_0",
-            "domestic-dns_2_0"
-          ],
-          "outboundTag": "direct",
-          "type": "field"
-        },
-        {
-          "inboundTag": [
-            "dns-module"
-          ],
-          "balancerTag": "proxy-balancer",
-          "type": "field"
-        },
-        {
-          "network": "tcp,udp",
-          "balancerTag": "proxy-balancer",
-          "type": "field"
-        }
-      ]
-    },
-    "burstObservatory": {
-      "subjectSelector": [
-        "proxy-"
-      ],
-      "pingConfig": {
-        "destination": "https://connectivitycheck.gstatic.com/generate_204",
-        "connectivity": "",
-        "interval": "15s",
-        "sampling": 2,
-        "timeout": "3s",
-        "httpMethod": "HEAD"
-      }
     }
   },
   {
