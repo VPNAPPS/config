@@ -117,13 +117,38 @@ jobs:
           cd ala
           python3 configs_gen.py
 
-      - name: Run no script
+      - name: Install curl-impersonate (outside the repo)
+        run: |
+          mkdir -p "$RUNNER_TEMP/ci"
+          curl -sSL -o "$RUNNER_TEMP/ci.tar.gz" \
+            https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz
+          tar xzf "$RUNNER_TEMP/ci.tar.gz" -C "$RUNNER_TEMP/ci"
+
+      - name: Diagnose Nora access
+        continue-on-error: true
+        env:
+          NORA_UUID: ${{ secrets.NORA_UUID }}
+          NORA_UA: ${{ secrets.NORA_UA }}
         run: |
           cd no
-          mkdir -p .ci && curl -sSL -o .ci/ci.tar.gz https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz
-          tar xzf .ci/ci.tar.gz -C .ci
-          python3 no_conf.py --impersonate --uuid-pool pool.json     --ech --ech-count 100 --ech-attempts 20 --ech-delay 4     --xrayjson --inject-credential --out configs.json --allow-empty
+          python3 no_conf.py --diagnose \
+            --impersonate "$RUNNER_TEMP/ci/curl-impersonate-chrome" \
+            --uuid "$NORA_UUID" --user-agent "$NORA_UA"
 
+      - name: Run no script
+        timeout-minutes: 8
+        env:
+          NORA_UUID: ${{ secrets.NORA_UUID }}
+          NORA_UA: ${{ secrets.NORA_UA }}
+          NORA_PROXY: ${{ secrets.NORA_PROXY }}
+        run: |
+          cd no
+          python3 no_conf.py \
+            --impersonate "$RUNNER_TEMP/ci/curl-impersonate-chrome" \
+            --uuid "$NORA_UUID" --user-agent "$NORA_UA" \
+            ${NORA_PROXY:+--proxy "$NORA_PROXY"} \
+            --ech --ech-count 6 --ech-attempts 6 --ech-delay 8 --max-wait 45 \
+            --xrayjson --inject-credential --out configs.json --allow-empty
       - name: Run kid script
         run: |
           cd kid
