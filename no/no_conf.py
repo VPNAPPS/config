@@ -318,7 +318,7 @@ class NoraError(RuntimeError):
 class NoraClient:
     def __init__(self, base_url=DEFAULT_BASE_URL, uuid=None, cert_sha256=None, apk=None,
                  user_agent=DEFAULT_UA, timeout=25, retries=3, verify_tls=True, verbose=False,
-                 adb_serial=None, impersonate=None, connect_ips=None):
+                 adb_serial=None, impersonate=None, connect_ips=None, proxy=None, max_wait=900.0):
         self.base_url = base_url.rstrip('/')
         self.uuid = uuid or str(uuidlib.uuid4())
         self.session_id = str(uuidlib.uuid4())
@@ -329,6 +329,8 @@ class NoraClient:
         self.adb_serial = adb_serial
         self.impersonate = impersonate
         self.connect_ips = list(connect_ips or [])
+        self.proxy = proxy
+        self.max_wait = max_wait
         self.clock_offset = 0
         self.retry_after = None
 
@@ -402,6 +404,8 @@ class NoraClient:
                '-H', 'User-Agent: ' + headers['User-Agent']]
         if os.path.exists('/etc/ssl/certs/ca-certificates.crt'):
             cmd += ['--cacert', '/etc/ssl/certs/ca-certificates.crt']
+        if self.proxy:
+            cmd += ['--proxy', self.proxy]
         for key, value in headers.items():
             if key == 'User-Agent':
                 continue
@@ -419,7 +423,8 @@ class NoraClient:
         candidates = self.connect_ips or list(DEFAULT_EDGE_IPS)
         last = (b'', '0')
         try:
-            for ip in [None] + candidates:
+            # try known-good edges first, the DNS answer last (it is often the blocked one)
+            for ip in candidates + [None]:
                 run = list(cmd)
                 if ip:
                     run[run.index(url):run.index(url)] = ['--resolve', f'{host}:{port}:{ip}']
@@ -493,7 +498,7 @@ class NoraClient:
                     if code == '429':
                         self._note_retry_after(raw)
                     if code in ('000', '429', '500', '502', '503', '504') and attempt <= self.retries:
-                        time.sleep(min(self.retry_after or 0.8 * attempt, 900))
+                        time.sleep(min(self.retry_after or 0.8 * attempt, self.max_wait))
                         continue
                     raise NoraError(f'HTTP {code} for {path}')
                 except NoraError:
@@ -513,7 +518,7 @@ class NoraClient:
                     if code == '429':
                         self._note_retry_after(raw)
                     if code in ('000', '429', '500', '502', '503', '504') and attempt <= self.retries:
-                        time.sleep(min(self.retry_after or 0.8 * attempt, 900))
+                        time.sleep(min(self.retry_after or 0.8 * attempt, self.max_wait))
                         continue
                     raise NoraError(f'HTTP {code} for {path}')
                 except NoraError:
@@ -524,7 +529,16 @@ class NoraClient:
                         continue
                     raise NoraError(f'adb transport error for {path}: {exc}') from None
             try:
-                with urllib.request.urlopen(req, timeout=self.timeout, context=self.ctx) as resp:
+                if self.proxy:
+                    opener = urllib.request.build_opener(
+                        urllib.request.ProxyHandler({'http': self.proxy,
+                                                      'https': self.proxy}),
+                        urllib.request.HTTPSHandler(context=self.ctx))
+                    response = opener.open(req, timeout=self.timeout)
+                else:
+                    response = urllib.request.urlopen(req, timeout=self.timeout,
+                                                      context=self.ctx)
+                with response as resp:
                     raw = resp.read()
                     self._sync_clock(resp.headers)
                     return json.loads(raw) if raw else None
@@ -546,7 +560,7 @@ class NoraClient:
                     delay = (self.retry_after
                              or float(exc.headers.get('Retry-After') or 0)
                              or (0.5 * 2 ** (attempt - 1)))
-                    time.sleep(min(delay, 900))
+                    time.sleep(min(delay, self.max_wait))
                     continue
                 raise NoraError(f'HTTP {code} for {path}') from None
             except (urllib.error.URLError, OSError, http.client.HTTPException) as exc:
@@ -956,7 +970,8 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
             except Exception as exc:  # noqa: BLE001 - one bad request must not end the run
                 log(f'noraconf: {kind}{"/" + str(sid) if sid else ""} failed: {exc}', file=sys.stderr)
                 if '429' in str(exc):
-                    wait = max(getattr(client, 'retry_after', None) or 0, args.ech_cooldown)
+                    wait = min(max(getattr(client, 'retry_after', None) or 0,
+                                   args.ech_cooldown), args.max_wait)
                     log(f'noraconf: rate limited; cooling down {wait:.0f}s', file=sys.stderr)
                     time.sleep(wait)
                 continue
@@ -990,6 +1005,79 @@ def collect_ech(clients, want_normal, want_selective, args, log=print):
 # CLI
 # --------------------------------------------------------------------------- #
 
+
+def run_diagnose(args, impersonate):
+    """Print a pass/fail checklist for this machine/CI runner."""
+    import socket
+
+    print('noraconf diagnose', flush=True)
+    problems = []
+
+    def line(label, detail, bad=False):
+        print(f'  {label:26} {detail}', flush=True)
+        if bad:
+            problems.append(label)
+
+    line('python', sys.version.split()[0])
+    line('base url', args.base_url)
+    line('proxy', args.proxy or '-')
+    line('via adb', str(args.via_adb) if args.via_adb is not None else '-')
+
+    if impersonate:
+        try:
+            env = dict(os.environ, LD_LIBRARY_PATH=os.path.dirname(os.path.abspath(impersonate)))
+            out = subprocess.run([impersonate, '--version'], capture_output=True, text=True,
+                                 env=env, timeout=15).stdout.splitlines()
+            line('impersonate', out[0] if out else 'present')
+        except Exception as exc:  # noqa: BLE001
+            line('impersonate', f'ERROR {exc}', bad=True)
+    else:
+        line('impersonate', 'MISSING - ECH needs it (see --impersonate)', bad=True)
+
+    host = urllib.parse.urlsplit(args.base_url).hostname or 'api.clyracore.com'
+    try:
+        infos = socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)
+        ips = sorted({info[4][0] for info in infos})
+        line(f'dns {host}', ', '.join(ips[:4]))
+    except Exception as exc:  # noqa: BLE001
+        line('dns', f'ERROR {exc}', bad=True)
+
+    identity = args.uuid or load_state(args.state).get('uuid')
+    ua = args.user_agent or DEFAULT_UA
+    line('identity', identity or '(random per run - unattested)')
+    line('user agent', ua)
+
+    for ip in (args.connect_ip or DEFAULT_EDGE_IPS):
+        try:
+            with socket.create_connection((ip, 443), timeout=6):
+                line(f'edge {ip}', 'reachable')
+                break
+        except OSError as exc:
+            line(f'edge {ip}', f'unreachable ({exc})', bad=True)
+
+    t0 = time.time()
+    try:
+        probe = NoraClient(base_url=args.base_url, uuid=identity, user_agent=ua,
+                           timeout=args.timeout, retries=1, verify_tls=not args.insecure,
+                           proxy=args.proxy, impersonate=impersonate,
+                           connect_ips=args.connect_ip)
+        probe.request('/v1/ping')
+        line('https /v1/ping', f'ok ({time.time() - t0:.1f}s)')
+    except Exception as exc:  # noqa: BLE001
+        line('https /v1/ping', f'FAIL {str(exc)[:70]}', bad=True)
+        return 1
+
+    try:
+        probe.request('/v1/ping')
+        kind = describe_profile(probe.normal_server())
+        line('signed request', kind, bad=(kind.endswith('(bootstrap)') or 'error' in kind))
+    except Exception as exc:  # noqa: BLE001
+        line('signed request', f'FAIL {str(exc)[:70]}', bad=True)
+
+    print(f'  -> {len(problems)} problem(s)', flush=True)
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         description='Fetch Nora VPN server profiles (Xray configs) via the app API.')
@@ -1006,6 +1094,12 @@ def main(argv=None):
     ap.add_argument('--uuid-pool', metavar='FILE',
                     help='JSON list of enrolled identities to rotate for --ech '
                          '([{"uuid": "...", "user_agent": "..."}]); avoids per-UUID throttling')
+    ap.add_argument('--max-wait', type=float, default=900.0,
+                    help='cap any server-requested wait in seconds (default 900); lower it in CI '
+                         'so a rate-limited run exits instead of hanging')
+    ap.add_argument('--diagnose', action='store_true',
+                    help='print a pass/fail checklist (python, DNS, proxy, impersonation binary, '
+                         'signed request) - run this first on a CI runner')
     ap.add_argument('--check-pool', action='store_true',
                     help='test every identity in --uuid-pool and report whether it is entitled to '
                          'the real/ECH pool (bootstrap = not attested or expired)')
@@ -1054,6 +1148,10 @@ def main(argv=None):
     ap.add_argument('--lang', default='en',
                     help='language token in the random User-Agent; the API localises server '
                          'Location names by it (default: en; use "random" to vary)')
+    ap.add_argument('--proxy', metavar='URL',
+                    help='route API requests through an HTTP(S) or SOCKS proxy, e.g. '
+                         'http://127.0.0.1:8080 or socks5h://user:pass@host:1080 '
+                         '(used by the urllib transport and passed to --impersonate curl)')
     ap.add_argument('--connect-ip', action='append', metavar='IP', default=None,
                     help='connect to this Cloudflare edge IP for the API host (repeatable); '
                          'useful when the DNS-advertised edge is unreachable')
@@ -1115,8 +1213,20 @@ def main(argv=None):
             return 1
         impersonate = candidate
 
+    if args.proxy and '://' not in args.proxy:
+        args.proxy = 'http://' + args.proxy
+    if args.proxy and args.proxy.split('://', 1)[0].lower().startswith('socks') \
+            and not impersonate:
+        print('noraconf: SOCKS proxies need --impersonate (the curl transport does the SOCKS '
+              'handshake); use an http:// proxy for the plain transport or add --impersonate',
+              file=sys.stderr)
+        return 1
+
     if args.prepared:
         args.inject_credential = True
+
+    if args.diagnose:
+        return run_diagnose(args, impersonate)
 
     if args.check_pool:
         pool = load_uuid_pool(args.uuid_pool)
@@ -1132,7 +1242,8 @@ def main(argv=None):
                                 timeout=args.timeout, retries=args.retries,
                                 verify_tls=not args.insecure, verbose=args.verbose,
                                 impersonate=impersonate,
-                                connect_ips=args.connect_ip)
+                                connect_ips=args.connect_ip, proxy=args.proxy,
+                        max_wait=args.max_wait)
             try:
                 kind = describe_profile(client.normal_server())
             except Exception as exc:  # noqa: BLE001
@@ -1248,7 +1359,8 @@ def main(argv=None):
                         timeout=args.timeout, retries=args.retries,
                         verify_tls=not args.insecure, verbose=args.verbose,
                         adb_serial=adb_transport, impersonate=impersonate,
-                        connect_ips=args.connect_ip)
+                        connect_ips=args.connect_ip, proxy=args.proxy,
+                        max_wait=args.max_wait)
     explicit_id = bool(args.uuid or args.state or args.from_device is not None
                        or args.mint_attested or args.enroll or args.mint_identity)
     if args.verbose:
@@ -1279,7 +1391,8 @@ def main(argv=None):
                                       timeout=args.timeout, retries=args.retries,
                                       verify_tls=not args.insecure, verbose=args.verbose,
                                       adb_serial=adb_transport, impersonate=impersonate,
-                        connect_ips=args.connect_ip))
+                        connect_ips=args.connect_ip, proxy=args.proxy,
+                        max_wait=args.max_wait))
         entries = collect_ech(clients, want_normal, want_selective, args)
         if not entries:
             print('noraconf: no ECH profile found (pool may be throttling); '
