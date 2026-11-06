@@ -136,17 +136,15 @@ jobs:
             --uuid "$NORA_UUID" --user-agent "$NORA_UA"
 
       - name: Run no script
-        timeout-minutes: 8
         env:
           NORA_UUID: ${{ secrets.NORA_UUID }}
           NORA_UA: ${{ secrets.NORA_UA }}
-          NORA_PROXY: ${{ secrets.NORA_PROXY }}
         run: |
           cd no
-          python3 no_conf.py \
-            --impersonate "$RUNNER_TEMP/ci/curl-impersonate-chrome" \
-            --uuid "$NORA_UUID" --user-agent "$NORA_UA" \
-            ${NORA_PROXY:+--proxy "$NORA_PROXY"} \
+          UUID="$(printf '%s' "$NORA_UUID" | tr -d '[:space:]')"
+          UA="$(printf '%s' "$NORA_UA" | tr -d '\r\n')"
+          python3 no_conf.py --impersonate "$RUNNER_TEMP/ci/curl-impersonate-chrome" \
+            --uuid "$UUID" --user-agent "$UA" \
             --ech --ech-count 6 --ech-attempts 6 --ech-delay 8 --max-wait 45 \
             --xrayjson --inject-credential --out configs.json --allow-empty
       - name: Run kid script
