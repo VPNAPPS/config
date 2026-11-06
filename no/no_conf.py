@@ -44,6 +44,7 @@ import itertools
 import json
 import os
 import random
+import re
 import ssl
 import struct
 import subprocess
@@ -320,9 +321,9 @@ class NoraClient:
                  user_agent=DEFAULT_UA, timeout=25, retries=3, verify_tls=True, verbose=False,
                  adb_serial=None, impersonate=None, connect_ips=None, proxy=None, max_wait=900.0):
         self.base_url = base_url.rstrip('/')
-        self.uuid = uuid or str(uuidlib.uuid4())
+        self.uuid = (uuid or '').strip() or str(uuidlib.uuid4())
         self.session_id = str(uuidlib.uuid4())
-        self.user_agent = user_agent
+        self.user_agent = (user_agent or DEFAULT_UA).strip()
         self.timeout = timeout
         self.retries = retries
         self.verbose = verbose
@@ -1046,6 +1047,9 @@ def run_diagnose(args, impersonate):
     ua = args.user_agent or DEFAULT_UA
     line('identity', identity or '(random per run - unattested)')
     line('user agent', ua)
+    ua_ok = bool(re.fullmatch(r'Nora,\d+,Android\(\d+\),[^,]+,[^,]+,[^,]+', ua))
+    line('ua shape', 'ok' if ua_ok else
+         'INVALID (expect Nora,<vc>,Android(<sdk>),<brand>,<model>,<lang>)', bad=not ua_ok)
 
     for ip in (args.connect_ip or DEFAULT_EDGE_IPS):
         try:
@@ -1212,6 +1216,22 @@ def main(argv=None):
                   file=sys.stderr)
             return 1
         impersonate = candidate
+
+    for attr in ('uuid', 'user_agent', 'proxy', 'base_url'):
+        value = getattr(args, attr, None)
+        if isinstance(value, str):
+            setattr(args, attr, value.strip())
+    if args.uuid and not re.fullmatch(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-'
+                                      r'[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', args.uuid):
+        print(f'noraconf: --uuid is not a UUID (got {args.uuid!r}); check for stray whitespace '
+              f'or quotes in your secret', file=sys.stderr)
+        return 1
+    if args.user_agent and not re.fullmatch(r'Nora,\d+,Android\(\d+\),[^,]+,[^,]+,[^,]+',
+                                            args.user_agent):
+        print(f'noraconf: --user-agent must look like '
+              f'"Nora,<versionCode>,Android(<sdk>),<brand>,<model>,<lang>" '
+              f'(got {args.user_agent!r})', file=sys.stderr)
+        return 1
 
     if args.proxy and '://' not in args.proxy:
         args.proxy = 'http://' + args.proxy
