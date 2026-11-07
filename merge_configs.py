@@ -282,6 +282,11 @@ def main():
     write_json(FASTEST_CONFIG_FILE, fastest_config)
     print(f"Final merged config written to {FASTEST_CONFIG_FILE}")
 
+    with open("hand-json/configs.json", "r", encoding="utf-8") as f:
+        handsjson = json.load(f)
+
+    configs = handsjson + configs
+
     write_json(ALL_CONFIGS_FILE, configs)
     print(f"Merged config written to {ALL_CONFIGS_FILE}")
     print(f"Total configs after merging: {len(configs)}")
