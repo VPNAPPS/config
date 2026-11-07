@@ -1,10 +1,4 @@
-# Nora fetch split out to a self-hosted runner labelled "l1";
-# everything else stays on GitHub-hosted ubuntu-24.04.
-#
-# Setup once on the l1 machine:
-#   ./config.sh --url https://github.com/<owner>/<repo> --token <token> --labels l1
-#   # requires: python3, curl, tar
-# The curl-impersonate binary is cached in ~/.nora-ci and reused across runs.
+# This workflow runs Python scripts and sets up the Xray binary for validation.
 
 name: Decrypt and Generate Configs
 
@@ -15,85 +9,14 @@ on:
   #   branches: [ main ]
   workflow_dispatch:
   # schedule:
-  #   - cron: '*/30 * * * *'
+  #   - cron: '*/5 * * * *'  # Run every 5 minutes
 
 permissions:
   contents: write
   actions: read
 
 jobs:
-  # --------------------------------------------------------------------- #
-  # 1) Runs ONLY on the self-hosted worker whose IP the API accepts
-  # --------------------------------------------------------------------- #
-  nora:
-    name: Nora fetch (self-hosted l1)
-    runs-on: [self-hosted, l1]
-    timeout-minutes: 12
-    steps:
-      - name: Check-out repository
-        uses: actions/checkout@v4
-
-      - name: Ensure curl-impersonate
-        run: |
-          CI_DIR="$HOME/.nora-ci"
-          if [ ! -x "$CI_DIR/curl-impersonate-chrome" ]; then
-            mkdir -p "$CI_DIR"
-            curl -sSL -o "$CI_DIR/ci.tar.gz" \
-              https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz
-            tar xzf "$CI_DIR/ci.tar.gz" -C "$CI_DIR"
-            rm -f "$CI_DIR/ci.tar.gz"
-            chmod +x "$CI_DIR"/curl_* "$CI_DIR"/curl-impersonate-*
-          fi
-          "$CI_DIR/curl-impersonate-chrome" --version | head -1
-          echo "CI_DIR=$CI_DIR" >> "$GITHUB_ENV"
-          python3 --version
-
-      - name: Diagnose Nora access
-        continue-on-error: true
-        env:
-          NORA_UUID: ${{ secrets.NORA_UUID }}
-          NORA_UA: ${{ secrets.NORA_UA }}
-        run: |
-          cd no
-          UUID="$(printf '%s' "$NORA_UUID" | tr -d '[:space:]')"
-          UA="$(printf '%s' "$NORA_UA" | tr -d '\r\n')"
-          python3 no_conf.py --diagnose \
-            --impersonate "$CI_DIR/curl-impersonate-chrome" \
-            --uuid "$UUID" --user-agent "$UA"
-
-      - name: Run no script
-        env:
-          NORA_UUID: ${{ secrets.NORA_UUID }}
-          NORA_UA: ${{ secrets.NORA_UA }}
-          NORA_PROXY: ${{ secrets.NORA_PROXY }}
-        run: |
-          cd no
-          UUID="$(printf '%s' "$NORA_UUID" | tr -d '[:space:]')"
-          UA="$(printf '%s' "$NORA_UA" | tr -d '\r\n')"
-          python3 no_conf.py \
-            --impersonate "$CI_DIR/curl-impersonate-chrome" \
-            --uuid "$UUID" --user-agent "$UA" \
-            ${NORA_PROXY:+--proxy "$NORA_PROXY"} \
-            --ech --ech-count 6 --ech-attempts 6 --ech-delay 8 --max-wait 45 \
-            --xrayjson --inject-credential --out configs.json --allow-empty
-
-      - name: Upload Nora configs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nora-configs
-          path: no/configs.json
-          if-no-files-found: warn
-
-  # --------------------------------------------------------------------- #
-  # 2) Everything else, on GitHub-hosted runners
-  # --------------------------------------------------------------------- #
   build-and-commit:
-    name: Merge and commit
-    needs: nora
-    # run even if the self-hosted job failed/timed out, so the other generators
-    # still update; the missing artifact is replaced with an empty list below
-    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -106,20 +29,7 @@ jobs:
         run: |
           python3 -m pip install --user --break-system-packages requests cryptography python-dotenv pycountry
 
-      - name: Download Nora configs
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: nora-configs
-          path: no
-
-      - name: Ensure no/configs.json exists
-        run: |
-          mkdir -p no
-          if [ ! -f no/configs.json ]; then echo '[]' > no/configs.json; fi
-          head -c 120 no/configs.json; echo
-
-      # ---- unchanged steps from here on ---- #
+      # Step 4: Download and Set Up Xray-core
       - name: Download and Set Up Xray-core
         run: |
           if [ "${{ runner.arch }}" == "X64" ]; then
@@ -130,10 +40,10 @@ jobs:
             echo "Unsupported architecture: ${{ runner.arch }}"
             exit 1
           fi
-
+          
           XRAY_VERSION="v25.7.26"
           XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_VERSION}/Xray-${XRAY_ARCH}.zip"
-
+          
           echo "Downloading Xray from $XRAY_URL"
           curl -L -o xray.zip "$XRAY_URL"
           unzip -o xray.zip xray
@@ -141,6 +51,7 @@ jobs:
           echo "$(pwd)" >> $GITHUB_PATH
           ./xray version
 
+      # Step 4b: Download and Set Up xray-checker
       - name: Download and Set Up xray-checker
         run: |
           if [ "${{ runner.arch }}" == "X64" ]; then
@@ -157,7 +68,7 @@ jobs:
           tar -xzvf checker.tar.gz
           chmod +x xray-checker
           echo "$(pwd)" >> $GITHUB_PATH
-          ./xray-checker --help || true
+          ./xray-checker --help || true  # Prevents failure if it exits non-zero
 
       - name: Create begz directory
         run: mkdir -p begz
@@ -187,19 +98,31 @@ jobs:
           echo "BASE_URL=${{ secrets.BASE_URL }}" > yebe/.env
           echo "GGITHUB_API_URL=${{ secrets.GGITHUB_API_URL }}" >> yebe/.env
 
+      # - name: Run yebe script
+      #   run: |
+      #     cd yebe
+      #     python3 generate_yebe_configs.py
       - name: Create .env file for freesub
         run: |
           echo "TARGET_URL=${{ secrets.TARGET_URL }}" > freesub/.env
-
+          
       - name: Run freesub script
         run: |
           cd freesub
           python3 configs_gen.py
+        #  curl -o configs.json ${{ secrets.freesub }}
 
       - name: Run ala script
         run: |
           cd ala
           python3 configs_gen.py
+
+      # - name: Run no script
+      #   run: |
+      #     cd no
+      #     mkdir -p .ci && curl -sSL -o .ci/ci.tar.gz https://github.com/lwthiker/curl-impersonate/releases/download/v0.6.1/curl-impersonate-v0.6.1.x86_64-linux-gnu.tar.gz
+      #     tar xzf .ci/ci.tar.gz -C .ci
+      #     python3 no_conf.py --impersonate --uuid-pool pool.json     --ech --ech-count 100 --ech-attempts 20 --ech-delay 4     --xrayjson --inject-credential --out configs.json --allow-empty
 
       - name: Run kid script
         run: |
