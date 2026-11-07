@@ -1,176 +1,5 @@
 [
   {
-    "dns": {
-      "hosts": {
-        "domain:googleapis.cn": "googleapis.com"
-      },
-      "queryStrategy": "UseIPv4",
-      "servers": [
-        "1.1.1.1",
-        {
-          "address": "1.1.1.1",
-          "domains": [],
-          "port": 53
-        },
-        {
-          "address": "8.8.8.8",
-          "domains": [],
-          "port": 53
-        }
-      ]
-    },
-    "inbounds": [
-      {
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "quic"
-          ],
-          "enabled": true
-        },
-        "tag": "socks"
-      },
-      {
-        "listen": "127.0.0.1",
-        "port": 10809,
-        "protocol": "http",
-        "settings": {
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "quic"
-          ],
-          "enabled": true
-        },
-        "tag": "http"
-      },
-      {
-        "listen": "127.0.0.1",
-        "port": 11111,
-        "protocol": "dokodemo-door",
-        "settings": {
-          "address": "127.0.0.1"
-        },
-        "tag": "metrics_in"
-      }
-    ],
-    "log": {
-      "loglevel": "warning"
-    },
-    "metrics": {
-      "tag": "metrics_out"
-    },
-    "outbounds": [
-      {
-        "mux": {
-          "concurrency": -1,
-          "enabled": false,
-          "xudpConcurrency": 8,
-          "xudpProxyUDP443": ""
-        },
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "152.70.177.210",
-              "level": 1,
-              "method": "2022-blake3-chacha20-poly1305",
-              "ota": false,
-              "password": "I6kqm/gYywvGcuixi8k9pEt9oDOT4yScFh+QfbWOgbQ=",
-              "port": 59924
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp"
-        },
-        "tag": "proxy"
-      },
-      {
-        "protocol": "freedom",
-        "settings": {
-          "domainStrategy": "UseIP"
-        },
-        "tag": "direct"
-      },
-      {
-        "protocol": "blackhole",
-        "settings": {
-          "response": {
-            "type": "http"
-          }
-        },
-        "tag": "block"
-      }
-    ],
-    "policy": {
-      "levels": {
-        "0": {
-          "statsUserDownlink": true,
-          "statsUserUplink": true
-        },
-        "8": {
-          "connIdle": 300,
-          "downlinkOnly": 1,
-          "handshake": 4,
-          "uplinkOnly": 1
-        }
-      },
-      "system": {
-        "statsInboundDownlink": true,
-        "statsInboundUplink": true,
-        "statsOutboundDownlink": true,
-        "statsOutboundUplink": true
-      }
-    },
-    "remarks": "🇩🇪 Germany High Speed ⚡️",
-    "routing": {
-      "domainStrategy": "IPIfNonMatch",
-      "rules": [
-        {
-          "inboundTag": [
-            "metrics_in"
-          ],
-          "outboundTag": "metrics_out"
-        },
-        {
-          "inboundTag": [
-            "socks"
-          ],
-          "outboundTag": "proxy",
-          "port": "53"
-        },
-        {
-          "ip": [
-            "1.1.1.1"
-          ],
-          "outboundTag": "proxy",
-          "port": "53"
-        },
-        {
-          "ip": [
-            "8.8.8.8"
-          ],
-          "outboundTag": "direct",
-          "port": "53"
-        }
-      ]
-    },
-    "stats": {}
-  },
-  {
     "remarks": "🇩🇪 Germany",
     "log": {
       "loglevel": "warning"
@@ -194,7 +23,7 @@
         "settings": {
           "servers": [
             {
-              "address": "35.159.5.203",
+              "address": "47.254.174.203",
               "port": 443,
               "method": "2022-blake3-chacha20-poly1305",
               "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
@@ -228,7 +57,7 @@
         "settings": {
           "servers": [
             {
-              "address": "8.208.118.32",
+              "address": "3.8.174.9",
               "port": 443,
               "method": "2022-blake3-chacha20-poly1305",
               "password": "Cg2Dw4OhdBZhqbeO9ZTA3g/Gk/AvsrYZGhAJeGnQIx4="
