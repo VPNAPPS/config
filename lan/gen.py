@@ -280,6 +280,7 @@ def to_xray(o, location):
     return {
         "remarks": config_name(location),
         "log": {"loglevel": "warning"},
+        "dns": {"servers": ["8.8.8.8", "1.1.1.1"]},
         "inbounds": [{
             "tag": "socks-in",
             "listen": "127.0.0.1",
