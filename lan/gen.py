@@ -310,16 +310,18 @@ def admob_outbound():
                 "password": "gC4aUObVtu/b0J+uOAKYeHqc+yhDKRpy/d203/zBuQY=",
             }],
         },
-        "streamSettings": {"network": "tcp"},
+        "streamSettings": {
+            "network": "tcp",
+            "sockopt": {
+                # Dial the AdMob Shadowsocks server through the Lantern main proxy.
+                "dialerProxy": "proxy",
+            },
+        },
         "mux": {
             "enabled": False,
             "concurrency": -1,
             "xudpConcurrency": 8,
             "xudpProxyUDP443": "",
-        },
-        "proxySettings": {
-            "tag": "proxy",
-            "transportLayer": True,
         },
     }
 
