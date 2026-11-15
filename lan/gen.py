@@ -219,6 +219,49 @@ def to_link(o, location):
 
 # --------------------------------------------------------- xray config (yours)
 
+# Narrow Google advertising / AdMob host rules rather than all of google.com.
+# Adjust this list if a particular Google Mobile Ads SDK release uses other hosts.
+ADMOB_DOMAINS = [
+    "domain:googleads.g.doubleclick.net",
+    "domain:googleads4.g.doubleclick.net",
+    "domain:securepubads.g.doubleclick.net",
+    "domain:ad.doubleclick.net",
+    "domain:googlesyndication.com",
+    "domain:googleadservices.com",
+    "domain:adservice.google.com",
+    "domain:admob.googleapis.com",
+]
+
+
+def admob_outbound():
+    # Only the TCP connection to this server is made over the main `proxy`.
+    return {
+        "tag": "admob-proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+            "servers": [{
+                "address": "65.109.209.50",
+                "port": 33250,
+                "level": 1,
+                "method": "2022-blake3-aes-256-gcm",
+                "ota": False,
+                "password": "p60R3Ea44fqV2UoFXu1gI4MI7JUdQApwowesE3kRZKk=:LCRqEFbJEP4RdmbK/HeWqI5gbiNjrGxVN/Z221xeG+0=",
+            }],
+        },
+        "streamSettings": {"network": "tcp"},
+        "mux": {
+            "enabled": False,
+            "concurrency": -1,
+            "xudpConcurrency": 8,
+            "xudpProxyUDP443": "",
+        },
+        "proxySettings": {
+            "tag": "proxy",
+            "transportLayer": True,
+        },
+    }
+
+
 def to_xray(o, location):
     if o["type"] == "shadowsocks":
         proxy = {
@@ -290,8 +333,22 @@ def to_xray(o, location):
                 "auth": "noauth",
                 "udp": True,
             },
+            "sniffing": {
+                "enabled": True,
+                "destOverride": ["http", "tls", "quic"],
+                "routeOnly": True,
+            },
         }],
-        "outbounds": [proxy],
+        "routing": {
+            "domainStrategy": "AsIs",
+            "rules": [{
+                "type": "field",
+                "domain": ADMOB_DOMAINS,
+                "outboundTag": "admob-proxy",
+            }],
+        },
+        # Default: Lantern main proxy. AdMob: AdMob SS -> Lantern main proxy.
+        "outbounds": [proxy, admob_outbound()],
     }
 
 
