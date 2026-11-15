@@ -255,10 +255,10 @@ def admob_outbound():
             "xudpConcurrency": 8,
             "xudpProxyUDP443": "",
         },
-        "proxySettings": {
-            "tag": "proxy",
-            "transportLayer": True,
-        },
+        # "proxySettings": {
+        #     "tag": "proxy",
+        #     "transportLayer": True,
+        # },
     }
 
 
