@@ -19,89 +19,37 @@
         "settings": {
           "auth": "noauth",
           "udp": true
+        },
+        "sniffing": {
+          "enabled": true,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "routeOnly": true
         }
       }
     ],
-    "outbounds": [
-      {
-        "tag": "proxy",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "8.211.62.205",
-              "port": 443,
-              "method": "2022-blake3-chacha20-poly1305",
-              "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
-            }
-          ]
+    "routing": {
+      "domainStrategy": "AsIs",
+      "rules": [
+        {
+          "type": "field",
+          "domain": [
+            "domain:googleads.g.doubleclick.net",
+            "domain:googleads4.g.doubleclick.net",
+            "domain:securepubads.g.doubleclick.net",
+            "domain:ad.doubleclick.net",
+            "domain:googlesyndication.com",
+            "domain:googleadservices.com",
+            "domain:adservice.google.com",
+            "domain:admob.googleapis.com"
+          ],
+          "outboundTag": "admob-proxy"
         }
-      }
-    ]
-  },
-  {
-    "remarks": "🇩🇪 Germany",
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "servers": [
-        "8.8.8.8",
-        "1.1.1.1"
       ]
     },
-    "inbounds": [
-      {
-        "tag": "socks-in",
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true
-        }
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy",
-        "protocol": "shadowsocks",
-        "settings": {
-          "servers": [
-            {
-              "address": "35.177.101.19",
-              "port": 443,
-              "method": "2022-blake3-chacha20-poly1305",
-              "password": "Cg2Dw4OhdBZhqbeO9ZTA3g/Gk/AvsrYZGhAJeGnQIx4="
-            }
-          ]
-        }
-      }
-    ]
-  },
-  {
-    "remarks": "🇩🇪 Germany",
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "servers": [
-        "8.8.8.8",
-        "1.1.1.1"
-      ]
-    },
-    "inbounds": [
-      {
-        "tag": "socks-in",
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true
-        }
-      }
-    ],
     "outbounds": [
       {
         "tag": "proxy",
@@ -130,6 +78,229 @@
             "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
             "shortId": ""
           }
+        }
+      },
+      {
+        "tag": "admob-proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "65.109.209.50",
+              "port": 33250,
+              "level": 1,
+              "method": "2022-blake3-aes-256-gcm",
+              "ota": false,
+              "password": "p60R3Ea44fqV2UoFXu1gI4MI7JUdQApwowesE3kRZKk=:LCRqEFbJEP4RdmbK/HeWqI5gbiNjrGxVN/Z221xeG+0="
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        },
+        "mux": {
+          "enabled": false,
+          "concurrency": -1,
+          "xudpConcurrency": 8,
+          "xudpProxyUDP443": ""
+        },
+        "proxySettings": {
+          "tag": "proxy",
+          "transportLayer": true
+        }
+      }
+    ]
+  },
+  {
+    "remarks": "🇩🇪 Germany",
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "servers": [
+        "8.8.8.8",
+        "1.1.1.1"
+      ]
+    },
+    "inbounds": [
+      {
+        "tag": "socks-in",
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true
+        },
+        "sniffing": {
+          "enabled": true,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "routeOnly": true
+        }
+      }
+    ],
+    "routing": {
+      "domainStrategy": "AsIs",
+      "rules": [
+        {
+          "type": "field",
+          "domain": [
+            "domain:googleads.g.doubleclick.net",
+            "domain:googleads4.g.doubleclick.net",
+            "domain:securepubads.g.doubleclick.net",
+            "domain:ad.doubleclick.net",
+            "domain:googlesyndication.com",
+            "domain:googleadservices.com",
+            "domain:adservice.google.com",
+            "domain:admob.googleapis.com"
+          ],
+          "outboundTag": "admob-proxy"
+        }
+      ]
+    },
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "35.159.162.39",
+              "port": 443,
+              "method": "2022-blake3-chacha20-poly1305",
+              "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
+            }
+          ]
+        }
+      },
+      {
+        "tag": "admob-proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "65.109.209.50",
+              "port": 33250,
+              "level": 1,
+              "method": "2022-blake3-aes-256-gcm",
+              "ota": false,
+              "password": "p60R3Ea44fqV2UoFXu1gI4MI7JUdQApwowesE3kRZKk=:LCRqEFbJEP4RdmbK/HeWqI5gbiNjrGxVN/Z221xeG+0="
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        },
+        "mux": {
+          "enabled": false,
+          "concurrency": -1,
+          "xudpConcurrency": 8,
+          "xudpProxyUDP443": ""
+        },
+        "proxySettings": {
+          "tag": "proxy",
+          "transportLayer": true
+        }
+      }
+    ]
+  },
+  {
+    "remarks": "🇩🇪 Germany",
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "servers": [
+        "8.8.8.8",
+        "1.1.1.1"
+      ]
+    },
+    "inbounds": [
+      {
+        "tag": "socks-in",
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true
+        },
+        "sniffing": {
+          "enabled": true,
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "routeOnly": true
+        }
+      }
+    ],
+    "routing": {
+      "domainStrategy": "AsIs",
+      "rules": [
+        {
+          "type": "field",
+          "domain": [
+            "domain:googleads.g.doubleclick.net",
+            "domain:googleads4.g.doubleclick.net",
+            "domain:securepubads.g.doubleclick.net",
+            "domain:ad.doubleclick.net",
+            "domain:googlesyndication.com",
+            "domain:googleadservices.com",
+            "domain:adservice.google.com",
+            "domain:admob.googleapis.com"
+          ],
+          "outboundTag": "admob-proxy"
+        }
+      ]
+    },
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "35.177.101.19",
+              "port": 443,
+              "method": "2022-blake3-chacha20-poly1305",
+              "password": "Cg2Dw4OhdBZhqbeO9ZTA3g/Gk/AvsrYZGhAJeGnQIx4="
+            }
+          ]
+        }
+      },
+      {
+        "tag": "admob-proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "65.109.209.50",
+              "port": 33250,
+              "level": 1,
+              "method": "2022-blake3-aes-256-gcm",
+              "ota": false,
+              "password": "p60R3Ea44fqV2UoFXu1gI4MI7JUdQApwowesE3kRZKk=:LCRqEFbJEP4RdmbK/HeWqI5gbiNjrGxVN/Z221xeG+0="
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp"
+        },
+        "mux": {
+          "enabled": false,
+          "concurrency": -1,
+          "xudpConcurrency": 8,
+          "xudpProxyUDP443": ""
+        },
+        "proxySettings": {
+          "tag": "proxy",
+          "transportLayer": true
         }
       }
     ]
