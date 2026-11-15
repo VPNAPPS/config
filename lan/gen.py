@@ -219,6 +219,58 @@ def to_link(o, location):
 
 # --------------------------------------------------------- xray config (yours)
 
+# Narrow AdMob, Google Ads, Google Analytics, and Firebase Analytics host rules.
+# Do not match google.com or googleapis.com wholesale: those are shared by unrelated services.
+# Xray routes by hostname, not by individual URL path.
+ADMOB_DOMAINS = [
+    "domain:googleads.g.doubleclick.net",
+    "domain:googleads4.g.doubleclick.net",
+    "domain:securepubads.g.doubleclick.net",
+    "domain:ad.doubleclick.net",
+    "domain:googlesyndication.com",
+    "domain:googleadservices.com",
+    "domain:adservice.google.com",
+    "domain:admob.googleapis.com",
+    # Google Analytics 4 collection (including region1.google-analytics.com).
+    "domain:google-analytics.com",
+    # Google Analytics admin UI and Google tag / Tag Manager script delivery.
+    "domain:analytics.google.com",
+    "domain:googletagmanager.com",
+    # Google Analytics for Firebase (native mobile SDK collection endpoints).
+    "domain:app-measurement.com",
+    "domain:app-analytics-services.com",
+]
+
+
+def admob_outbound():
+    # Only the TCP connection to this server is made over the main `proxy`.
+    return {
+        "tag": "admob-proxy",
+        "protocol": "shadowsocks",
+        "settings": {
+            "servers": [{
+                "address": "141.147.92.223",
+                "port": 8388,
+                "level": 1,
+                "method": "2022-blake3-chacha20-poly1305",
+                "ota": False,
+                "password": "gC4aUObVtu/b0J+uOAKYeHqc+yhDKRpy/d203/zBuQY=",
+            }],
+        },
+        "streamSettings": {"network": "tcp"},
+        "mux": {
+            "enabled": False,
+            "concurrency": -1,
+            "xudpConcurrency": 8,
+            "xudpProxyUDP443": "",
+        },
+        "proxySettings": {
+            "tag": "proxy",
+            "transportLayer": True,
+        },
+    }
+
+
 def to_xray(o, location):
     if o["type"] == "shadowsocks":
         proxy = {
@@ -290,8 +342,22 @@ def to_xray(o, location):
                 "auth": "noauth",
                 "udp": True,
             },
+            "sniffing": {
+                "enabled": True,
+                "destOverride": ["http", "tls", "quic"],
+                "routeOnly": True,
+            },
         }],
-        "outbounds": [proxy],
+        "routing": {
+            "domainStrategy": "AsIs",
+            "rules": [{
+                "type": "field",
+                "domain": ADMOB_DOMAINS,
+                "outboundTag": "admob-proxy",
+            }],
+        },
+        # Default: Lantern main proxy. Ads/Analytics: secondary SS over Lantern main proxy.
+        "outbounds": [proxy, admob_outbound()],
     }
 
 
