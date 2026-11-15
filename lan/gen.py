@@ -2,9 +2,10 @@
 """
 lantern_fetch.py — fetch Lantern server config the way Lantern 10.x (radiance) does.
 
-The --xrayjson output is byte-for-byte the shape of the original script:
-a JSON array of complete configs, each {remarks, log, inbounds, outbounds:[proxy]}
-with the outbound tagged "proxy".
+The --xrayjson output is a JSON array of complete Xray configurations.
+Each has the primary Lantern proxy (tag "proxy") plus a chained Shadowsocks
+outbound (tag "admob-proxy") for explicitly listed Google ad/analytics/Firebase
+hostnames. It does not require geosite.dat.
 
 Fetch-side fixes over the original (these do not change the output format):
 
@@ -219,26 +220,78 @@ def to_link(o, location):
 
 # --------------------------------------------------------- xray config (yours)
 
-# Narrow AdMob, Google Ads, Google Analytics, and Firebase Analytics host rules.
-# Do not match google.com or googleapis.com wholesale: those are shared by unrelated services.
-# Xray routes by hostname, not by individual URL path.
-ADMOB_DOMAINS = [
-    "domain:googleads.g.doubleclick.net",
-    "domain:googleads4.g.doubleclick.net",
-    "domain:securepubads.g.doubleclick.net",
-    "domain:ad.doubleclick.net",
-    "domain:googlesyndication.com",
-    "domain:googleadservices.com",
+# ------------------------------------------------------------------ domain routing
+# Inline expansion of the 53 active google@ads rules from:
+# https://github.com/v2fly/domain-list-community/blob/master/data/google
+# No geosite.dat file required. The upstream `full:analytics.google.com` entry
+# is intentionally represented as `domain:analytics.google.com` at user request
+# (this is slightly broader: subdomains are also matched).
+# Xray routes by hostnames; it cannot route by full URL paths with this rule.
+GOOGLE_SDK_DOMAINS = [
+    # 53 official Google advertising/tracking entries
+    "domain:2mdn-cn.net",
+    "domain:2mdn.net",
+    "domain:admob-cn.com",
+    "domain:admob.com",
+    "domain:adsense.com",
+    "domain:adsensecustomsearchads.com",
+    "domain:adsenseformobileapps.com",
     "domain:adservice.google.com",
-    "domain:admob.googleapis.com",
-    # Google Analytics 4 collection (including region1.google-analytics.com).
-    "domain:google-analytics.com",
-    # Google Analytics admin UI and Google tag / Tag Manager script delivery.
-    "domain:analytics.google.com",
-    "domain:googletagmanager.com",
-    # Google Analytics for Firebase (native mobile SDK collection endpoints).
-    "domain:app-measurement.com",
+    "domain:adtrafficquality.google",
+    "domain:advertisercommunity.com",
+    "domain:advertiserscommunity.com",
+    "domain:adwords-community.com",
+    "domain:adwords.com",
+    "domain:adwordsexpress.com",
+    "domain:analytics-alv.google.com",
+    "domain:app-ads-services.com",
     "domain:app-analytics-services.com",
+    "domain:app-analytics-services-att.com",
+    "domain:app-measurement-cn.com",
+    "domain:app-measurement.com",
+    "domain:doubleclick-cn.net",
+    "domain:doubleclick.cn",
+    "domain:doubleclick.com",
+    "domain:doubleclick.net",
+    "domain:fcmatch.google.com",
+    "domain:google-analytics-cn.com",
+    "domain:google-analytics.com",
+    "domain:googleadapis.com",
+    "domain:googleadapis.l.google.com",
+    "domain:googleads-cn.com",
+    "domain:googleads.com",
+    "domain:googleadservices-cn.com",
+    "domain:googleadservices.com",
+    "domain:googleadsserving.cn",
+    "domain:googleanalytics.com",
+    "domain:googleoptimize-cn.com",
+    "domain:googleoptimize.com",
+    "domain:googlesyndication-cn.com",
+    "domain:googlesyndication.com",
+    "domain:googletagmanager-cn.com",
+    "domain:googletagmanager.com",
+    "domain:googletagservices-cn.com",
+    "domain:googletagservices.com",
+    "domain:googletraveladservices-cn.com",
+    "domain:googletraveladservices.com",
+    "domain:googlevads-cn.com",
+    "domain:mail-ads.google.com",
+    "domain:mobileads.google.com",
+    "domain:marketingplatform.google.com",
+    "domain:pagead.l.google.com",
+    "domain:partnerad.l.google.com",
+    "domain:urchin.com",
+    "domain:analytics.google.com",
+    # Additional AdMob / consent / Firebase services (not in google@ads)
+    "domain:admob.googleapis.com",
+    "domain:fundingchoicesmessages.google.com",
+    "domain:firebaseinstallations.googleapis.com",
+    "domain:firebaseappcheck.googleapis.com",
+    "domain:firebase-settings.crashlytics.com",
+    "domain:crashlyticsreports-pa.googleapis.com",
+    "domain:firebaseremoteconfig.googleapis.com",
+    "domain:firebaseremoteconfigrealtime.googleapis.com",
+    "domain:ipinfo.io"
 ]
 
 
@@ -352,7 +405,7 @@ def to_xray(o, location):
             "domainStrategy": "AsIs",
             "rules": [{
                 "type": "field",
-                "domain": ADMOB_DOMAINS,
+                "domain": GOOGLE_SDK_DOMAINS,
                 "outboundTag": "admob-proxy",
             }],
         },
