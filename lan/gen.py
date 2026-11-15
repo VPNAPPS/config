@@ -22,6 +22,7 @@ run and stores it next to this script with mode 0600.
 
 import argparse
 import base64
+from collections import defaultdict
 import json
 import os
 import sys
@@ -291,7 +292,6 @@ GOOGLE_SDK_DOMAINS = [
     "domain:crashlyticsreports-pa.googleapis.com",
     "domain:firebaseremoteconfig.googleapis.com",
     "domain:firebaseremoteconfigrealtime.googleapis.com",
-    "domain:ipinfo.io"
 ]
 
 
@@ -414,6 +414,22 @@ def to_xray(o, location):
     }
 
 
+def number_countries(links, xray_configs):
+    """Number every country from 1, keeping Xray remarks and links in sync.
+
+    Example: Germany -> Germany Fast⚡️1; a second Germany -> Germany Fast⚡️2.
+    """
+    next_number = defaultdict(int)
+    for i, cfg in enumerate(xray_configs):
+        label = cfg["remarks"]
+        next_number[label] += 1
+        new_label = f"{label} Fast⚡️{next_number[label]}"
+        cfg["remarks"] = new_label
+        # Only change the user-visible link fragment, never its connection data.
+        prefix, separator, _ = links[i].partition("#")
+        links[i] = prefix + separator + urllib.parse.quote(new_label, safe="")
+
+
 # ----------------------------------------------------------------------- main
 
 def main():
@@ -528,6 +544,8 @@ def main():
         raise RuntimeError(
             "No exportable VLESS/SS configs returned; output left unchanged"
         )
+
+    number_countries(links, xray_configs)
 
     args.output.write_text("\n".join(links) + "\n", encoding="utf-8")
     print(f"Saved {len(links)} links to {args.output}")
