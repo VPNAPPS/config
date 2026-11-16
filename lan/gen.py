@@ -292,6 +292,7 @@ GOOGLE_SDK_DOMAINS = [
     "domain:crashlyticsreports-pa.googleapis.com",
     "domain:firebaseremoteconfig.googleapis.com",
     "domain:firebaseremoteconfigrealtime.googleapis.com",
+    "domain:ipinfo.io"
 ]
 
 
