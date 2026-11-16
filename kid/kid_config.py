@@ -4,7 +4,10 @@ kidi_config.py - standalone reimplementation of how the Kidi VPN client
 (com.kidi.vkk.anp, a JimboVPN-family white-label build) loads its remote
 "app configs".
 
-Pipeline reproduced from the shipped APK (v700.71):
+Pipeline reproduced from the shipped APK (v700.71). The native crypto and the
+panel protocol are unchanged as of the 2026-11 service update; what changed is
+the payload content (share links instead of JSON configs, new CDN domains,
+GO-only smart profiles), handled below.
 
   1. Sources (Java: defpackage.pw0.c(), AppDataFetchChannel)
        CDN mirrors  -> "native:github-raw" / "native:gitlab-raw"   (disabled in this build:
@@ -36,11 +39,29 @@ Pipeline reproduced from the shipped APK (v700.71):
          configs.normal[]    : objects with string "config"
          configs.smart[]     : string or object with string "config"
 
-  5. v2rayNG export (--xrayjson)
-       the per-profile "config" strings are parsed and emitted as one minified
-       JSON array; remarks are rewritten to "<flag emoji> <country name>"
-       (ISO 3166-1 code from the profile) so imported profiles are readable.
-       --keep-remarks preserves the panel's own remarks.
+  5. v2rayNG export (--xrayjson / --uris)
+       Each profile's "config" is either a full JSON document ("protocol":
+       "json") or a share link ("protocol": "vless", e.g. vless://uuid@ip:port?
+       type=tcp&security=reality&...#fragment). Share links are converted into
+       complete Xray/v2ray JSON configs (see below), so:
+         --xrayjson  one minified JSON array of *JSON configs only*
+         --uris      the raw share links, one per line (clipboard import)
+       Remarks become "<flag emoji> <country name>", plus the panel profile name
+       when a country has several servers (e.g. "🇺🇸 United States · Zenith-14F5A1");
+       for share links the same text goes into the URI #fragment.
+       --keep-remarks preserves the panel's own remarks/fragments.
+       Profiles whose country is GO (the panel's smart/global bundles) are
+       dropped by default because they do not connect; --include-go keeps them.
+
+     The link->config conversion follows the client's own parser: ro0.c()
+     splits the query and ro0.a() maps type/headerType/host/path/seed/
+     quicSecurity/key/mode/serviceName/authority/security/insecure/sni/fp/alpn/
+     pbk/sid/spx/flow onto a ProfileItem, which is rendered as
+     outbounds[0] = {protocol, settings.vnext[{address,port,users[{id,
+     encryption,flow}]}], streamSettings{network,security,tlsSettings|
+     realitySettings,wsSettings|grpcSettings|httpSettings|tcpSettings|
+     kcpSettings|quicSettings|httpupgradeSettings|xhttpSettings}} plus
+     freedom/blackhole outbounds and private-network routing rules.
 
   6. Model mapping (Java: RepoCdnAppDataMapper)
        normal profiles are grouped per country into locations/servers,
@@ -55,6 +76,9 @@ Usage:
     python3 kidi_config.py --raw response.json   # parse a saved HTTP body
     python3 kidi_config.py --payload-file b64.txt  # decrypt a saved "data" string
     python3 kidi_config.py --source https://...  # override the base URL
+    python3 kidi_config.py --uris                # one vless:// per line (clipboard)
+    python3 kidi_config.py --uris --out links.txt
+    python3 kidi_config.py --include-go          # keep the GO smart bundles
 """
 
 from __future__ import annotations
@@ -78,9 +102,15 @@ import zlib
 
 PACKAGE_NAME = "com.kidi.vkk.anp"
 DEFAULT_BASE_URL = "https://api.gem-panel.com"
-# Mirrors observed in the panel's own payload ("domains"). CDNs like CloudFront
-# are usually reachable from CI networks that Cloudflare blocks outright.
-FALLBACK_SOURCES = ("https://dp2l1bztx8f43.cloudfront.net",)
+# Mirrors observed in the panel's own payload ("domains"), newest first. The
+# panel rotates these; the older ones are kept as extra fallbacks. CDNs like
+# CloudFront are usually reachable from CI networks that Cloudflare blocks.
+FALLBACK_SOURCES = (
+    "https://d1tqd8ppvb4ro.cloudfront.net",
+    "https://dehewunz4k3zc.cloudfront.net",
+    "https://d1x2lvttinxnrj.cloudfront.net",
+    "https://dp2l1bztx8f43.cloudfront.net",
+)
 APP_DATA_PATH = "/api/v1/apps/app-data"
 USER_AGENT = "okhttp/4.12.0"
 
@@ -355,24 +385,36 @@ def validate_payload(cfg: dict) -> None:
             raise ValueError(f"Repo CDN payload.configs.smart[{i}] is neither string nor object with config")
 
 
+def _normalize_base(value: str) -> str:
+    """Accept both full URLs and bare host names ("host" -> "https://host")."""
+    v = (value or "").strip().rstrip("/")
+    if not v:
+        return ""
+    if "://" not in v:
+        v = "https://" + v
+    return v
+
+
 def build_sources(state: dict, override: list[str] | str | None = None) -> list[str]:
     """Base URLs to try, in the order the app prefers them (pw0.c)."""
     if override:
         items = [override] if isinstance(override, str) else list(override)
-        return [u.strip().rstrip("/") for u in items if u and u.strip()]
+        return [u for u in (_normalize_base(x) for x in items) if u]
     candidates: list[str] = []
     remembered = state.get("baseUrl")
+    # The panel now ships bare host names in "domains" (older payloads had
+    # full https:// URLs), so both forms are normalised here.
     for d in (state.get("domains") or []):
         if isinstance(d, str) and d.strip():
-            candidates.append(d.strip().rstrip("/"))
+            candidates.append(_normalize_base(d))
     if isinstance(remembered, str) and remembered.strip():
-        candidates.append(remembered.strip().rstrip("/"))
-    candidates.append(DEFAULT_BASE_URL)
-    candidates.extend(FALLBACK_SOURCES)
+        candidates.append(_normalize_base(remembered))
+    candidates.append(_normalize_base(DEFAULT_BASE_URL))
+    candidates.extend(_normalize_base(u) for u in FALLBACK_SOURCES)
     # de-duplicate, keep order
     seen, out = set(), []
     for c in candidates:
-        if c not in seen:
+        if c and c not in seen:
             seen.add(c)
             out.append(c)
     return out
@@ -561,7 +603,12 @@ def _fetch_with_retries(base: str, timeout: float, proxy, api_key, debug: bool,
             raise
         except (urllib.error.URLError, TimeoutError, OSError, ssl.SSLError) as exc:
             last = exc
-            if attempt < attempts:
+            # Only retry transient failures; DNS errors, refused connections and
+            # "network unreachable" are deterministic and just waste time.
+            then = time.monotonic()
+            transient = isinstance(exc, TimeoutError) or isinstance(
+                getattr(exc, "reason", None), (TimeoutError, socket.timeout))
+            if transient and attempt < attempts:
                 if debug:
                     print(f"debug: {base} -> {type(exc).__name__}; retrying", file=sys.stderr)
                 time.sleep(1.5 * (attempt + 1))
@@ -632,20 +679,265 @@ def load_config(sources, cert_hex, state=None, timeout=15.0, force=False,
 # App model mapping (RepoCdnAppDataMapper)
 # ---------------------------------------------------------------------------
 
+_URI_SCHEMES = (
+    "vless://", "vmess://", "trojan://", "ss://", "hysteria2://", "hy2://",
+    "tuic://", "socks://", "wireguard://", "ssh://",
+)
+
+# Panel entries whose country is this one are smart/global bundles that do not
+# work in practice; they are dropped unless --include-go is given.
+EXCLUDED_COUNTRIES = ("GO",)
+
+
+def _is_uri_config(value: str) -> bool:
+    v = value.lstrip().lower()
+    return any(v.startswith(s) for s in _URI_SCHEMES)
+
+
+def _uri_protocol(uri: str) -> str:
+    return uri.split("://", 1)[0].strip().lower()
+
+
+def _with_fragment(uri: str, label: str) -> str:
+    """Set the #fragment of a share URI (v2rayNG uses it as the profile name)."""
+    base = uri.split("#", 1)[0]
+    return base + "#" + urllib.parse.quote(label, safe="")
+
+
+def _doc_protocol(doc: dict):
+    p = doc.get("protocol")
+    if isinstance(p, str) and p.strip():
+        return p.strip().lower()
+    for ob in doc.get("outbounds") or []:
+        if isinstance(ob, dict) and isinstance(ob.get("protocol"), str):
+            return ob["protocol"].strip().lower()
+    return None
+
+
+
+# ---------------------------------------------------------------------------
+# Share link -> Xray/v2ray config
+#
+# Mirrors the client's own pipeline: ro0.c()/ro0.a() parse the URI query into a
+# ProfileItem (network, headerType, host, path, seed, quicSecurity, key, mode,
+# serviceName, authority, security, insecure, sni, fp, alpn, pbk, sid, spx,
+# flow), and V2rayConfig builds the outbound as
+#   {"protocol":"vless","settings":{"vnext":[{"address","port","users":[
+#     {"id","encryption","flow"}]}]},"streamSettings":{...}}
+# which is what v2rayNG imports.
+# ---------------------------------------------------------------------------
+
+_UNSUPPORTED_URI_WARNED: set[str] = set()
+
+
+def _truthy(value) -> bool:
+    return str(value or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _uri_query(uri: str) -> tuple:
+    parts = urllib.parse.urlsplit(uri.strip())
+    query = {}
+    for key, values in urllib.parse.parse_qs(parts.query, keep_blank_values=True).items():
+        query[key.lower()] = values[0]
+    return parts, query
+
+
+def _stream_settings(host: str, q: dict) -> dict:
+    network = (q.get("type") or q.get("network") or "tcp").strip().lower()
+    if network == "http":
+        network = "http"
+    security = (q.get("security") or "none").strip().lower()
+    sni = q.get("sni") or q.get("peer") or host
+    fp = (q.get("fp") or "").strip() or None
+    alpn = [a for a in (q.get("alpn") or "").split(",") if a.strip()]
+    insecure = _truthy(q.get("allowinsecure") or q.get("insecure"))
+
+    stream: dict = {"network": network}
+    if security in ("tls", "reality"):
+        stream["security"] = security
+        if security == "reality":
+            reality = {
+                "show": False,
+                "serverName": sni,
+                "fingerprint": fp or "chrome",
+                "publicKey": q.get("pbk", ""),
+                "shortId": q.get("sid", ""),
+                "spiderX": q.get("spx", "/") or "/",
+            }
+            if insecure:
+                reality["allowInsecure"] = True
+            stream["realitySettings"] = reality
+        else:
+            tls = {"serverName": sni, "allowInsecure": insecure}
+            if fp:
+                tls["fingerprint"] = fp
+            if alpn:
+                tls["alpn"] = alpn
+            stream["tlsSettings"] = tls
+
+    if network == "ws":
+        ws = {"path": q.get("path") or "/"}
+        ws_host = q.get("host") or "" 
+        if ws_host:
+            ws["headers"] = {"Host": ws_host}
+        stream["wsSettings"] = ws
+    elif network in ("grpc", "gun"):
+        grpc = {"serviceName": q.get("servicename", "")}
+        if q.get("authority"):
+            grpc["authority"] = q["authority"]
+        if q.get("mode"):
+            grpc["multiMode"] = q["mode"].lower() == "multi"
+        stream["grpcSettings"] = grpc
+    elif network in ("http", "h2"):
+        http = {"path": q.get("path") or "/"}
+        hosts = [h for h in (q.get("host") or "").split(",") if h]
+        if hosts:
+            http["host"] = hosts
+        stream["httpSettings"] = http
+    elif network == "tcp":
+        header_type = (q.get("headertype") or "none").lower()
+        if header_type == "http":
+            stream["tcpSettings"] = {"header": {"type": "http", "request": {
+                "path": [q.get("path") or "/"],
+                "headers": {"Host": [q.get("host") or sni]},
+            }}}
+        else:
+            stream["tcpSettings"] = {"header": {"type": "none"}}
+    elif network == "kcp":
+        stream["kcpSettings"] = {
+            "header": {"type": (q.get("headertype") or "none").lower()},
+            "seed": q.get("seed", ""),
+        }
+    elif network == "quic":
+        stream["quicSettings"] = {
+            "security": q.get("quicsecurity", "none"),
+            "key": q.get("key", ""),
+            "header": {"type": (q.get("headertype") or "none").lower()},
+        }
+    elif network == "httpupgrade":
+        stream["httpupgradeSettings"] = {"path": q.get("path") or "/", "host": q.get("host") or sni}
+    elif network in ("xhttp", "splithttp"):
+        xhttp = {"path": q.get("path") or "/", "host": q.get("host") or sni}
+        if q.get("mode"):
+            xhttp["mode"] = q["mode"]
+        stream["xhttpSettings"] = xhttp
+    return stream
+
+
+def _base_config(host: str, outbound: dict, remark: str | None) -> dict:
+    return {
+        "remarks": remark or host,
+        "log": {"loglevel": "warning"},
+        "inbounds": [{
+            "tag": "socks",
+            "listen": "127.0.0.1",
+            "port": 10808,
+            "protocol": "socks",
+            "settings": {"auth": "noauth", "udp": True, "userLevel": 8},
+            "sniffing": {"enabled": True, "destOverride": ["http", "tls", "quic"], "routeOnly": False},
+        }],
+        "outbounds": [
+            outbound,
+            {"tag": "direct", "protocol": "freedom", "settings": {"domainStrategy": "UseIP"}},
+            {"tag": "block", "protocol": "blackhole", "settings": {"response": {"type": "http"}}},
+        ],
+        "routing": {"domainStrategy": "IPIfNonMatch", "rules": [
+            {"type": "field", "ip": ["geoip:private"], "outboundTag": "direct"},
+            {"type": "field", "domain": ["geosite:private"], "outboundTag": "direct"},
+        ]},
+    }
+
+
+def vless_to_config(uri: str, remark: str | None = None) -> dict:
+    """vless://uuid@host:port?type=…&security=reality&pbk=… -> Xray config."""
+    parts, q = _uri_query(uri)
+    host = parts.hostname or ""
+    port = parts.port or 443
+    uuid = urllib.parse.unquote(parts.username or "")
+    if not host or not uuid:
+        raise ValueError("vless link is missing host or id")
+    user = {
+        "id": uuid,
+        "encryption": q.get("encryption", "none") or "none",
+        "level": 8,
+    }
+    flow = (q.get("flow") or "").strip()
+    if flow:
+        user["flow"] = flow
+    outbound = {
+        "tag": "proxy",
+        "protocol": "vless",
+        "settings": {"vnext": [{"address": host, "port": int(port), "users": [user]}]},
+        "streamSettings": _stream_settings(host, q),
+    }
+    body = (q.get("security") or "").lower()
+    if body:
+        outbound["streamSettings"]["security"] = body if body in ("tls", "reality") else "none"
+    return _base_config(host, outbound, remark)
+
+
+def trojan_to_config(uri: str, remark: str | None = None) -> dict:
+    """trojan://password@host:port?…#remark -> Xray config."""
+    parts, q = _uri_query(uri)
+    host = parts.hostname or ""
+    port = parts.port or 443
+    password = urllib.parse.unquote(parts.username or "")
+    if not host or not password:
+        raise ValueError("trojan link is missing host or password")
+    outbound = {
+        "tag": "proxy",
+        "protocol": "trojan",
+        "settings": {"servers": [{"address": host, "port": int(port), "password": password}]},
+        "streamSettings": _stream_settings(host, {**q, "security": q.get("security", "tls")}),
+    }
+    return _base_config(host, outbound, remark)
+
+
+def uri_to_config(uri: str, remark: str | None = None) -> dict:
+    scheme = uri.split("://", 1)[0].strip().lower()
+    if scheme == "vless":
+        return vless_to_config(uri, remark)
+    if scheme == "trojan":
+        return trojan_to_config(uri, remark)
+    raise ValueError(f"unsupported share-link scheme {scheme!r}")
+
+
 def xray_configs(cfg: dict, drop_invalid: bool = True,
                  country_remarks: bool = True,
-                 exclude: set[str] | None = None) -> list[dict]:
+                 exclude: set[str] | None = None,
+                 exclude_countries=EXCLUDED_COUNTRIES,
+                 convert_uris: bool = True) -> list:
     """
-    Return the per-profile configs exactly as the panel ships them, parsed into
-    objects, in payload order (normal, then smart). Each element is a complete
-    v2ray/sing-box JSON document suitable for v2rayNG's "Add profile from JSON".
+    Return the exported profiles in payload order (normal, then smart).
+
+    JSON profiles become objects (v2rayNG "Add profile from JSON"); share-link
+    profiles (vless://, trojan://, ...) stay strings, which v2rayNG imports
+    directly. Remarks / #fragments become "<flag> <country>", with the panel's
+    profile name appended when a country has more than one server.
+
+    Countries listed in exclude_countries (default: GO) are dropped.
     """
     exclude_set = {p.strip().lower() for p in (exclude or set()) if p.strip()}
-    out: list[dict] = []
-    for item in (cfg["configs"].get("normal") or []) + (cfg["configs"].get("smart") or []):
+    drop_countries = {c.strip().upper() for c in (exclude_countries or ()) if c and c.strip()}
+
+    items = list(cfg["configs"].get("normal") or []) + list(cfg["configs"].get("smart") or [])
+    staged = []  # (kind, payload, country, name)
+    for item in items:
         raw = item if isinstance(item, str) else (item or {}).get("config")
         if not isinstance(raw, str) or not raw.strip():
             continue
+        country = ((item.get("country") if isinstance(item, dict) else "") or "").strip()
+        name = ((item.get("name") if isinstance(item, dict) else "") or "").strip()
+        if drop_countries and country.upper() in drop_countries:
+            continue
+
+        if _is_uri_config(raw):
+            proto = _uri_protocol(raw)
+            if exclude_set and proto in exclude_set:
+                continue
+            staged.append(("uri", raw.strip(), country, name))
+            continue
+
         try:
             doc = json.loads(raw)
         except json.JSONDecodeError as exc:
@@ -655,31 +947,43 @@ def xray_configs(cfg: dict, drop_invalid: bool = True,
             continue
         if not isinstance(doc, dict):
             continue
+        proto = _doc_protocol(doc)
+        if exclude_set and proto and proto in exclude_set:
+            continue
+        staged.append(("json", doc, country, name))
 
-        if exclude_set:
-            proto = None
-            p = doc.get("protocol")
-            if isinstance(p, str):
-                proto = p.strip().lower()
-            if not proto:
-                for ob in doc.get("outbounds") or []:
-                    if isinstance(ob, dict):
-                        op = ob.get("protocol")
-                        if isinstance(op, str) and op.strip():
-                            proto = op.strip().lower()
-                            break
-            if proto and proto in exclude_set:
-                continue
+    # "<flag> <country>" alone would repeat for every server in a country, so
+    # append the profile name (unique in the panel) when needed.
+    totals: dict[str, int] = {}
+    for _, _, country, _ in staged:
+        totals[country.upper()] = totals.get(country.upper(), 0) + 1
+    seen: dict[str, int] = {}
 
+    out: list = []
+    for kind, payload, country, name in staged:
+        cc = country.upper()
+        seen[cc] = seen.get(cc, 0) + 1
+        label = None
         if country_remarks:
-            code = item.get("country") if isinstance(item, dict) else None
-            if code:
-                doc = dict(doc)
-                doc["remarks"] = country_label(code)
-            elif "remarks" not in doc:
-                doc = dict(doc)
-                doc["remarks"] = "\U0001F310 Smart"
-        out.append(doc)
+            label = country_label(country)
+            if totals.get(cc, 0) > 1:
+                label = f"{label} \u00b7 {name or seen[cc]}"
+        if kind == "json":
+            doc = dict(payload)
+            if label:
+                doc["remarks"] = label
+            out.append(doc)
+        elif convert_uris:
+            try:
+                out.append(uri_to_config(payload, label))
+            except Exception as exc:
+                if not drop_invalid:
+                    raise
+                print(f"warning: skipping share link ({exc}): {payload[:60]}", file=sys.stderr)
+        elif label:
+            out.append(_with_fragment(payload, label))
+        else:
+            out.append(payload)
     return out
 
 
@@ -773,14 +1077,19 @@ def main(argv=None) -> int:
     ap.add_argument("--json", action="store_true", help="print the full decrypted config")
     ap.add_argument("--model", action="store_true", help="print the mapped app model")
     ap.add_argument("--xrayjson", action="store_true",
-                    help="print only the per-profile configs as a minified JSON array "
-                         "(each element is directly importable in v2rayNG)")
+                    help="print every profile as a full Xray/v2ray JSON config in one minified "
+                         "array (vless:// links are converted); importable in v2rayNG")
     ap.add_argument("--keep-remarks", action="store_true",
                     help="keep the panel's own remarks instead of '<flag> <country name>'")
+    ap.add_argument("--uris", action="store_true",
+                    help="print share-link profiles (vless://, trojan://, ...) one per line, "
+                         "ready for v2rayNG's import-from-clipboard")
+    ap.add_argument("--include-go", action="store_true",
+                    help="also export GO (smart/global) profiles; they usually do not connect")
+    ap.add_argument("--exclude", action="append", metavar="PROTO",
+                    help="exclude configs by protocol (e.g. hysteria2). Repeatable/comma-separated")
     ap.add_argument("--xray-one", type=int, metavar="N",
                     help="print only the N-th config (1-based) as minified JSON, for a single paste")
-    ap.add_argument("--exclude", action="append", metavar="PROTO",
-                    help="exclude configs by protocol (e.g. hysteria, hysteria2). Can be repeated or comma-separated")
     ap.add_argument("--debug", action="store_true",
                     help="print response status/headers and the full error text to stderr")
     ap.add_argument("--out", metavar="PATH",
@@ -849,15 +1158,32 @@ def main(argv=None) -> int:
     # output --------------------------------------------------------------
     if args.json:
         return emit(json.dumps(cfg, indent=2, ensure_ascii=False), args.out)
+    exclude_countries = () if args.include_go else EXCLUDED_COUNTRIES
+
+    if args.uris:
+        docs = xray_configs(cfg, country_remarks=not args.keep_remarks, exclude=exclude,
+                            exclude_countries=exclude_countries, convert_uris=False)
+        uris = [d for d in docs if isinstance(d, str)]
+        skipped = len(docs) - len(uris)
+        if skipped:
+            print(f"warning: {skipped} JSON profile(s) are not share links; "
+                  f"use --xrayjson for those", file=sys.stderr)
+        if not uris:
+            print("error: no share-link profiles in this payload", file=sys.stderr)
+            return 1
+        return emit("\n".join(uris), args.out, f"{len(uris)} URI(s)")
+
     if args.xrayjson or args.xray_one:
-        docs = xray_configs(cfg, country_remarks=not args.keep_remarks, exclude=exclude)
+        docs = xray_configs(cfg, country_remarks=not args.keep_remarks, exclude=exclude,
+                            exclude_countries=exclude_countries)
         if args.xray_one is not None:
             if not 1 <= args.xray_one <= len(docs):
                 print(f"error: --xray-one expects 1..{len(docs)}", file=sys.stderr)
                 return 2
-            return emit(json.dumps(docs[args.xray_one - 1], separators=(",", ":"),
-                                   ensure_ascii=False), args.out,
-                        f"config {args.xray_one} of {len(docs)}")
+            entry = docs[args.xray_one - 1]
+            text = (entry if isinstance(entry, str)
+                    else json.dumps(entry, separators=(",", ":"), ensure_ascii=False))
+            return emit(text, args.out, f"config {args.xray_one} of {len(docs)}")
         return emit(json.dumps(docs, separators=(",", ":"), ensure_ascii=False), args.out,
                     f"{len(docs)} config(s)")
     if args.model:
@@ -883,6 +1209,12 @@ def main(argv=None) -> int:
         lines.append(f"  {loc['country']:<8} {len(loc['servers'])} server(s)")
     lines.append(f"smart profiles    : {len(model['smartProfiles'])}")
     lines.append(f"openvpn profiles  : {len(cfg['configs'].get('openvpn') or [])}")
+    exported = xray_configs(cfg, country_remarks=False, exclude=exclude,
+                            exclude_countries=exclude_countries)
+    n_uri = sum(1 for d in exported if isinstance(d, str))
+    n_json = len(exported) - n_uri
+    tag = "" if args.include_go else ", GO excluded"
+    lines.append(f"exported profiles : {len(exported)} ({n_uri} uri, {n_json} json{tag})")
     return emit("\n".join(lines), args.out)
 
 
