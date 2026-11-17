@@ -298,8 +298,6 @@ GOOGLE_SDK_DOMAINS = [
     "domain:googleapis.com",
     "domain:gstatic.com",
     "domain:googleusercontent.com",
-    "domain:googlevideo.com",
-    "domain:ytimg.com",
     "domain:ads.youtube.com",
     "domain:ipinfo.io"
 ]
