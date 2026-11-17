@@ -292,6 +292,15 @@ GOOGLE_SDK_DOMAINS = [
     "domain:crashlyticsreports-pa.googleapis.com",
     "domain:firebaseremoteconfig.googleapis.com",
     "domain:firebaseremoteconfigrealtime.googleapis.com",
+    "domain:imasdk.googleapis.com",
+    "domain:pagead-googlehosted.l.google.com",
+    "domain:gstaticadssl.l.google.com",
+    "domain:googleapis.com",
+    "domain:gstatic.com",
+    "domain:googleusercontent.com",
+    "domain:googlevideo.com",
+    "domain:ytimg.com",
+    "domain:ads.youtube.com",
     "domain:ipinfo.io"
 ]
 
