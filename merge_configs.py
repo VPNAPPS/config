@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from create_configs_json import build_config_json_from_proxies
 
-SOURCE_FOLDERS = ["freesub", "ala", "lan", "kid"]
+SOURCE_FOLDERS = ["freesub", "ala", "lan"]
 IRAN_SOURCE_FOLDERS = ["lan", "kid"]
 CANDIDATE_FILES = ["configs.json", "config.json"]
 
