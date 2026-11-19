@@ -1,5 +1,1004 @@
 [
   {
+    "dns": {
+      "disableCache": false,
+      "enableParallelQuery": true,
+      "hosts": {
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": [
+          "223.5.5.5",
+          "223.6.6.6",
+          "2400:3200::1",
+          "2400:3200:baba::1"
+        ],
+        "dns.cloudflare.com": [
+          "162.159.61.8",
+          "172.64.41.8",
+          "2a06:98c1:52::8",
+          "2803:f800:53::8"
+        ],
+        "cloudflare-dns.com": [
+          "104.16.248.249",
+          "104.16.249.249",
+          "2606:4700::6810:f8f9",
+          "2606:4700::6810:f9f9"
+        ],
+        "dns.google": [
+          "8.8.8.8",
+          "8.8.4.4",
+          "2001:4860:4860::8888",
+          "2001:4860:4860::8844"
+        ],
+        "dns.quad9.net": [
+          "9.9.9.9",
+          "149.112.112.112",
+          "2620:fe::fe",
+          "2620:fe::9"
+        ],
+        "one.one.one.one": [
+          "1.1.1.1",
+          "1.0.0.1",
+          "2606:4700:4700::1111",
+          "2606:4700:4700::1001"
+        ],
+        "hamshahrionline.ir": "188.221.119.237",
+        "tabnak.ir": "85.118.167.144",
+        "ghbi.ir": "85.118.167.140",
+        "digi-kala.com": "178.18.159.32"
+      },
+      "queryStrategy": "UseIPv4",
+      "serveExpiredTTL": 300,
+      "serveStale": true,
+      "servers": [
+        {
+          "address": "tcp://1.1.1.1",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://8.8.8.8",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://9.9.9.9",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "geosite:private"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_0_0"
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_2_0"
+        }
+      ],
+      "tag": "dns-module"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "tag": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "enabled": true,
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "hamshahrionline.ir",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
+        },
+        "tag": "proxy-1",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tabnak.ir",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+        },
+        "tag": "proxy-2",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "ghbi.ir",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-3",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "digi-kala.com",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "freedom",
+        "tag": "direct",
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "blackhole",
+        "tag": "block",
+        "settings": {}
+      }
+    ],
+    "log": {
+      "loglevel": "warning"
+    },
+    "remarks": "🇳🇱 Netherlands · Echo-5798FA",
+    "policy": {
+      "levels": {
+        "8": {
+          "connIdle": 300,
+          "downlinkOnly": 1,
+          "handshake": 4,
+          "uplinkOnly": 1
+        }
+      }
+    },
+    "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "balancers": [
+        {
+          "tag": "proxy-balancer",
+          "selector": [
+            "proxy-"
+          ],
+          "strategy": {
+            "type": "leastLoad",
+            "settings": {
+              "expected": 2,
+              "maxRTT": "8s",
+              "tolerance": 0.5
+            }
+          },
+          "fallbackTag": "proxy-1"
+        }
+      ],
+      "rules": [
+        {
+          "type": "field",
+          "network": "udp",
+          "port": "443",
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ads-all"
+          ],
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ir",
+            "domain:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "domestic-dns_0_0",
+            "domestic-dns_2_0"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "dns-module"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "network": "tcp,udp",
+          "balancerTag": "proxy-balancer"
+        }
+      ]
+    },
+    "burstObservatory": {
+      "subjectSelector": [
+        "proxy-"
+      ],
+      "pingConfig": {
+        "destination": "https://connectivitycheck.gstatic.com/generate_204",
+        "connectivity": "",
+        "interval": "30s",
+        "sampling": 3,
+        "timeout": "8s",
+        "httpMethod": "HEAD"
+      }
+    }
+  },
+  {
+    "dns": {
+      "disableCache": false,
+      "enableParallelQuery": true,
+      "hosts": {
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": [
+          "223.5.5.5",
+          "223.6.6.6",
+          "2400:3200::1",
+          "2400:3200:baba::1"
+        ],
+        "dns.cloudflare.com": [
+          "162.159.61.8",
+          "172.64.41.8",
+          "2a06:98c1:52::8",
+          "2803:f800:53::8"
+        ],
+        "cloudflare-dns.com": [
+          "104.16.248.249",
+          "104.16.249.249",
+          "2606:4700::6810:f8f9",
+          "2606:4700::6810:f9f9"
+        ],
+        "dns.google": [
+          "8.8.8.8",
+          "8.8.4.4",
+          "2001:4860:4860::8888",
+          "2001:4860:4860::8844"
+        ],
+        "dns.quad9.net": [
+          "9.9.9.9",
+          "149.112.112.112",
+          "2620:fe::fe",
+          "2620:fe::9"
+        ],
+        "one.one.one.one": [
+          "1.1.1.1",
+          "1.0.0.1",
+          "2606:4700:4700::1111",
+          "2606:4700:4700::1001"
+        ],
+        "hamshahrionline.ir": "188.221.119.237",
+        "tabnak.ir": "85.118.167.144",
+        "ghbi.ir": "85.118.167.140",
+        "digi-kala.com": "178.18.159.32"
+      },
+      "queryStrategy": "UseIPv4",
+      "serveExpiredTTL": 300,
+      "serveStale": true,
+      "servers": [
+        {
+          "address": "tcp://1.1.1.1",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://8.8.8.8",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://9.9.9.9",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "geosite:private"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_0_0"
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_2_0"
+        }
+      ],
+      "tag": "dns-module"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "tag": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "enabled": true,
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "hamshahrionline.ir",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
+        },
+        "tag": "proxy-1",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tabnak.ir",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+        },
+        "tag": "proxy-2",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "ghbi.ir",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-3",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "digi-kala.com",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "freedom",
+        "tag": "direct",
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "blackhole",
+        "tag": "block",
+        "settings": {}
+      }
+    ],
+    "log": {
+      "loglevel": "warning"
+    },
+    "remarks": "🇳🇱 Netherlands · Echo-5798FA",
+    "policy": {
+      "levels": {
+        "8": {
+          "connIdle": 300,
+          "downlinkOnly": 1,
+          "handshake": 4,
+          "uplinkOnly": 1
+        }
+      }
+    },
+    "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "balancers": [
+        {
+          "tag": "proxy-balancer",
+          "selector": [
+            "proxy-"
+          ],
+          "strategy": {
+            "type": "leastLoad",
+            "settings": {
+              "expected": 2,
+              "maxRTT": "8s",
+              "tolerance": 0.5
+            }
+          },
+          "fallbackTag": "proxy-1"
+        }
+      ],
+      "rules": [
+        {
+          "type": "field",
+          "network": "udp",
+          "port": "443",
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ads-all"
+          ],
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ir",
+            "domain:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "domestic-dns_0_0",
+            "domestic-dns_2_0"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "dns-module"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "network": "tcp,udp",
+          "balancerTag": "proxy-balancer"
+        }
+      ]
+    },
+    "burstObservatory": {
+      "subjectSelector": [
+        "proxy-"
+      ],
+      "pingConfig": {
+        "destination": "https://connectivitycheck.gstatic.com/generate_204",
+        "connectivity": "",
+        "interval": "30s",
+        "sampling": 3,
+        "timeout": "8s",
+        "httpMethod": "HEAD"
+      }
+    }
+  },
+  {
+    "dns": {
+      "disableCache": false,
+      "enableParallelQuery": true,
+      "hosts": {
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": [
+          "223.5.5.5",
+          "223.6.6.6",
+          "2400:3200::1",
+          "2400:3200:baba::1"
+        ],
+        "dns.cloudflare.com": [
+          "162.159.61.8",
+          "172.64.41.8",
+          "2a06:98c1:52::8",
+          "2803:f800:53::8"
+        ],
+        "cloudflare-dns.com": [
+          "104.16.248.249",
+          "104.16.249.249",
+          "2606:4700::6810:f8f9",
+          "2606:4700::6810:f9f9"
+        ],
+        "dns.google": [
+          "8.8.8.8",
+          "8.8.4.4",
+          "2001:4860:4860::8888",
+          "2001:4860:4860::8844"
+        ],
+        "dns.quad9.net": [
+          "9.9.9.9",
+          "149.112.112.112",
+          "2620:fe::fe",
+          "2620:fe::9"
+        ],
+        "one.one.one.one": [
+          "1.1.1.1",
+          "1.0.0.1",
+          "2606:4700:4700::1111",
+          "2606:4700:4700::1001"
+        ],
+        "hamshahrionline.ir": "188.221.119.237",
+        "tabnak.ir": "85.118.167.144",
+        "ghbi.ir": "85.118.167.140",
+        "digi-kala.com": "178.18.159.32"
+      },
+      "queryStrategy": "UseIPv4",
+      "serveExpiredTTL": 300,
+      "serveStale": true,
+      "servers": [
+        {
+          "address": "tcp://1.1.1.1",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://8.8.8.8",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://9.9.9.9",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "geosite:private"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_0_0"
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_2_0"
+        }
+      ],
+      "tag": "dns-module"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "tag": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "enabled": true,
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "hamshahrionline.ir",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
+        },
+        "tag": "proxy-1",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tabnak.ir",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+        },
+        "tag": "proxy-2",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "ghbi.ir",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-3",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "digi-kala.com",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "freedom",
+        "tag": "direct",
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "blackhole",
+        "tag": "block",
+        "settings": {}
+      }
+    ],
+    "log": {
+      "loglevel": "warning"
+    },
+    "remarks": "🇳🇱 Netherlands · Echo-5798FA",
+    "policy": {
+      "levels": {
+        "8": {
+          "connIdle": 300,
+          "downlinkOnly": 1,
+          "handshake": 4,
+          "uplinkOnly": 1
+        }
+      }
+    },
+    "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "balancers": [
+        {
+          "tag": "proxy-balancer",
+          "selector": [
+            "proxy-"
+          ],
+          "strategy": {
+            "type": "leastLoad",
+            "settings": {
+              "expected": 2,
+              "maxRTT": "8s",
+              "tolerance": 0.5
+            }
+          },
+          "fallbackTag": "proxy-1"
+        }
+      ],
+      "rules": [
+        {
+          "type": "field",
+          "network": "udp",
+          "port": "443",
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ads-all"
+          ],
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ir",
+            "domain:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "domestic-dns_0_0",
+            "domestic-dns_2_0"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "dns-module"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "network": "tcp,udp",
+          "balancerTag": "proxy-balancer"
+        }
+      ]
+    },
+    "burstObservatory": {
+      "subjectSelector": [
+        "proxy-"
+      ],
+      "pingConfig": {
+        "destination": "https://connectivitycheck.gstatic.com/generate_204",
+        "connectivity": "",
+        "interval": "30s",
+        "sampling": 3,
+        "timeout": "8s",
+        "httpMethod": "HEAD"
+      }
+    }
+  },
+  {
     "remarks": "🇩🇪 Germany Fast⚡️1",
     "log": {
       "loglevel": "warning"
@@ -114,16 +1113,31 @@
     "outbounds": [
       {
         "tag": "proxy",
-        "protocol": "shadowsocks",
+        "protocol": "vless",
         "settings": {
-          "servers": [
+          "vnext": [
             {
-              "address": "3.68.94.238",
+              "address": "54.216.69.235",
               "port": 443,
-              "method": "2022-blake3-chacha20-poly1305",
-              "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
+              "users": [
+                {
+                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
             }
           ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "www.amazon.com",
+            "fingerprint": "chrome",
+            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
+            "shortId": ""
+          }
         }
       },
       {
@@ -271,31 +1285,16 @@
     "outbounds": [
       {
         "tag": "proxy",
-        "protocol": "vless",
+        "protocol": "shadowsocks",
         "settings": {
-          "vnext": [
+          "servers": [
             {
-              "address": "54.216.69.235",
+              "address": "3.68.94.238",
               "port": 443,
-              "users": [
-                {
-                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
-                  "encryption": "none",
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
+              "method": "2022-blake3-chacha20-poly1305",
+              "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
             }
           ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "www.amazon.com",
-            "fingerprint": "chrome",
-            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
-            "shortId": ""
-          }
         }
       },
       {
@@ -20851,16 +21850,31 @@
     },
     "outbounds": [
       {
-        "protocol": "shadowsocks",
+        "protocol": "vless",
         "settings": {
-          "servers": [
+          "vnext": [
             {
-              "address": "3.68.94.238",
+              "address": "54.216.69.235",
               "port": 443,
-              "method": "2022-blake3-chacha20-poly1305",
-              "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
+              "users": [
+                {
+                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
             }
           ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "www.amazon.com",
+            "fingerprint": "chrome",
+            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
+            "shortId": ""
+          }
         },
         "tag": "proxy1"
       },
@@ -21008,31 +22022,16 @@
     },
     "outbounds": [
       {
-        "protocol": "vless",
+        "protocol": "shadowsocks",
         "settings": {
-          "vnext": [
+          "servers": [
             {
-              "address": "54.216.69.235",
+              "address": "3.68.94.238",
               "port": 443,
-              "users": [
-                {
-                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
-                  "encryption": "none",
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
+              "method": "2022-blake3-chacha20-poly1305",
+              "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
             }
           ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "www.amazon.com",
-            "fingerprint": "chrome",
-            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
-            "shortId": ""
-          }
         },
         "tag": "proxy1"
       },
