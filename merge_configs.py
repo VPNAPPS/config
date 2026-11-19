@@ -287,8 +287,11 @@ def main():
 
     with open("lan/configs.json", "r", encoding="utf-8") as f:
         lanjson = json.load(f)
-
-    configs = handsjson + lanjson + configs
+    
+    with open("kid/configs.json", "r", encoding="utf-8") as f:
+        kidjson = json.load(f)
+      
+    configs = kidjson + handsjson + lanjson + configs
 
     write_json(ALL_CONFIGS_FILE, configs)
     print(f"Merged config written to {ALL_CONFIGS_FILE}")
