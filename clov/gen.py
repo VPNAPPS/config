@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import random
 import os
 import re
 import shutil
@@ -205,16 +206,22 @@ def flag_emoji(code: str) -> str:
     return "".join(chr(0x1F1E6 + ord(c) - 65) for c in code.upper())
 
 
-def country_label(code: str | None, region: str | None, suffix: str) -> str:
+def country_label(code: str | None, region: str | None, suffix: str,
+                  tag: int | None = None) -> str:
     if not code:
-        return suffix
+        return f"#{tag} {suffix}" if tag is not None else suffix
     name = COUNTRY_NAMES.get(code, code.upper())
-    return f"{flag_emoji(code)} {name} {suffix}"
+    head = f"{flag_emoji(code)} {name}"
+    if tag is not None:
+        head += f" #{tag}"
+    return f"{head} {suffix}"
 
 
-def split_nodes(nodes: list[dict], suffix: str, remarks: bool = True) -> tuple[list[dict], list[dict]]:
+def split_nodes(nodes: list[dict], suffix: str, remarks: bool = True,
+                tags: list[int | None] | None = None) -> tuple[list[dict], list[dict]]:
     xray, other = [], []
-    for n in nodes:
+    for idx, n in enumerate(nodes):
+        tag = tags[idx] if tags else None
         cfg_raw = n.get("coreConfig")
         if not cfg_raw:
             continue
@@ -223,7 +230,7 @@ def split_nodes(nodes: list[dict], suffix: str, remarks: bool = True) -> tuple[l
         except json.JSONDecodeError:
             continue
         cc, region = node_country(n)
-        label = country_label(cc, region, suffix)
+        label = country_label(cc, region, suffix, tag)
         if remarks:
             cfg["remarks"] = label
         entry = {
@@ -275,6 +282,10 @@ def main() -> int:
     ap.add_argument("--pretty", action="store_true", help="pretty-print the JSON output")
     ap.add_argument("--remarks-suffix", default=DEFAULT_SUFFIX,
                     help=f'text appended to each config remarks (default: "{DEFAULT_SUFFIX}")')
+    ap.add_argument("--no-hashtag", action="store_true",
+                    help="omit the random #N suffix from the remarks")
+    ap.add_argument("--hashtag-max", type=int, default=999,
+                    help="upper bound of the random #N number (default: 999)")
     ap.add_argument("--no-remarks", action="store_true",
                     help="do not add the country remarks field to configs")
     ap.add_argument("--raw", action="store_true",
@@ -298,7 +309,14 @@ def main() -> int:
 
     nodes = load_nodes(xml)
     suffix = args.remarks_suffix
-    xray, other = split_nodes(nodes, suffix, remarks=not args.no_remarks)
+    tags = None
+    if not args.no_hashtag and not args.no_remarks:
+        tags = [None] * len(nodes)
+        pool = list(range(1, max(2, args.hashtag_max) + 1))
+        picks = random.sample(pool, min(len(nodes), len(pool)))
+        for i in range(len(nodes)):
+            tags[i] = picks[i] if i < len(picks) else random.randint(1, max(2, args.hashtag_max))
+    xray, other = split_nodes(nodes, suffix, remarks=not args.no_remarks, tags=tags)
 
     print(f"[+] {len(nodes)} node(s) cached, {len(xray)} xray, {len(other)} other")
     for e in xray:
