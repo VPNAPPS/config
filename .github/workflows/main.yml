@@ -118,6 +118,11 @@ jobs:
           python3 gen.py --xrayjson --protocols [shadowsocks, vless] --country IR
           curl -fsS -X PUT "https://ultimate.datacenter.org.uk/api/admin/configs/bulk" -H "Authorization: Bearer ${{ secrets.ULTI_KEY }}" -H "Content-Type: application/json" --data-binary @configs.json
 
+      - name: Run clov script
+        run: |
+          cd clov
+          python3 gen.py --xml prefs.xml --xrayjson --pretty
+          
       - name: Run ala script
         run: |
           cd ala
