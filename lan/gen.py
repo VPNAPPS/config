@@ -2,10 +2,9 @@
 """
 lantern_fetch.py — fetch Lantern server config the way Lantern 10.x (radiance) does.
 
-The --xrayjson output is a JSON array of complete Xray configurations.
-Each has the primary Lantern proxy (tag "proxy") plus a chained Shadowsocks
-outbound (tag "admob-proxy") for explicitly listed Google ad/analytics/Firebase
-hostnames. It does not require geosite.dat.
+The --xrayjson output is byte-for-byte the shape of the original script:
+a JSON array of complete configs, each {remarks, log, inbounds, outbounds:[proxy]}
+with the outbound tagged "proxy".
 
 Fetch-side fixes over the original (these do not change the output format):
 
@@ -22,7 +21,6 @@ run and stores it next to this script with mode 0600.
 
 import argparse
 import base64
-from collections import defaultdict
 import json
 import os
 import sys
@@ -221,119 +219,6 @@ def to_link(o, location):
 
 # --------------------------------------------------------- xray config (yours)
 
-# ------------------------------------------------------------------ domain routing
-# Inline expansion of the 53 active google@ads rules from:
-# https://github.com/v2fly/domain-list-community/blob/master/data/google
-# No geosite.dat file required. The upstream `full:analytics.google.com` entry
-# is intentionally represented as `domain:analytics.google.com` at user request
-# (this is slightly broader: subdomains are also matched).
-# Xray routes by hostnames; it cannot route by full URL paths with this rule.
-GOOGLE_SDK_DOMAINS = [
-    # 53 official Google advertising/tracking entries
-    "domain:2mdn-cn.net",
-    "domain:2mdn.net",
-    "domain:admob-cn.com",
-    "domain:admob.com",
-    "domain:adsense.com",
-    "domain:adsensecustomsearchads.com",
-    "domain:adsenseformobileapps.com",
-    "domain:adservice.google.com",
-    "domain:adtrafficquality.google",
-    "domain:advertisercommunity.com",
-    "domain:advertiserscommunity.com",
-    "domain:adwords-community.com",
-    "domain:adwords.com",
-    "domain:adwordsexpress.com",
-    "domain:analytics-alv.google.com",
-    "domain:app-ads-services.com",
-    "domain:app-analytics-services.com",
-    "domain:app-analytics-services-att.com",
-    "domain:app-measurement-cn.com",
-    "domain:app-measurement.com",
-    "domain:doubleclick-cn.net",
-    "domain:doubleclick.cn",
-    "domain:doubleclick.com",
-    "domain:doubleclick.net",
-    "domain:fcmatch.google.com",
-    "domain:google-analytics-cn.com",
-    "domain:google-analytics.com",
-    "domain:googleadapis.com",
-    "domain:googleadapis.l.google.com",
-    "domain:googleads-cn.com",
-    "domain:googleads.com",
-    "domain:googleadservices-cn.com",
-    "domain:googleadservices.com",
-    "domain:googleadsserving.cn",
-    "domain:googleanalytics.com",
-    "domain:googleoptimize-cn.com",
-    "domain:googleoptimize.com",
-    "domain:googlesyndication-cn.com",
-    "domain:googlesyndication.com",
-    "domain:googletagmanager-cn.com",
-    "domain:googletagmanager.com",
-    "domain:googletagservices-cn.com",
-    "domain:googletagservices.com",
-    "domain:googletraveladservices-cn.com",
-    "domain:googletraveladservices.com",
-    "domain:googlevads-cn.com",
-    "domain:mail-ads.google.com",
-    "domain:mobileads.google.com",
-    "domain:marketingplatform.google.com",
-    "domain:pagead.l.google.com",
-    "domain:partnerad.l.google.com",
-    "domain:urchin.com",
-    "domain:analytics.google.com",
-    # Additional AdMob / consent / Firebase services (not in google@ads)
-    "domain:admob.googleapis.com",
-    "domain:fundingchoicesmessages.google.com",
-    "domain:firebaseinstallations.googleapis.com",
-    "domain:firebaseappcheck.googleapis.com",
-    "domain:firebase-settings.crashlytics.com",
-    "domain:crashlyticsreports-pa.googleapis.com",
-    "domain:firebaseremoteconfig.googleapis.com",
-    "domain:firebaseremoteconfigrealtime.googleapis.com",
-    "domain:imasdk.googleapis.com",
-    "domain:pagead-googlehosted.l.google.com",
-    "domain:gstaticadssl.l.google.com",
-    "domain:googleapis.com",
-    "domain:gstatic.com",
-    "domain:googleusercontent.com",
-    "domain:ads.youtube.com",
-    "domain:ipinfo.io"
-]
-
-
-def admob_outbound():
-    # Only the TCP connection to this server is made over the main `proxy`.
-    return {
-        "tag": "admob-proxy",
-        "protocol": "shadowsocks",
-        "settings": {
-            "servers": [{
-                "address": "141.147.92.223",
-                "port": 8388,
-                "level": 1,
-                "method": "2022-blake3-chacha20-poly1305",
-                "ota": False,
-                "password": "gC4aUObVtu/b0J+uOAKYeHqc+yhDKRpy/d203/zBuQY=",
-            }],
-        },
-        "streamSettings": {
-            "network": "tcp",
-            "sockopt": {
-                # Dial the AdMob Shadowsocks server through the Lantern main proxy.
-                "dialerProxy": "proxy",
-            },
-        },
-        "mux": {
-            "enabled": False,
-            "concurrency": -1,
-            "xudpConcurrency": 8,
-            "xudpProxyUDP443": "",
-        },
-    }
-
-
 def to_xray(o, location):
     if o["type"] == "shadowsocks":
         proxy = {
@@ -405,39 +290,9 @@ def to_xray(o, location):
                 "auth": "noauth",
                 "udp": True,
             },
-            "sniffing": {
-                "enabled": True,
-                "destOverride": ["http", "tls", "quic"],
-                "routeOnly": True,
-            },
         }],
-        "routing": {
-            "domainStrategy": "AsIs",
-            "rules": [{
-                "type": "field",
-                "domain": GOOGLE_SDK_DOMAINS,
-                "outboundTag": "admob-proxy",
-            }],
-        },
-        # Default: Lantern main proxy. Ads/Analytics: secondary SS over Lantern main proxy.
-        "outbounds": [proxy, admob_outbound()],
+        "outbounds": [proxy],
     }
-
-
-def number_countries(links, xray_configs):
-    """Number every country from 1, keeping Xray remarks and links in sync.
-
-    Example: Germany -> Germany Fast⚡️1; a second Germany -> Germany Fast⚡️2.
-    """
-    next_number = defaultdict(int)
-    for i, cfg in enumerate(xray_configs):
-        label = cfg["remarks"]
-        next_number[label] += 1
-        new_label = f"{label} Fast⚡️{next_number[label]}"
-        cfg["remarks"] = new_label
-        # Only change the user-visible link fragment, never its connection data.
-        prefix, separator, _ = links[i].partition("#")
-        links[i] = prefix + separator + urllib.parse.quote(new_label, safe="")
 
 
 # ----------------------------------------------------------------------- main
@@ -554,8 +409,6 @@ def main():
         raise RuntimeError(
             "No exportable VLESS/SS configs returned; output left unchanged"
         )
-
-    number_countries(links, xray_configs)
 
     args.output.write_text("\n".join(links) + "\n", encoding="utf-8")
     print(f"Saved {len(links)} links to {args.output}")
