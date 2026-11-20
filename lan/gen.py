@@ -23,6 +23,7 @@ import argparse
 import base64
 import json
 import os
+import secrets
 import sys
 import urllib.error
 import urllib.parse
@@ -158,9 +159,18 @@ def config_name(location):
     return f"{flag} {country}"
 
 
+def unique_remarks(location, used_numbers):
+    """Generate a unique six-digit number for each config in this run."""
+    while True:
+        number = 100000 + secrets.randbelow(900000)
+        if number not in used_numbers:
+            used_numbers.add(number)
+            return f"{config_name(location)} #{number} LN Fast ⚡"
+
+
 # ---------------------------------------------------------------- share links
 
-def to_link(o, location):
+def to_link(o, location, remarks=None):
     if (
         o.get("transport")
         or o.get("detour")
@@ -172,7 +182,7 @@ def to_link(o, location):
     if ":" in host:
         host = f"[{host}]"
     address = f'{host}:{int(o["server_port"])}'
-    label = urllib.parse.quote(config_name(location), safe="")
+    label = urllib.parse.quote(remarks if remarks is not None else config_name(location), safe="")
 
     if o["type"] == "shadowsocks":
         if o.get("plugin") or o.get("tls", {}).get("enabled"):
@@ -382,6 +392,8 @@ def main():
     xray_configs = []
     singbox_out = []
     skipped = []
+    seen_links = set()
+    used_numbers = set()
 
     for outbound in find_proxies(config):
         location = locations.get(outbound.get("tag")) or {}
@@ -399,11 +411,17 @@ def main():
             skipped.append((outbound["type"], f'{outbound.get("tag","")} ({exc})'))
             continue
 
-        if link not in links:
+        # De-duplicate BEFORE adding the random number, otherwise identical
+        # proxies would appear unique simply because their remarks differ.
+        if link not in seen_links:
+            seen_links.add(link)
+            remarks = unique_remarks(location, used_numbers)
+            link = to_link(outbound, location, remarks=remarks)
+            xray["remarks"] = remarks
             links.append(link)
             xray_configs.append(xray)
             singbox_out.append(outbound)
-            print(f"Added: {config_name(location)}")
+            print(f"Added: {remarks}")
 
     if not links:
         raise RuntimeError(
