@@ -294,7 +294,7 @@ def main():
     with open("clov/configs.json", "r", encoding="utf-8") as f:
         clovjson = json.load(f)
       
-    configs = clovjson + kidjson + handsjson + lanjson + configs
+    configs =  handsjson + lanjson + kidjson + clovjson + lanjson + configs
 
     write_json(ALL_CONFIGS_FILE, configs)
     print(f"Merged config written to {ALL_CONFIGS_FILE}")
