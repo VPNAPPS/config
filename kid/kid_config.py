@@ -91,6 +91,7 @@ import http.client
 import json
 import os
 import re
+import secrets
 import socket
 import ssl
 import sys
@@ -912,8 +913,8 @@ def xray_configs(cfg: dict, drop_invalid: bool = True,
 
     JSON profiles become objects (v2rayNG "Add profile from JSON"); share-link
     profiles (vless://, trojan://, ...) stay strings, which v2rayNG imports
-    directly. Remarks / #fragments become "<flag> <country>", with the panel's
-    profile name appended when a country has more than one server.
+    directly. Remarks / #fragments become
+    "<flag> <country> #<unique 5-digit random number> KD Fast ⚡️".
 
     Countries listed in exclude_countries (default: GO) are dropped.
     """
@@ -952,22 +953,18 @@ def xray_configs(cfg: dict, drop_invalid: bool = True,
             continue
         staged.append(("json", doc, country, name))
 
-    # "<flag> <country>" alone would repeat for every server in a country, so
-    # append the profile name (unique in the panel) when needed.
-    totals: dict[str, int] = {}
-    for _, _, country, _ in staged:
-        totals[country.upper()] = totals.get(country.upper(), 0) + 1
-    seen: dict[str, int] = {}
+    # Draw without replacement so every exported profile gets a unique random
+    # five-digit suffix, including profiles from the same country.
+    if country_remarks and len(staged) > 90_000:
+        raise ValueError("more profiles than available unique five-digit numbers")
+    numbers = iter(secrets.SystemRandom().sample(range(10_000, 100_000), len(staged))) \
+        if country_remarks else iter(())
 
     out: list = []
     for kind, payload, country, name in staged:
-        cc = country.upper()
-        seen[cc] = seen.get(cc, 0) + 1
         label = None
         if country_remarks:
-            label = country_label(country)
-            if totals.get(cc, 0) > 1:
-                label = f"{label} \u00b7 {name or seen[cc]}"
+            label = f"{country_label(country)} #{next(numbers)} KD Fast ⚡️"
         if kind == "json":
             doc = dict(payload)
             if label:
@@ -1080,7 +1077,7 @@ def main(argv=None) -> int:
                     help="print every profile as a full Xray/v2ray JSON config in one minified "
                          "array (vless:// links are converted); importable in v2rayNG")
     ap.add_argument("--keep-remarks", action="store_true",
-                    help="keep the panel's own remarks instead of '<flag> <country name>'")
+                    help="keep the panel's own remarks instead of generated country / number / KD Fast labels")
     ap.add_argument("--uris", action="store_true",
                     help="print share-link profiles (vless://, trojan://, ...) one per line, "
                          "ready for v2rayNG's import-from-clipboard")
