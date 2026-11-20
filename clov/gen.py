@@ -56,6 +56,55 @@ PKG = "net.clovervpn.fast"
 PREF_PATH = f"/data/data/{PKG}/shared_prefs/clovervpn_core.xml"
 PREF_KEY = "connectorStartOptions"
 
+# ISO 3166-1 alpha-2 -> English short name (fallback: the code itself)
+COUNTRY_NAMES = {
+    "ad": "Andorra", "ae": "United Arab Emirates", "af": "Afghanistan", "ag": "Antigua and Barbuda",
+    "ai": "Anguilla", "al": "Albania", "am": "Armenia", "ao": "Angola", "ar": "Argentina",
+    "at": "Austria", "au": "Australia", "aw": "Aruba", "az": "Azerbaijan", "ba": "Bosnia and Herzegovina",
+    "bb": "Barbados", "bd": "Bangladesh", "be": "Belgium", "bf": "Burkina Faso", "bg": "Bulgaria",
+    "bh": "Bahrain", "bi": "Burundi", "bj": "Benin", "bm": "Bermuda", "bn": "Brunei",
+    "bo": "Bolivia", "br": "Brazil", "bs": "Bahamas", "bt": "Bhutan", "bw": "Botswana",
+    "by": "Belarus", "bz": "Belize", "ca": "Canada", "cd": "DR Congo", "cf": "Central African Republic",
+    "cg": "Congo", "ch": "Switzerland", "ci": "Côte d'Ivoire", "cl": "Chile", "cm": "Cameroon",
+    "cn": "China", "co": "Colombia", "cr": "Costa Rica", "cu": "Cuba", "cv": "Cape Verde",
+    "cw": "Curaçao", "cy": "Cyprus", "cz": "Czechia", "de": "Germany", "dj": "Djibouti",
+    "dk": "Denmark", "dm": "Dominica", "do": "Dominican Republic", "dz": "Algeria", "ec": "Ecuador",
+    "ee": "Estonia", "eg": "Egypt", "er": "Eritrea", "es": "Spain", "et": "Ethiopia",
+    "fi": "Finland", "fj": "Fiji", "fm": "Micronesia", "fo": "Faroe Islands", "fr": "France",
+    "ga": "Gabon", "gb": "United Kingdom", "gd": "Grenada", "ge": "Georgia", "gh": "Ghana",
+    "gi": "Gibraltar", "gl": "Greenland", "gm": "Gambia", "gn": "Guinea", "gp": "Guadeloupe",
+    "gq": "Equatorial Guinea", "gr": "Greece", "gt": "Guatemala", "gu": "Guam", "gw": "Guinea-Bissau",
+    "gy": "Guyana", "hk": "Hong Kong", "hn": "Honduras", "hr": "Croatia", "ht": "Haiti",
+    "hu": "Hungary", "id": "Indonesia", "ie": "Ireland", "il": "Israel", "im": "Isle of Man",
+    "in": "India", "iq": "Iraq", "ir": "Iran", "is": "Iceland", "it": "Italy",
+    "jm": "Jamaica", "jo": "Jordan", "jp": "Japan", "ke": "Kenya", "kg": "Kyrgyzstan",
+    "kh": "Cambodia", "ki": "Kiribati", "km": "Comoros", "kn": "Saint Kitts and Nevis", "kp": "North Korea",
+    "kr": "South Korea", "kw": "Kuwait", "ky": "Cayman Islands", "kz": "Kazakhstan", "la": "Laos",
+    "lb": "Lebanon", "lc": "Saint Lucia", "li": "Liechtenstein", "lk": "Sri Lanka", "lr": "Liberia",
+    "ls": "Lesotho", "lt": "Lithuania", "lu": "Luxembourg", "lv": "Latvia", "ly": "Libya",
+    "ma": "Morocco", "mc": "Monaco", "md": "Moldova", "me": "Montenegro", "mg": "Madagascar",
+    "mh": "Marshall Islands", "mk": "North Macedonia", "ml": "Mali", "mm": "Myanmar", "mn": "Mongolia",
+    "mo": "Macao", "mq": "Martinique", "mr": "Mauritania", "ms": "Montserrat", "mt": "Malta",
+    "mu": "Mauritius", "mv": "Maldives", "mw": "Malawi", "mx": "Mexico", "my": "Malaysia",
+    "mz": "Mozambique", "na": "Namibia", "ne": "Niger", "ng": "Nigeria", "ni": "Nicaragua",
+    "nl": "Netherlands", "no": "Norway", "np": "Nepal", "nr": "Nauru", "nz": "New Zealand",
+    "om": "Oman", "pa": "Panama", "pe": "Peru", "pf": "French Polynesia", "pg": "Papua New Guinea",
+    "ph": "Philippines", "pk": "Pakistan", "pl": "Poland", "pm": "Saint Pierre and Miquelon", "pr": "Puerto Rico",
+    "ps": "Palestine", "pt": "Portugal", "pw": "Palau", "py": "Paraguay", "qa": "Qatar",
+    "re": "Réunion", "ro": "Romania", "rs": "Serbia", "ru": "Russia", "rw": "Rwanda",
+    "sa": "Saudi Arabia", "sb": "Solomon Islands", "sc": "Seychelles", "sd": "Sudan", "se": "Sweden",
+    "sg": "Singapore", "si": "Slovenia", "sk": "Slovakia", "sl": "Sierra Leone", "sm": "San Marino",
+    "sn": "Senegal", "so": "Somalia", "sr": "Suriname", "ss": "South Sudan", "st": "São Tomé and Príncipe",
+    "sv": "El Salvador", "sx": "Sint Maarten", "sy": "Syria", "sz": "Eswatini", "tc": "Turks and Caicos Islands",
+    "td": "Chad", "tg": "Togo", "th": "Thailand", "tj": "Tajikistan", "tl": "Timor-Leste",
+    "tm": "Turkmenistan", "tn": "Tunisia", "to": "Tonga", "tr": "Türkiye", "tt": "Trinidad and Tobago",
+    "tv": "Tuvalu", "tw": "Taiwan", "tz": "Tanzania", "ua": "Ukraine", "ug": "Uganda",
+    "us": "United States", "uy": "Uruguay", "uz": "Uzbekistan", "va": "Vatican City", "vc": "Saint Vincent and the Grenadines",
+    "ve": "Venezuela", "vg": "British Virgin Islands", "vi": "U.S. Virgin Islands", "vn": "Vietnam", "vu": "Vanuatu",
+    "ws": "Samoa", "ye": "Yemen", "yt": "Mayotte", "za": "South Africa", "zm": "Zambia", "zw": "Zimbabwe",
+}
+DEFAULT_SUFFIX = "CV Fast ⚡️"
+
 
 # --------------------------------------------------------------------------
 # adb helpers
@@ -127,7 +176,43 @@ def load_nodes(xml: str) -> list[dict]:
     return nodes
 
 
-def split_nodes(nodes: list[dict]) -> tuple[list[dict], list[dict]]:
+def node_country(node: dict) -> tuple[str | None, str | None]:
+    """Country/region of the node's primary channel (XVPN_PROXY_NODE_CHANNELS)."""
+    env = node.get("coreRuntimeEnvVars") or {}
+    raw = env.get("XVPN_PROXY_NODE_CHANNELS")
+    if not raw:
+        return None, None
+    try:
+        channels = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return None, None
+    primary = None
+    for ch in channels:
+        attrs = ch.get("nodeAttrs") or {}
+        if attrs.get("linePurpose") != "ad":
+            primary = ch
+            break
+    primary = primary or (channels[0] if channels else None)
+    if not primary:
+        return None, None
+    last = (primary.get("nodeAttrs") or {}).get("lastNode") or {}
+    cc = last.get("idcCountry")
+    region = last.get("idcRegion")
+    return (cc.lower() if isinstance(cc, str) else None), region
+
+
+def flag_emoji(code: str) -> str:
+    return "".join(chr(0x1F1E6 + ord(c) - 65) for c in code.upper())
+
+
+def country_label(code: str | None, region: str | None, suffix: str) -> str:
+    if not code:
+        return suffix
+    name = COUNTRY_NAMES.get(code, code.upper())
+    return f"{flag_emoji(code)} {name} {suffix}"
+
+
+def split_nodes(nodes: list[dict], suffix: str, remarks: bool = True) -> tuple[list[dict], list[dict]]:
     xray, other = [], []
     for n in nodes:
         cfg_raw = n.get("coreConfig")
@@ -137,9 +222,16 @@ def split_nodes(nodes: list[dict]) -> tuple[list[dict], list[dict]]:
             cfg = json.loads(cfg_raw)
         except json.JSONDecodeError:
             continue
+        cc, region = node_country(n)
+        label = country_label(cc, region, suffix)
+        if remarks:
+            cfg["remarks"] = label
         entry = {
             "nodeId": n.get("nodeId"),
             "coreType": n.get("coreType"),
+            "country": cc,
+            "region": region,
+            "remarks": label,
             "config": cfg,
         }
         (xray if n.get("coreType") == "xray" else other).append(entry)
@@ -181,6 +273,10 @@ def main() -> int:
                     help="write a list of Xray configs to configs.json next to this script")
     ap.add_argument("--out", help="output path (default: ./configs.json)")
     ap.add_argument("--pretty", action="store_true", help="pretty-print the JSON output")
+    ap.add_argument("--remarks-suffix", default=DEFAULT_SUFFIX,
+                    help=f'text appended to each config remarks (default: "{DEFAULT_SUFFIX}")')
+    ap.add_argument("--no-remarks", action="store_true",
+                    help="do not add the country remarks field to configs")
     ap.add_argument("--raw", action="store_true",
                     help="emit full node records (coreType + coreConfig) instead of bare configs")
     ap.add_argument("--save-prefs", metavar="PATH",
@@ -201,11 +297,12 @@ def main() -> int:
             print(f"[+] saved prefs snapshot -> {args.save_prefs}")
 
     nodes = load_nodes(xml)
-    xray, other = split_nodes(nodes)
+    suffix = args.remarks_suffix
+    xray, other = split_nodes(nodes, suffix, remarks=not args.no_remarks)
 
     print(f"[+] {len(nodes)} node(s) cached, {len(xray)} xray, {len(other)} other")
     for e in xray:
-        print("    " + describe(e))
+        print("    " + describe(e) + "   [" + e["remarks"] + "]")
     for e in other:
         print(f"    node {e['nodeId']}: coreType={e['coreType']} (not Xray)")
 
@@ -215,6 +312,10 @@ def main() -> int:
 
     if args.raw:
         payload = nodes
+        if not args.no_remarks:
+            for n in payload:
+                cc, _ = node_country(n)
+                n["remarks"] = country_label(cc, None, suffix)
     else:
         payload = [e["config"] for e in xray]
 
