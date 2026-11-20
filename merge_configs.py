@@ -290,8 +290,11 @@ def main():
     
     with open("kid/configs.json", "r", encoding="utf-8") as f:
         kidjson = json.load(f)
+
+    with open("clov/configs.json", "r", encoding="utf-8") as f:
+        clovjson = json.load(f)
       
-    configs = kidjson + handsjson + lanjson + configs
+    configs = clovjson + kidjson + handsjson + lanjson + configs
 
     write_json(ALL_CONFIGS_FILE, configs)
     print(f"Merged config written to {ALL_CONFIGS_FILE}")
