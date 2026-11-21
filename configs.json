@@ -1,6 +1,6 @@
 [
   {
-    "remarks": "🇩🇪 Germany #703980 LN Fast ⚡",
+    "remarks": "🇩🇪 Germany #539889 LN Fast ⚡",
     "log": {
       "loglevel": "warning"
     },
@@ -40,7 +40,7 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #639532 LN Fast ⚡",
+    "remarks": "🇩🇪 Germany #717683 LN Fast ⚡",
     "log": {
       "loglevel": "warning"
     },
@@ -95,7 +95,7 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #637451 LN Fast ⚡",
+    "remarks": "🇩🇪 Germany #291761 LN Fast ⚡",
     "log": {
       "loglevel": "warning"
     },
@@ -176,10 +176,10 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "blogsky.com": "85.118.167.167",
-        "melodify.app": "188.221.119.244",
-        "mahex.com": "85.118.167.181",
-        "arvancloud.com": "178.18.159.39"
+        "flightio.com": "85.118.167.168",
+        "tap30.services": "85.118.167.182",
+        "telewebion.com": "188.221.119.244",
+        "blogfa.com": "178.18.159.40"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
@@ -246,7 +246,7 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "blogsky.com",
+          "address": "flightio.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "00dac2d792dd610c55ce4da875f1dedb"
@@ -263,10 +263,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "melodify.app",
+          "address": "tap30.services",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "9fad478988dd57a505b618af1cddd159"
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "tag": "proxy-2",
         "streamSettings": {
@@ -280,10 +280,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "mahex.com",
+          "address": "telewebion.com",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
         },
         "tag": "proxy-3",
         "streamSettings": {
@@ -297,7 +297,7 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "arvancloud.com",
+          "address": "blogfa.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
           "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
@@ -330,340 +330,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #47597 KD Fast ⚡️",
-    "policy": {
-      "levels": {
-        "8": {
-          "connIdle": 300,
-          "downlinkOnly": 1,
-          "handshake": 4,
-          "uplinkOnly": 1
-        }
-      }
-    },
-    "routing": {
-      "domainStrategy": "IPIfNonMatch",
-      "balancers": [
-        {
-          "tag": "proxy-balancer",
-          "selector": [
-            "proxy-"
-          ],
-          "strategy": {
-            "type": "leastLoad",
-            "settings": {
-              "expected": 2,
-              "maxRTT": "8s",
-              "tolerance": 0.5
-            }
-          },
-          "fallbackTag": "proxy-1"
-        }
-      ],
-      "rules": [
-        {
-          "type": "field",
-          "network": "udp",
-          "port": "443",
-          "outboundTag": "block"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:private"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:private"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:category-ads-all"
-          ],
-          "outboundTag": "block"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:category-ir",
-            "domain:ir"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:ir"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:category-ru"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:ru"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:cn"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:cn"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "inboundTag": [
-            "domestic-dns_0_0",
-            "domestic-dns_2_0"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "inboundTag": [
-            "dns-module"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "network": "tcp,udp",
-          "balancerTag": "proxy-balancer"
-        }
-      ]
-    },
-    "burstObservatory": {
-      "subjectSelector": [
-        "proxy-"
-      ],
-      "pingConfig": {
-        "destination": "https://connectivitycheck.gstatic.com/generate_204",
-        "connectivity": "",
-        "interval": "30s",
-        "sampling": 3,
-        "timeout": "8s",
-        "httpMethod": "HEAD"
-      }
-    }
-  },
-  {
-    "dns": {
-      "disableCache": false,
-      "enableParallelQuery": true,
-      "hosts": {
-        "domain:googleapis.cn": "googleapis.com",
-        "dns.alidns.com": [
-          "223.5.5.5",
-          "223.6.6.6",
-          "2400:3200::1",
-          "2400:3200:baba::1"
-        ],
-        "dns.cloudflare.com": [
-          "162.159.61.8",
-          "172.64.41.8",
-          "2a06:98c1:52::8",
-          "2803:f800:53::8"
-        ],
-        "cloudflare-dns.com": [
-          "104.16.248.249",
-          "104.16.249.249",
-          "2606:4700::6810:f8f9",
-          "2606:4700::6810:f9f9"
-        ],
-        "dns.google": [
-          "8.8.8.8",
-          "8.8.4.4",
-          "2001:4860:4860::8888",
-          "2001:4860:4860::8844"
-        ],
-        "dns.quad9.net": [
-          "9.9.9.9",
-          "149.112.112.112",
-          "2620:fe::fe",
-          "2620:fe::9"
-        ],
-        "one.one.one.one": [
-          "1.1.1.1",
-          "1.0.0.1",
-          "2606:4700:4700::1111",
-          "2606:4700:4700::1001"
-        ],
-        "blogsky.com": "85.118.167.167",
-        "melodify.app": "188.221.119.244",
-        "mahex.com": "85.118.167.181",
-        "arvancloud.com": "178.18.159.39"
-      },
-      "queryStrategy": "UseIPv4",
-      "serveExpiredTTL": 300,
-      "serveStale": true,
-      "servers": [
-        {
-          "address": "tcp://1.1.1.1",
-          "port": 53,
-          "timeoutMs": 1400
-        },
-        {
-          "address": "tcp://8.8.8.8",
-          "port": 53,
-          "timeoutMs": 1400
-        },
-        {
-          "address": "tcp://9.9.9.9",
-          "port": 53,
-          "timeoutMs": 1400
-        },
-        {
-          "address": "223.5.5.5",
-          "domains": [
-            "geosite:private"
-          ],
-          "skipFallback": true,
-          "tag": "domestic-dns_0_0"
-        },
-        {
-          "address": "223.5.5.5",
-          "domains": [
-            "domain:ir",
-            "geosite:category-ir"
-          ],
-          "skipFallback": true,
-          "tag": "domestic-dns_2_0"
-        }
-      ],
-      "tag": "dns-module"
-    },
-    "inbounds": [
-      {
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "tag": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "quic"
-          ],
-          "enabled": true,
-          "routeOnly": false
-        }
-      }
-    ],
-    "outbounds": [
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "blogsky.com",
-          "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
-        },
-        "tag": "proxy-1",
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        }
-      },
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "melodify.app",
-          "port": 443,
-          "method": "aes-256-gcm",
-          "password": "9fad478988dd57a505b618af1cddd159"
-        },
-        "tag": "proxy-2",
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        }
-      },
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "mahex.com",
-          "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
-        },
-        "tag": "proxy-3",
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        }
-      },
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "arvancloud.com",
-          "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
-        },
-        "tag": "proxy-4",
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        }
-      },
-      {
-        "protocol": "freedom",
-        "tag": "direct",
-        "streamSettings": {
-          "network": "tcp",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        }
-      },
-      {
-        "protocol": "blackhole",
-        "tag": "block",
-        "settings": {}
-      }
-    ],
-    "log": {
-      "loglevel": "warning"
-    },
-    "remarks": "🇳🇱 Netherlands #87927 KD Fast ⚡️",
+    "remarks": "🇳🇱 Netherlands #26358 KD Fast ⚡️",
     "policy": {
       "levels": {
         "8": {
@@ -996,7 +663,340 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #37540 KD Fast ⚡️",
+    "remarks": "🇳🇱 Netherlands #79768 KD Fast ⚡️",
+    "policy": {
+      "levels": {
+        "8": {
+          "connIdle": 300,
+          "downlinkOnly": 1,
+          "handshake": 4,
+          "uplinkOnly": 1
+        }
+      }
+    },
+    "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "balancers": [
+        {
+          "tag": "proxy-balancer",
+          "selector": [
+            "proxy-"
+          ],
+          "strategy": {
+            "type": "leastLoad",
+            "settings": {
+              "expected": 2,
+              "maxRTT": "8s",
+              "tolerance": 0.5
+            }
+          },
+          "fallbackTag": "proxy-1"
+        }
+      ],
+      "rules": [
+        {
+          "type": "field",
+          "network": "udp",
+          "port": "443",
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ads-all"
+          ],
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ir",
+            "domain:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "domestic-dns_0_0",
+            "domestic-dns_2_0"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "dns-module"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "network": "tcp,udp",
+          "balancerTag": "proxy-balancer"
+        }
+      ]
+    },
+    "burstObservatory": {
+      "subjectSelector": [
+        "proxy-"
+      ],
+      "pingConfig": {
+        "destination": "https://connectivitycheck.gstatic.com/generate_204",
+        "connectivity": "",
+        "interval": "30s",
+        "sampling": 3,
+        "timeout": "8s",
+        "httpMethod": "HEAD"
+      }
+    }
+  },
+  {
+    "dns": {
+      "disableCache": false,
+      "enableParallelQuery": true,
+      "hosts": {
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": [
+          "223.5.5.5",
+          "223.6.6.6",
+          "2400:3200::1",
+          "2400:3200:baba::1"
+        ],
+        "dns.cloudflare.com": [
+          "162.159.61.8",
+          "172.64.41.8",
+          "2a06:98c1:52::8",
+          "2803:f800:53::8"
+        ],
+        "cloudflare-dns.com": [
+          "104.16.248.249",
+          "104.16.249.249",
+          "2606:4700::6810:f8f9",
+          "2606:4700::6810:f9f9"
+        ],
+        "dns.google": [
+          "8.8.8.8",
+          "8.8.4.4",
+          "2001:4860:4860::8888",
+          "2001:4860:4860::8844"
+        ],
+        "dns.quad9.net": [
+          "9.9.9.9",
+          "149.112.112.112",
+          "2620:fe::fe",
+          "2620:fe::9"
+        ],
+        "one.one.one.one": [
+          "1.1.1.1",
+          "1.0.0.1",
+          "2606:4700:4700::1111",
+          "2606:4700:4700::1001"
+        ],
+        "flightio.com": "85.118.167.168",
+        "tap30.services": "85.118.167.182",
+        "telewebion.com": "188.221.119.244",
+        "blogfa.com": "178.18.159.40"
+      },
+      "queryStrategy": "UseIPv4",
+      "serveExpiredTTL": 300,
+      "serveStale": true,
+      "servers": [
+        {
+          "address": "tcp://1.1.1.1",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://8.8.8.8",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://9.9.9.9",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "geosite:private"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_0_0"
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_2_0"
+        }
+      ],
+      "tag": "dns-module"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "tag": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "enabled": true,
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "flightio.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-1",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tap30.services",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+        },
+        "tag": "proxy-2",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "telewebion.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
+        },
+        "tag": "proxy-3",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "blogfa.com",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "freedom",
+        "tag": "direct",
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "blackhole",
+        "tag": "block",
+        "settings": {}
+      }
+    ],
+    "log": {
+      "loglevel": "warning"
+    },
+    "remarks": "🇳🇱 Netherlands #40900 KD Fast ⚡️",
     "policy": {
       "levels": {
         "8": {
@@ -22851,7 +22851,7 @@
     "remarks": "🇬🇭 Ghana"
   },
   {
-    "remarks": "🇩🇪 Germany #703980 LN Fast ⚡ (for Iran)",
+    "remarks": "🇩🇪 Germany #539889 LN Fast ⚡ (for Iran)",
     "log": {
       "loglevel": "warning"
     },
@@ -22891,7 +22891,7 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #639532 LN Fast ⚡ (for Iran)",
+    "remarks": "🇩🇪 Germany #717683 LN Fast ⚡ (for Iran)",
     "log": {
       "loglevel": "warning"
     },
@@ -22946,7 +22946,7 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #637451 LN Fast ⚡ (for Iran)",
+    "remarks": "🇩🇪 Germany #291761 LN Fast ⚡ (for Iran)",
     "log": {
       "loglevel": "warning"
     },
@@ -23027,10 +23027,10 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "blogsky.com": "85.118.167.167",
-        "melodify.app": "188.221.119.244",
-        "mahex.com": "85.118.167.181",
-        "arvancloud.com": "178.18.159.39"
+        "flightio.com": "85.118.167.168",
+        "tap30.services": "85.118.167.182",
+        "telewebion.com": "188.221.119.244",
+        "blogfa.com": "178.18.159.40"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
@@ -23097,7 +23097,7 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "blogsky.com",
+          "address": "flightio.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "00dac2d792dd610c55ce4da875f1dedb"
@@ -23114,10 +23114,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "melodify.app",
+          "address": "tap30.services",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "9fad478988dd57a505b618af1cddd159"
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "streamSettings": {
           "network": "tcp",
@@ -23131,10 +23131,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "mahex.com",
+          "address": "telewebion.com",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
         },
         "streamSettings": {
           "network": "tcp",
@@ -23148,7 +23148,7 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "arvancloud.com",
+          "address": "blogfa.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
           "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
@@ -23181,340 +23181,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #47597 KD Fast ⚡️ (for Iran)",
-    "policy": {
-      "levels": {
-        "8": {
-          "connIdle": 300,
-          "downlinkOnly": 1,
-          "handshake": 4,
-          "uplinkOnly": 1
-        }
-      }
-    },
-    "routing": {
-      "domainStrategy": "IPIfNonMatch",
-      "balancers": [
-        {
-          "tag": "proxy-balancer",
-          "selector": [
-            "proxy-"
-          ],
-          "strategy": {
-            "type": "leastLoad",
-            "settings": {
-              "expected": 2,
-              "maxRTT": "8s",
-              "tolerance": 0.5
-            }
-          },
-          "fallbackTag": "proxy-1"
-        }
-      ],
-      "rules": [
-        {
-          "type": "field",
-          "network": "udp",
-          "port": "443",
-          "outboundTag": "block"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:private"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:private"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:category-ads-all"
-          ],
-          "outboundTag": "block"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:category-ir",
-            "domain:ir"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:ir"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:category-ru"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:ru"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "domain": [
-            "geosite:cn"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "ip": [
-            "geoip:cn"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "inboundTag": [
-            "domestic-dns_0_0",
-            "domestic-dns_2_0"
-          ],
-          "outboundTag": "direct"
-        },
-        {
-          "type": "field",
-          "inboundTag": [
-            "dns-module"
-          ],
-          "balancerTag": "proxy-balancer"
-        },
-        {
-          "type": "field",
-          "network": "tcp,udp",
-          "balancerTag": "proxy-balancer"
-        }
-      ]
-    },
-    "burstObservatory": {
-      "subjectSelector": [
-        "proxy-"
-      ],
-      "pingConfig": {
-        "destination": "https://connectivitycheck.gstatic.com/generate_204",
-        "connectivity": "",
-        "interval": "30s",
-        "sampling": 3,
-        "timeout": "8s",
-        "httpMethod": "HEAD"
-      }
-    }
-  },
-  {
-    "dns": {
-      "disableCache": false,
-      "enableParallelQuery": true,
-      "hosts": {
-        "domain:googleapis.cn": "googleapis.com",
-        "dns.alidns.com": [
-          "223.5.5.5",
-          "223.6.6.6",
-          "2400:3200::1",
-          "2400:3200:baba::1"
-        ],
-        "dns.cloudflare.com": [
-          "162.159.61.8",
-          "172.64.41.8",
-          "2a06:98c1:52::8",
-          "2803:f800:53::8"
-        ],
-        "cloudflare-dns.com": [
-          "104.16.248.249",
-          "104.16.249.249",
-          "2606:4700::6810:f8f9",
-          "2606:4700::6810:f9f9"
-        ],
-        "dns.google": [
-          "8.8.8.8",
-          "8.8.4.4",
-          "2001:4860:4860::8888",
-          "2001:4860:4860::8844"
-        ],
-        "dns.quad9.net": [
-          "9.9.9.9",
-          "149.112.112.112",
-          "2620:fe::fe",
-          "2620:fe::9"
-        ],
-        "one.one.one.one": [
-          "1.1.1.1",
-          "1.0.0.1",
-          "2606:4700:4700::1111",
-          "2606:4700:4700::1001"
-        ],
-        "blogsky.com": "85.118.167.167",
-        "melodify.app": "188.221.119.244",
-        "mahex.com": "85.118.167.181",
-        "arvancloud.com": "178.18.159.39"
-      },
-      "queryStrategy": "UseIPv4",
-      "serveExpiredTTL": 300,
-      "serveStale": true,
-      "servers": [
-        {
-          "address": "tcp://1.1.1.1",
-          "port": 53,
-          "timeoutMs": 1400
-        },
-        {
-          "address": "tcp://8.8.8.8",
-          "port": 53,
-          "timeoutMs": 1400
-        },
-        {
-          "address": "tcp://9.9.9.9",
-          "port": 53,
-          "timeoutMs": 1400
-        },
-        {
-          "address": "223.5.5.5",
-          "domains": [
-            "geosite:private"
-          ],
-          "skipFallback": true,
-          "tag": "domestic-dns_0_0"
-        },
-        {
-          "address": "223.5.5.5",
-          "domains": [
-            "domain:ir",
-            "geosite:category-ir"
-          ],
-          "skipFallback": true,
-          "tag": "domestic-dns_2_0"
-        }
-      ],
-      "tag": "dns-module"
-    },
-    "inbounds": [
-      {
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "tag": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true,
-          "userLevel": 8
-        },
-        "sniffing": {
-          "destOverride": [
-            "http",
-            "tls",
-            "quic"
-          ],
-          "enabled": true,
-          "routeOnly": false
-        }
-      }
-    ],
-    "outbounds": [
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "blogsky.com",
-          "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        },
-        "tag": "proxy1"
-      },
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "melodify.app",
-          "port": 443,
-          "method": "aes-256-gcm",
-          "password": "9fad478988dd57a505b618af1cddd159"
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        },
-        "tag": "proxy2"
-      },
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "mahex.com",
-          "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        },
-        "tag": "proxy3"
-      },
-      {
-        "protocol": "shadowsocks",
-        "settings": {
-          "address": "arvancloud.com",
-          "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "none",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        },
-        "tag": "proxy4"
-      },
-      {
-        "protocol": "freedom",
-        "tag": "direct",
-        "streamSettings": {
-          "network": "tcp",
-          "sockopt": {
-            "domainStrategy": "UseIP"
-          }
-        }
-      },
-      {
-        "protocol": "blackhole",
-        "tag": "block",
-        "settings": {}
-      }
-    ],
-    "log": {
-      "loglevel": "warning"
-    },
-    "remarks": "🇳🇱 Netherlands #87927 KD Fast ⚡️ (for Iran)",
+    "remarks": "🇳🇱 Netherlands #26358 KD Fast ⚡️ (for Iran)",
     "policy": {
       "levels": {
         "8": {
@@ -23847,7 +23514,340 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #37540 KD Fast ⚡️ (for Iran)",
+    "remarks": "🇳🇱 Netherlands #79768 KD Fast ⚡️ (for Iran)",
+    "policy": {
+      "levels": {
+        "8": {
+          "connIdle": 300,
+          "downlinkOnly": 1,
+          "handshake": 4,
+          "uplinkOnly": 1
+        }
+      }
+    },
+    "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "balancers": [
+        {
+          "tag": "proxy-balancer",
+          "selector": [
+            "proxy-"
+          ],
+          "strategy": {
+            "type": "leastLoad",
+            "settings": {
+              "expected": 2,
+              "maxRTT": "8s",
+              "tolerance": 0.5
+            }
+          },
+          "fallbackTag": "proxy-1"
+        }
+      ],
+      "rules": [
+        {
+          "type": "field",
+          "network": "udp",
+          "port": "443",
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:private"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ads-all"
+          ],
+          "outboundTag": "block"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ir",
+            "domain:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ir"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:category-ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:ru"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "domain": [
+            "geosite:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "ip": [
+            "geoip:cn"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "domestic-dns_0_0",
+            "domestic-dns_2_0"
+          ],
+          "outboundTag": "direct"
+        },
+        {
+          "type": "field",
+          "inboundTag": [
+            "dns-module"
+          ],
+          "balancerTag": "proxy-balancer"
+        },
+        {
+          "type": "field",
+          "network": "tcp,udp",
+          "balancerTag": "proxy-balancer"
+        }
+      ]
+    },
+    "burstObservatory": {
+      "subjectSelector": [
+        "proxy-"
+      ],
+      "pingConfig": {
+        "destination": "https://connectivitycheck.gstatic.com/generate_204",
+        "connectivity": "",
+        "interval": "30s",
+        "sampling": 3,
+        "timeout": "8s",
+        "httpMethod": "HEAD"
+      }
+    }
+  },
+  {
+    "dns": {
+      "disableCache": false,
+      "enableParallelQuery": true,
+      "hosts": {
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": [
+          "223.5.5.5",
+          "223.6.6.6",
+          "2400:3200::1",
+          "2400:3200:baba::1"
+        ],
+        "dns.cloudflare.com": [
+          "162.159.61.8",
+          "172.64.41.8",
+          "2a06:98c1:52::8",
+          "2803:f800:53::8"
+        ],
+        "cloudflare-dns.com": [
+          "104.16.248.249",
+          "104.16.249.249",
+          "2606:4700::6810:f8f9",
+          "2606:4700::6810:f9f9"
+        ],
+        "dns.google": [
+          "8.8.8.8",
+          "8.8.4.4",
+          "2001:4860:4860::8888",
+          "2001:4860:4860::8844"
+        ],
+        "dns.quad9.net": [
+          "9.9.9.9",
+          "149.112.112.112",
+          "2620:fe::fe",
+          "2620:fe::9"
+        ],
+        "one.one.one.one": [
+          "1.1.1.1",
+          "1.0.0.1",
+          "2606:4700:4700::1111",
+          "2606:4700:4700::1001"
+        ],
+        "flightio.com": "85.118.167.168",
+        "tap30.services": "85.118.167.182",
+        "telewebion.com": "188.221.119.244",
+        "blogfa.com": "178.18.159.40"
+      },
+      "queryStrategy": "UseIPv4",
+      "serveExpiredTTL": 300,
+      "serveStale": true,
+      "servers": [
+        {
+          "address": "tcp://1.1.1.1",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://8.8.8.8",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp://9.9.9.9",
+          "port": 53,
+          "timeoutMs": 1400
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "geosite:private"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_0_0"
+        },
+        {
+          "address": "223.5.5.5",
+          "domains": [
+            "domain:ir",
+            "geosite:category-ir"
+          ],
+          "skipFallback": true,
+          "tag": "domestic-dns_2_0"
+        }
+      ],
+      "tag": "dns-module"
+    },
+    "inbounds": [
+      {
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "tag": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true,
+          "userLevel": 8
+        },
+        "sniffing": {
+          "destOverride": [
+            "http",
+            "tls",
+            "quic"
+          ],
+          "enabled": true,
+          "routeOnly": false
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "flightio.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy1"
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tap30.services",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy2"
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "telewebion.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "9fad478988dd57a505b618af1cddd159"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy3"
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "blogfa.com",
+          "port": 443,
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy4"
+      },
+      {
+        "protocol": "freedom",
+        "tag": "direct",
+        "streamSettings": {
+          "network": "tcp",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "blackhole",
+        "tag": "block",
+        "settings": {}
+      }
+    ],
+    "log": {
+      "loglevel": "warning"
+    },
+    "remarks": "🇳🇱 Netherlands #40900 KD Fast ⚡️ (for Iran)",
     "policy": {
       "levels": {
         "8": {
