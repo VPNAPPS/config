@@ -903,6 +903,95 @@ def uri_to_config(uri: str, remark: str | None = None) -> dict:
     raise ValueError(f"unsupported share-link scheme {scheme!r}")
 
 
+# ---------------------------------------------------------------------------
+# Export-time HTTPS URL checks
+# ---------------------------------------------------------------------------
+
+def _https_url(value: str, location: str) -> str:
+    """Normalize an HTTPS-only endpoint without changing unrelated proxy hosts.
+
+    HTTPS-only URL fields are URLs, not ordinary server addresses. A bare host,
+    or an obsolete http:// prefix, must not be sent unchanged to clients that
+    explicitly require an HTTPS scheme. This is a syntactic repair only: the
+    destination still needs to support TLS and serve the requested endpoint.
+    """
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{location}: HTTPS URL is missing")
+    value = value.strip()
+    if "://" not in value:
+        value = "https://" + value.lstrip("/")
+    else:
+        parts = urllib.parse.urlsplit(value)
+        if parts.scheme.lower() == "http":
+            value = urllib.parse.urlunsplit(parts._replace(scheme="https"))
+        elif parts.scheme.lower() != "https":
+            raise ValueError(f"{location}: unsupported HTTPS URL scheme {parts.scheme!r}")
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        _ = parsed.port  # Detect malformed ports.
+    except ValueError as exc:
+        raise ValueError(f"{location}: malformed HTTPS URL: {exc}") from exc
+    if parsed.scheme.lower() != "https" or not parsed.hostname or parsed.username is not None:
+        raise ValueError(f"{location}: invalid HTTPS server URL")
+    return value
+
+
+def fix_https_endpoints(doc: dict) -> dict:
+    """Fix explicit HTTPS-only URL fields in panel-provided Xray JSON.
+
+    Do not prepend https:// to VLESS/Trojan *proxy addresses*, WebSocket hosts,
+    REALITY serverNames, or any generic URL. Only explicitly HTTPS-only URL
+    fields and DoH URLs need this repair.
+    """
+    def walk(value, loc="config"):
+        if isinstance(value, list):
+            return [walk(item, f"{loc}[{i}]") for i, item in enumerate(value)]
+        if not isinstance(value, dict):
+            return value
+        fixed = {}
+        for key, child in value.items():
+            at = f"{loc}.{key}"
+            canonical = key.lower().replace("_", "").replace("-", "")
+            if canonical in {"serverurl", "dohurl", "dnsurl"} and isinstance(child, str):
+                updated = _https_url(child, at)
+                if updated != child:
+                    print(f"warning: fixed HTTPS scheme in {at}", file=sys.stderr)
+                fixed[key] = updated
+            else:
+                fixed[key] = walk(child, at)
+        return fixed
+
+    out = walk(doc)
+    dns = out.get("dns")
+    if isinstance(dns, dict) and isinstance(dns.get("servers"), list):
+        # An http:// URL inside Xray's DNS resolver list is an invalid DoH URL.
+        # Other DNS types (IP, tcp://, quic+local://, https+local://) are not changed.
+        servers = []
+        for i, entry in enumerate(dns["servers"]):
+            if isinstance(entry, str) and entry.lower().startswith("http://"):
+                new = _https_url(entry, f"dns.servers[{i}]")
+                print(f"warning: fixed DoH HTTPS scheme in dns.servers[{i}]", file=sys.stderr)
+                servers.append(new)
+            elif isinstance(entry, dict) and isinstance(entry.get("address"), str) and entry["address"].lower().startswith("http://"):
+                new = dict(entry)
+                new["address"] = _https_url(entry["address"], f"dns.servers[{i}].address")
+                print(f"warning: fixed DoH HTTPS scheme in dns.servers[{i}].address", file=sys.stderr)
+                servers.append(new)
+            else:
+                servers.append(entry)
+        dns["servers"] = servers
+
+    # MASQUE requires TLS by the Xray transport specification. Rather than
+    # inventing a TLS configuration for a non-TLS server, reject broken entries.
+    for i, ob in enumerate(out.get("outbounds") or []):
+        if not isinstance(ob, dict):
+            continue
+        stream = ob.get("streamSettings") or {}
+        if ob.get("protocol") == "masque" and stream.get("security") != "tls":
+            raise ValueError(f"outbounds[{i}]: MASQUE requires streamSettings.security='tls'")
+    return out
+
+
 def xray_configs(cfg: dict, drop_invalid: bool = True,
                  country_remarks: bool = True,
                  exclude: set[str] | None = None,
@@ -966,13 +1055,18 @@ def xray_configs(cfg: dict, drop_invalid: bool = True,
         if country_remarks:
             label = f"{country_label(country)} #{next(numbers)} KD Fast ⚡️"
         if kind == "json":
-            doc = dict(payload)
-            if label:
-                doc["remarks"] = label
-            out.append(doc)
+            try:
+                doc = fix_https_endpoints(payload)
+                if label:
+                    doc["remarks"] = label
+                out.append(doc)
+            except ValueError as exc:
+                if not drop_invalid:
+                    raise
+                print(f"warning: skipping invalid JSON profile: {exc}", file=sys.stderr)
         elif convert_uris:
             try:
-                out.append(uri_to_config(payload, label))
+                out.append(fix_https_endpoints(uri_to_config(payload, label)))
             except Exception as exc:
                 if not drop_invalid:
                     raise
