@@ -981,6 +981,45 @@ def fix_https_endpoints(doc: dict) -> dict:
                 servers.append(entry)
         dns["servers"] = servers
 
+    # Happ 6.2.0 compatibility: some iOS clients reject DNS-over-TCP URLs
+    # with an HTTPS-scheme validation error, even though Xray-core accepts them.
+    # Convert ONLY well-known resolver endpoints to their real DoH services.
+    # This is not a blind tcp:// -> https:// rewrite (which would be invalid).
+    doh_for_dns_tcp = {
+        "1.1.1.1": "https://cloudflare-dns.com/dns-query",
+        "1.0.0.1": "https://cloudflare-dns.com/dns-query",
+        "8.8.8.8": "https://dns.google/dns-query",
+        "8.8.4.4": "https://dns.google/dns-query",
+        "9.9.9.9": "https://dns.quad9.net/dns-query",
+        "149.112.112.112": "https://dns.quad9.net/dns-query",
+    }
+    if isinstance(dns, dict) and isinstance(dns.get("servers"), list):
+        fixed_servers = []
+        for i, entry in enumerate(dns["servers"]):
+            address = entry if isinstance(entry, str) else (
+                entry.get("address") if isinstance(entry, dict) else None
+            )
+            if isinstance(address, str) and address.lower().startswith("tcp://"):
+                parsed = urllib.parse.urlsplit(address)
+                ip = parsed.hostname
+                if ip not in doh_for_dns_tcp:
+                    raise ValueError(
+                        f"dns.servers[{i}]: no verified DoH equivalent for DNS-over-TCP server {address!r}; "
+                        "replace it with a verified HTTPS DoH endpoint"
+                    )
+                doh = doh_for_dns_tcp[ip]
+                if isinstance(entry, dict):
+                    updated = dict(entry)
+                    updated["address"] = doh
+                    # Port 53 is the original DNS-over-TCP port, not valid for DoH.
+                    updated.pop("port", None)
+                    entry = updated
+                else:
+                    entry = doh
+                print(f"warning: converted dns.servers[{i}] TCP DNS to {doh} for Happ", file=sys.stderr)
+            fixed_servers.append(entry)
+        dns["servers"] = fixed_servers
+
     # MASQUE requires TLS by the Xray transport specification. Rather than
     # inventing a TLS configuration for a non-TLS server, reject broken entries.
     for i, ob in enumerate(out.get("outbounds") or []):
@@ -1158,6 +1197,8 @@ def main(argv=None) -> int:
     ap.add_argument("--state", default="kidi_state.json", help="cache/state file")
     ap.add_argument("--cert-hex", help="file with the pinned certificate hex")
     ap.add_argument("--raw", help="parse a saved HTTP response body instead of fetching")
+    ap.add_argument("--fix-export", metavar="PATH",
+                    help="repair an already-exported Xray JSON array without panel access")
     ap.add_argument("--payload-file", help="decrypt a saved base64 'data' string")
     ap.add_argument("--timeout", type=float, default=15.0)
     ap.add_argument("--proxy", default=os.environ.get("KIDI_PROXY"), metavar="HOST:PORT",
@@ -1202,6 +1243,23 @@ def main(argv=None) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+
+    if args.fix_export:
+        try:
+            with open(args.fix_export, "r", encoding="utf-8") as stream:
+                exported = json.load(stream)
+            if not isinstance(exported, list):
+                raise ValueError("Expected a JSON array of Xray profiles")
+            repaired = []
+            for idx, entry in enumerate(exported, start=1):
+                if not isinstance(entry, dict):
+                    raise ValueError(f"Profile {idx} is not an Xray JSON object")
+                repaired.append(fix_https_endpoints(entry))
+            return emit(json.dumps(repaired, ensure_ascii=False, separators=(",", ":")),
+                        args.out, f"{len(repaired)} Happ-compatible profiles")
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: cannot repair export: {exc}", file=sys.stderr)
+            return 1
 
     cert_hex = load_pinned_cert_hex(args.cert_hex)
     key = derive_key(cert_hex)
