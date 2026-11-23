@@ -116,7 +116,6 @@ jobs:
         run: |
           cd lan
           python3 gen.py --xrayjson --protocols [shadowsocks, vless] --country IR
-          curl -fsS -X PUT "https://ultimate.datacenter.org.uk/api/admin/configs/bulk" -H "Authorization: Bearer ${{ secrets.ULTI_KEY }}" -H "Content-Type: application/json" --data-binary @configs.json
 
       - name: Run clov script
         run: |
@@ -147,6 +146,7 @@ jobs:
           cd kid
           python3 kid_config.py --xrayjson --exclude hysteria,hysteria2 --out configs.json
           rm kidi_state.json
+          jq -s 'add' ../lan/configs.json configs.json | curl -fsS -X PUT "https://ultimate.datacenter.org.uk/api/admin/configs/bulk" -H "Authorization: Bearer ${{ secrets.ULTI_KEY }}" -H "Content-Type: application/json" --data-binary @-
 
       - name: Run hand script
         run: |
