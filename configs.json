@@ -1,6 +1,6 @@
 [
   {
-    "remarks": "🇩🇪 Germany #946868 LN Fast ⚡",
+    "remarks": "🇩🇪 Germany #144041 LN Fast ⚡",
     "log": {
       "loglevel": "warning"
     },
@@ -29,7 +29,7 @@
         "settings": {
           "servers": [
             {
-              "address": "63.181.29.198",
+              "address": "47.245.173.254",
               "port": 443,
               "method": "2022-blake3-chacha20-poly1305",
               "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
@@ -40,7 +40,62 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #741466 LN Fast ⚡",
+    "remarks": "🇩🇪 Germany #353073 LN Fast ⚡",
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "servers": [
+        "8.8.8.8",
+        "1.1.1.1"
+      ]
+    },
+    "inbounds": [
+      {
+        "tag": "socks-in",
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "34.248.154.93",
+              "port": 443,
+              "users": [
+                {
+                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "www.amazon.com",
+            "fingerprint": "chrome",
+            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
+            "shortId": ""
+          }
+        }
+      }
+    ]
+  },
+  {
+    "remarks": "🇩🇪 Germany #679876 LN Fast ⚡",
     "log": {
       "loglevel": "warning"
     },
@@ -80,61 +135,6 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #513574 LN Fast ⚡",
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "servers": [
-        "8.8.8.8",
-        "1.1.1.1"
-      ]
-    },
-    "inbounds": [
-      {
-        "tag": "socks-in",
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true
-        }
-      }
-    ],
-    "outbounds": [
-      {
-        "tag": "proxy",
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "54.170.163.14",
-              "port": 443,
-              "users": [
-                {
-                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
-                  "encryption": "none",
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "www.amazon.com",
-            "fingerprint": "chrome",
-            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
-            "shortId": ""
-          }
-        }
-      }
-    ]
-  },
-  {
     "dns": {
       "disableCache": false,
       "enableParallelQuery": true,
@@ -176,15 +176,35 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "pishgaman.net": "85.118.167.219",
-        "tejaratbank.ir": "178.18.159.69",
-        "qodsna.com": "85.118.167.225",
-        "uplod.ir": "178.18.159.58"
+        "yjc.ir": "assets.cuivert.ir",
+        "rozblog.com": "85.118.167.219",
+        "parspack.com": "178.18.159.69",
+        "ettelaat.com": "85.118.167.225",
+        "tasnimnews.com": "178.18.159.58"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
       "serveStale": true,
       "servers": [
+        {
+          "address": "tcp+local://1.1.1.1:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-primary",
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp+local://8.8.8.8:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "finalQuery": true,
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-secondary",
+          "timeoutMs": 1400
+        },
         {
           "address": "https://cloudflare-dns.com/dns-query",
           "timeoutMs": 1400
@@ -243,10 +263,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "pishgaman.net",
+          "address": "yjc.ir",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "xchacha20-ietf-poly1305",
+          "password": "1b66a19d288ee4d705870fbbcfe60b08"
         },
         "tag": "proxy-1",
         "streamSettings": {
@@ -260,10 +280,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "tejaratbank.ir",
+          "address": "rozblog.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "tag": "proxy-2",
         "streamSettings": {
@@ -277,10 +297,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "qodsna.com",
+          "address": "parspack.com",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
         },
         "tag": "proxy-3",
         "streamSettings": {
@@ -294,12 +314,29 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "uplod.ir",
+          "address": "ettelaat.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tasnimnews.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "9fad478988dd57a505b618af1cddd159"
         },
-        "tag": "proxy-4",
+        "tag": "proxy-5",
         "streamSettings": {
           "network": "tcp",
           "security": "none",
@@ -327,7 +364,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #35967 KD Fast ⚡️",
+    "remarks": "🇳🇱 Netherlands #37344 KD Fast ⚡️",
     "policy": {
       "levels": {
         "8": {
@@ -506,15 +543,35 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "pishgaman.net": "85.118.167.219",
-        "tejaratbank.ir": "178.18.159.69",
-        "qodsna.com": "85.118.167.225",
-        "uplod.ir": "178.18.159.58"
+        "yjc.ir": "assets.cuivert.ir",
+        "rozblog.com": "85.118.167.219",
+        "parspack.com": "178.18.159.69",
+        "ettelaat.com": "85.118.167.225",
+        "tasnimnews.com": "178.18.159.58"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
       "serveStale": true,
       "servers": [
+        {
+          "address": "tcp+local://1.1.1.1:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-primary",
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp+local://8.8.8.8:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "finalQuery": true,
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-secondary",
+          "timeoutMs": 1400
+        },
         {
           "address": "https://cloudflare-dns.com/dns-query",
           "timeoutMs": 1400
@@ -573,10 +630,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "pishgaman.net",
+          "address": "yjc.ir",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "xchacha20-ietf-poly1305",
+          "password": "1b66a19d288ee4d705870fbbcfe60b08"
         },
         "tag": "proxy-1",
         "streamSettings": {
@@ -590,10 +647,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "tejaratbank.ir",
+          "address": "rozblog.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "tag": "proxy-2",
         "streamSettings": {
@@ -607,10 +664,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "qodsna.com",
+          "address": "parspack.com",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
         },
         "tag": "proxy-3",
         "streamSettings": {
@@ -624,12 +681,29 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "uplod.ir",
+          "address": "ettelaat.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tasnimnews.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "9fad478988dd57a505b618af1cddd159"
         },
-        "tag": "proxy-4",
+        "tag": "proxy-5",
         "streamSettings": {
           "network": "tcp",
           "security": "none",
@@ -657,7 +731,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #82198 KD Fast ⚡️",
+    "remarks": "🇳🇱 Netherlands #17253 KD Fast ⚡️",
     "policy": {
       "levels": {
         "8": {
@@ -836,15 +910,35 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "pishgaman.net": "85.118.167.219",
-        "tejaratbank.ir": "178.18.159.69",
-        "qodsna.com": "85.118.167.225",
-        "uplod.ir": "178.18.159.58"
+        "yjc.ir": "assets.cuivert.ir",
+        "rozblog.com": "85.118.167.219",
+        "parspack.com": "178.18.159.69",
+        "ettelaat.com": "85.118.167.225",
+        "tasnimnews.com": "178.18.159.58"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
       "serveStale": true,
       "servers": [
+        {
+          "address": "tcp+local://1.1.1.1:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-primary",
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp+local://8.8.8.8:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "finalQuery": true,
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-secondary",
+          "timeoutMs": 1400
+        },
         {
           "address": "https://cloudflare-dns.com/dns-query",
           "timeoutMs": 1400
@@ -903,10 +997,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "pishgaman.net",
+          "address": "yjc.ir",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "xchacha20-ietf-poly1305",
+          "password": "1b66a19d288ee4d705870fbbcfe60b08"
         },
         "tag": "proxy-1",
         "streamSettings": {
@@ -920,10 +1014,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "tejaratbank.ir",
+          "address": "rozblog.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "tag": "proxy-2",
         "streamSettings": {
@@ -937,10 +1031,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "qodsna.com",
+          "address": "parspack.com",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
         },
         "tag": "proxy-3",
         "streamSettings": {
@@ -954,12 +1048,29 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "uplod.ir",
+          "address": "ettelaat.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "tag": "proxy-4",
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        }
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tasnimnews.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "9fad478988dd57a505b618af1cddd159"
         },
-        "tag": "proxy-4",
+        "tag": "proxy-5",
         "streamSettings": {
           "network": "tcp",
           "security": "none",
@@ -987,7 +1098,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #78679 KD Fast ⚡️",
+    "remarks": "🇳🇱 Netherlands #61077 KD Fast ⚡️",
     "policy": {
       "levels": {
         "8": {
@@ -19515,7 +19626,7 @@
     "remarks": "🇿🇦 South Africa"
   },
   {
-    "remarks": "🇩🇪 Germany #946868 LN Fast ⚡ (for Iran)",
+    "remarks": "🇩🇪 Germany #144041 LN Fast ⚡ (for Iran)",
     "log": {
       "loglevel": "warning"
     },
@@ -19543,7 +19654,7 @@
         "settings": {
           "servers": [
             {
-              "address": "63.181.29.198",
+              "address": "47.245.173.254",
               "port": 443,
               "method": "2022-blake3-chacha20-poly1305",
               "password": "8yO3ANWefuuGs1lRKXECQA1FEhxlWFV2ppQMcBaZo5Y="
@@ -19555,7 +19666,62 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #741466 LN Fast ⚡ (for Iran)",
+    "remarks": "🇩🇪 Germany #353073 LN Fast ⚡ (for Iran)",
+    "log": {
+      "loglevel": "warning"
+    },
+    "dns": {
+      "servers": [
+        "8.8.8.8",
+        "1.1.1.1"
+      ]
+    },
+    "inbounds": [
+      {
+        "tag": "socks-in",
+        "listen": "127.0.0.1",
+        "port": 10808,
+        "protocol": "socks",
+        "settings": {
+          "auth": "noauth",
+          "udp": true
+        }
+      }
+    ],
+    "outbounds": [
+      {
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "34.248.154.93",
+              "port": 443,
+              "users": [
+                {
+                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
+                  "encryption": "none",
+                  "flow": "xtls-rprx-vision"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "reality",
+          "realitySettings": {
+            "serverName": "www.amazon.com",
+            "fingerprint": "chrome",
+            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
+            "shortId": ""
+          }
+        },
+        "tag": "proxy1"
+      }
+    ]
+  },
+  {
+    "remarks": "🇩🇪 Germany #679876 LN Fast ⚡ (for Iran)",
     "log": {
       "loglevel": "warning"
     },
@@ -19595,61 +19761,6 @@
     ]
   },
   {
-    "remarks": "🇩🇪 Germany #513574 LN Fast ⚡ (for Iran)",
-    "log": {
-      "loglevel": "warning"
-    },
-    "dns": {
-      "servers": [
-        "8.8.8.8",
-        "1.1.1.1"
-      ]
-    },
-    "inbounds": [
-      {
-        "tag": "socks-in",
-        "listen": "127.0.0.1",
-        "port": 10808,
-        "protocol": "socks",
-        "settings": {
-          "auth": "noauth",
-          "udp": true
-        }
-      }
-    ],
-    "outbounds": [
-      {
-        "protocol": "vless",
-        "settings": {
-          "vnext": [
-            {
-              "address": "54.170.163.14",
-              "port": 443,
-              "users": [
-                {
-                  "id": "fad6c240-14d0-47ce-9264-21c5f18689c1",
-                  "encryption": "none",
-                  "flow": "xtls-rprx-vision"
-                }
-              ]
-            }
-          ]
-        },
-        "streamSettings": {
-          "network": "tcp",
-          "security": "reality",
-          "realitySettings": {
-            "serverName": "www.amazon.com",
-            "fingerprint": "chrome",
-            "publicKey": "ZODw0ijKEfbSpHjvQqTyYzsbLpnlnA3j9Io5PfmZ-Ts",
-            "shortId": ""
-          }
-        },
-        "tag": "proxy1"
-      }
-    ]
-  },
-  {
     "dns": {
       "disableCache": false,
       "enableParallelQuery": true,
@@ -19691,15 +19802,35 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "pishgaman.net": "85.118.167.219",
-        "tejaratbank.ir": "178.18.159.69",
-        "qodsna.com": "85.118.167.225",
-        "uplod.ir": "178.18.159.58"
+        "yjc.ir": "assets.cuivert.ir",
+        "rozblog.com": "85.118.167.219",
+        "parspack.com": "178.18.159.69",
+        "ettelaat.com": "85.118.167.225",
+        "tasnimnews.com": "178.18.159.58"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
       "serveStale": true,
       "servers": [
+        {
+          "address": "tcp+local://1.1.1.1:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-primary",
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp+local://8.8.8.8:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "finalQuery": true,
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-secondary",
+          "timeoutMs": 1400
+        },
         {
           "address": "https://cloudflare-dns.com/dns-query",
           "timeoutMs": 1400
@@ -19758,10 +19889,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "pishgaman.net",
+          "address": "yjc.ir",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "xchacha20-ietf-poly1305",
+          "password": "1b66a19d288ee4d705870fbbcfe60b08"
         },
         "streamSettings": {
           "network": "tcp",
@@ -19775,10 +19906,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "tejaratbank.ir",
+          "address": "rozblog.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "streamSettings": {
           "network": "tcp",
@@ -19792,10 +19923,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "qodsna.com",
+          "address": "parspack.com",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
         },
         "streamSettings": {
           "network": "tcp",
@@ -19809,7 +19940,24 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "uplod.ir",
+          "address": "ettelaat.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy4"
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tasnimnews.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "9fad478988dd57a505b618af1cddd159"
@@ -19821,7 +19969,7 @@
             "domainStrategy": "UseIP"
           }
         },
-        "tag": "proxy4"
+        "tag": "proxy5"
       },
       {
         "protocol": "freedom",
@@ -19842,7 +19990,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #35967 KD Fast ⚡️ (for Iran)",
+    "remarks": "🇳🇱 Netherlands #37344 KD Fast ⚡️ (for Iran)",
     "policy": {
       "levels": {
         "8": {
@@ -20021,15 +20169,35 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "pishgaman.net": "85.118.167.219",
-        "tejaratbank.ir": "178.18.159.69",
-        "qodsna.com": "85.118.167.225",
-        "uplod.ir": "178.18.159.58"
+        "yjc.ir": "assets.cuivert.ir",
+        "rozblog.com": "85.118.167.219",
+        "parspack.com": "178.18.159.69",
+        "ettelaat.com": "85.118.167.225",
+        "tasnimnews.com": "178.18.159.58"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
       "serveStale": true,
       "servers": [
+        {
+          "address": "tcp+local://1.1.1.1:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-primary",
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp+local://8.8.8.8:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "finalQuery": true,
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-secondary",
+          "timeoutMs": 1400
+        },
         {
           "address": "https://cloudflare-dns.com/dns-query",
           "timeoutMs": 1400
@@ -20088,10 +20256,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "pishgaman.net",
+          "address": "yjc.ir",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "xchacha20-ietf-poly1305",
+          "password": "1b66a19d288ee4d705870fbbcfe60b08"
         },
         "streamSettings": {
           "network": "tcp",
@@ -20105,10 +20273,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "tejaratbank.ir",
+          "address": "rozblog.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "streamSettings": {
           "network": "tcp",
@@ -20122,10 +20290,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "qodsna.com",
+          "address": "parspack.com",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
         },
         "streamSettings": {
           "network": "tcp",
@@ -20139,7 +20307,24 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "uplod.ir",
+          "address": "ettelaat.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy4"
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tasnimnews.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "9fad478988dd57a505b618af1cddd159"
@@ -20151,7 +20336,7 @@
             "domainStrategy": "UseIP"
           }
         },
-        "tag": "proxy4"
+        "tag": "proxy5"
       },
       {
         "protocol": "freedom",
@@ -20172,7 +20357,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #82198 KD Fast ⚡️ (for Iran)",
+    "remarks": "🇳🇱 Netherlands #17253 KD Fast ⚡️ (for Iran)",
     "policy": {
       "levels": {
         "8": {
@@ -20351,15 +20536,35 @@
           "2606:4700:4700::1111",
           "2606:4700:4700::1001"
         ],
-        "pishgaman.net": "85.118.167.219",
-        "tejaratbank.ir": "178.18.159.69",
-        "qodsna.com": "85.118.167.225",
-        "uplod.ir": "178.18.159.58"
+        "yjc.ir": "assets.cuivert.ir",
+        "rozblog.com": "85.118.167.219",
+        "parspack.com": "178.18.159.69",
+        "ettelaat.com": "85.118.167.225",
+        "tasnimnews.com": "178.18.159.58"
       },
       "queryStrategy": "UseIPv4",
       "serveExpiredTTL": 300,
       "serveStale": true,
       "servers": [
+        {
+          "address": "tcp+local://1.1.1.1:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-primary",
+          "timeoutMs": 1400
+        },
+        {
+          "address": "tcp+local://8.8.8.8:53",
+          "domains": [
+            "full:assets.cuivert.ir"
+          ],
+          "finalQuery": true,
+          "skipFallback": true,
+          "tag": "subscription-bootstrap-dns-secondary",
+          "timeoutMs": 1400
+        },
         {
           "address": "https://cloudflare-dns.com/dns-query",
           "timeoutMs": 1400
@@ -20418,10 +20623,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "pishgaman.net",
+          "address": "yjc.ir",
           "port": 443,
-          "method": "chacha20-ietf-poly1305",
-          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
+          "method": "xchacha20-ietf-poly1305",
+          "password": "1b66a19d288ee4d705870fbbcfe60b08"
         },
         "streamSettings": {
           "network": "tcp",
@@ -20435,10 +20640,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "tejaratbank.ir",
+          "address": "rozblog.com",
           "port": 443,
           "method": "chacha20-ietf-poly1305",
-          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
+          "password": "4c4aa314de8bad72b4ad6f24a690fd7c"
         },
         "streamSettings": {
           "network": "tcp",
@@ -20452,10 +20657,10 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "qodsna.com",
+          "address": "parspack.com",
           "port": 443,
-          "method": "aes-256-gcm",
-          "password": "00dac2d792dd610c55ce4da875f1dedb"
+          "method": "chacha20-ietf-poly1305",
+          "password": "7ae437acd1a7a110d3c7b5a6c2b3563b"
         },
         "streamSettings": {
           "network": "tcp",
@@ -20469,7 +20674,24 @@
       {
         "protocol": "shadowsocks",
         "settings": {
-          "address": "uplod.ir",
+          "address": "ettelaat.com",
+          "port": 443,
+          "method": "aes-256-gcm",
+          "password": "00dac2d792dd610c55ce4da875f1dedb"
+        },
+        "streamSettings": {
+          "network": "tcp",
+          "security": "none",
+          "sockopt": {
+            "domainStrategy": "UseIP"
+          }
+        },
+        "tag": "proxy4"
+      },
+      {
+        "protocol": "shadowsocks",
+        "settings": {
+          "address": "tasnimnews.com",
           "port": 443,
           "method": "aes-256-gcm",
           "password": "9fad478988dd57a505b618af1cddd159"
@@ -20481,7 +20703,7 @@
             "domainStrategy": "UseIP"
           }
         },
-        "tag": "proxy4"
+        "tag": "proxy5"
       },
       {
         "protocol": "freedom",
@@ -20502,7 +20724,7 @@
     "log": {
       "loglevel": "warning"
     },
-    "remarks": "🇳🇱 Netherlands #78679 KD Fast ⚡️ (for Iran)",
+    "remarks": "🇳🇱 Netherlands #61077 KD Fast ⚡️ (for Iran)",
     "policy": {
       "levels": {
         "8": {
