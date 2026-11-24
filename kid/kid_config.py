@@ -1028,6 +1028,34 @@ def fix_https_endpoints(doc: dict) -> dict:
         stream = ob.get("streamSettings") or {}
         if ob.get("protocol") == "masque" and stream.get("security") != "tls":
             raise ValueError(f"outbounds[{i}]: MASQUE requires streamSettings.security='tls'")
+    # Happ/iOS DNS compatibility hardening. Some newer panel profiles start
+    # with tcp+local:// DNS bootstrap entries. They are valid Xray DNS sources,
+    # but not HTTPS URLs. Happ's tunnel DoH setup may interpret them as an
+    # HTTPS-only server URL and reject the whole configuration.
+    # Preserve dns.hosts mappings (some proxy server domains rely on them),
+    # but DO NOT pass anything except real HTTPS DoH endpoints in dns.servers.
+    dns = out.get("dns")
+    if isinstance(dns, dict):
+        valid_https_servers = []
+        for item in dns.get("servers", []):
+            addr = item.get("address") if isinstance(item, dict) else item
+            if not isinstance(addr, str):
+                continue
+            try:
+                parts = urllib.parse.urlsplit(addr)
+                good = (parts.scheme.lower() == "https" and bool(parts.hostname))
+            except ValueError:
+                good = False
+            if good:
+                valid_https_servers.append({"address": addr})
+        if not valid_https_servers:
+            valid_https_servers = [{"address": "https://cloudflare-dns.com/dns-query"}]
+        dns["servers"] = valid_https_servers
+        for obsolete in ("serveStale", "serveExpiredTTL", "enableParallelQuery"):
+            dns.pop(obsolete, None)
+    bo = out.get("burstObservatory")
+    if isinstance(bo, dict) and isinstance(bo.get("pingConfig"), dict):
+        bo["pingConfig"].pop("connectivity", None)
     return out
 
 
